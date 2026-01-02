@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Lean WASM Worker</title>
+</head>
+
+<body>
+    <script>
+        // ============================================
+        // CROSS-ORIGIN ISOLATION CHECK (required for pthreads)
+        // ============================================
+        console.log("=== CROSS-ORIGIN ISOLATION STATUS ===");
+        console.log("crossOriginIsolated:", crossOriginIsolated);
+        console.log("SharedArrayBuffer available:", typeof SharedArrayBuffer !== 'undefined');
+        console.log("Location:", window.location.href);
+
+        if (!crossOriginIsolated) {
+            console.warn("⚠️ NOT cross-origin isolated!");
+            console.warn("   pthreads will NOT work properly.");
+            console.warn("   Required headers:");
+            console.warn("   • Cross-Origin-Opener-Policy: same-origin");
+            console.warn("   • Cross-Origin-Embedder-Policy: require-corp");
+            parent.postMessage({
+                type: "stderr",
+                data: "⚠️ Warning: Not cross-origin isolated. pthreads may fail.\n"
+            }, "*");
+        } else {
+            console.log("✓ Cross-origin isolated - pthreads should work");
+        }
+        console.log("=====================================");
+        // ============================================
+
+        var pendingConfig = null;
+        var libraryFiles = [];
+
+        function mkdirp(FS, path) {
+            const parts = path.split("/").filter(p => p);
+            let current = "";
+            for (const part of parts) {
+                current += "/" + part;
+                try { FS.mkdir(current); } catch (e) { }
+            }
+        }
+
+        // Helper to call main() - works even if callMain wasn't exported
+        function runMain(args) {
+            // Try callMain first (cleaner if available)
+            if (typeof Module.callMain === 'function') {
+                return Module.callMain(args);
+            }
+            // Fallback: manual argv setup
+            var fullArgs = ["lean"].concat(args);
+            var argc = fullArgs.length;
+            var argPtrs = fullArgs.map(function (arg) {
+                return Module.stringToNewUTF8 ? Module.stringToNewUTF8(arg) : Module.allocateUTF8(arg);
+            });
+            var ptrSize = 4;
+            var argvPtr = Module._malloc(ptrSize * (argc + 1));
+            for (var i = 0; i < argc; i++) {
+                Module.setValue(argvPtr + i * ptrSize, argPtrs[i], "i32");
+            }
+            Module.setValue(argvPtr + argc * ptrSize, 0, "i32");
+            return Module.ccall("main", "number", ["number", "number"], [argc, argvPtr]);
+        }
+
+        window.addEventListener("message", (event) => {
+            const msg = event.data || {};
+
+            if (msg.type === "configure") {
+                console.log("Received configuration:", msg.args);
+                pendingConfig = msg;
+            }
+
+            if (msg.type === "load_library") {
+                console.log("Received library files");
+                libraryFiles = msg.files;
+                parent.postMessage({ type: "library_received" }, "*");
+            }
+
+            if (msg.type === "start") {
+                console.log("Starting Lean...");
+                startLean();
+            }
+        });
+
+        function startLean() {
+            if (!pendingConfig) {
+                parent.postMessage({ type: "error", data: "No configuration received" }, "*");
+                return;
+            }
+
+            var args = pendingConfig.args || [];
+            var code = pendingConfig.code;
+            var codePath = pendingConfig.path;
+
+            window.Module = {
+                locateFile: (path) => "/lean-wasm/" + path,
+                print: (text) => {
+                    console.log("stdout:", text);
+                    parent.postMessage({ type: "stdout", data: text }, "*");
+                },
+                printErr: (text) => {
+                    console.error("stderr:", text);
+                    parent.postMessage({ type: "stderr", data: text }, "*");
+                },
+                setStatus: (text) => {
+                    if (text) {
+                        console.log("Status:", text);
+                        parent.postMessage({ type: "progress", data: text }, "*");
+                    }
+                },
+                noInitialRun: true,  // DON'T auto-run main - we set up FS first
+
+                // preRun runs BEFORE main() but AFTER runtime is ready
+                // This is where we set up filesystem and environment variables
+                preRun: [function () {
+                    console.log("preRun: Setting up filesystem and environment...");
+                    var FS = Module.FS;
+                    var ENV = Module.ENV;
+
+                    // *** SET ENVIRONMENT VARIABLES ***
+                    // Put files directly in /lib/lean so both LEAN_PATH and sysroot path work:
+                    // - LEAN_PATH=/lib/lean finds files in /lib/lean
+                    // - Sysroot "/" + "/lib/lean" = "//lib/lean" (same as /lib/lean on Unix)
+                    ENV["LEAN_PATH"] = "/lib/lean";
+                    console.log("Environment set: LEAN_PATH=/lib/lean");
+
+                    // Setup filesystem directories
+                    try { FS.mkdir("/lib"); } catch (e) { }
+                    try { FS.mkdir("/lib/lean"); } catch (e) { }
+                    try { FS.mkdir("/workspace"); } catch (e) { }
+
+                    // Write library files directly to /lib/lean
+                    var libraryWriteErrors = 0;
+                    if (libraryFiles.length > 0) {
+                        console.log("Writing " + libraryFiles.length + " library files to /lib/lean/...");
+                        console.log("First 5 file names:", libraryFiles.slice(0, 5).map(f => f.name));
+                        for (var i = 0; i < libraryFiles.length; i++) {
+                            var file = libraryFiles[i];
+                            try {
+                                // Strip "library/" prefix if present
+                                var fileName = file.name;
+                                if (fileName.startsWith("library/")) {
+                                    fileName = fileName.substring(8); // Remove "library/"
+                                }
+                                var fullPath = "/lib/lean/" + fileName;
+                                var dirPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
+                                mkdirp(FS, dirPath);
+                                FS.writeFile(fullPath, new Uint8Array(file.data));
+                                if (i < 5) {
+                                    console.log("  ✓ Wrote:", fullPath, "(was: " + file.name + ",", file.data.byteLength, "bytes)");
+                                }
+                            } catch (e) {
+                                libraryWriteErrors++;
+                                if (libraryWriteErrors <= 5) {
+                                    console.error("  ✗ Failed to write " + file.name + ":", e.message || e);
+                                }
+                            }
+                        }
+                        if (libraryWriteErrors > 0) {
+                            console.error("Total library write errors:", libraryWriteErrors);
+                        }
+                        // Verify key files
+                        try {
+                            FS.stat("/lib/lean/Init.olean");
+                            console.log("  ✓ /lib/lean/Init.olean exists");
+                        } catch (e) {
+                            console.error("  ✗ /lib/lean/Init.olean NOT FOUND");
+                        }
+                        try {
+                            FS.stat("/lib/lean/Init/Prelude.olean");
+                            console.log("  ✓ /lib/lean/Init/Prelude.olean exists");
+                        } catch (e) {
+                            console.error("  ✗ /lib/lean/Init/Prelude.olean NOT FOUND");
+                        }
+                    } else {
+                        console.log("No library files provided");
+                    }
+
+                    // Write code file if provided
+                    if (code && codePath) {
+                        var codeDir = codePath.substring(0, codePath.lastIndexOf("/"));
+                        if (codeDir) mkdirp(FS, codeDir);
+                        var codeString = typeof code === 'string' ? code : String(code);
+                        console.log("=== INPUT FILE ===");
+                        console.log("Path:", codePath);
+                        console.log("Content:", codeString);
+                        FS.writeFile(codePath, codeString);
+                        // Verify
+                        try {
+                            var readBack = FS.readFile(codePath, { encoding: 'utf8' });
+                            if (readBack === codeString) {
+                                console.log("  ✓ Code file verified");
+                            } else {
+                                console.error("  ✗ Code file mismatch!");
+                            }
+                        } catch (e) {
+                            console.error("  ✗ Failed to verify:", e);
+                        }
+                    }
+
+                    try { FS.chdir("/workspace"); } catch (e) { }
+                    console.log("Working directory:", FS.cwd());
+                    console.log("Final ENV: LEAN_PATH=" + ENV["LEAN_PATH"]);
+                    console.log("preRun complete");
+                }],
+
+                onRuntimeInitialized: function () {
+                    console.log("Runtime initialized (filesystem already set up in preRun)");
+                    var FS = Module.FS;
+
+                    // List workspace contents
+                    try {
+                        var workspaceContents = FS.readdir("/workspace");
+                        console.log("Workspace contents:", workspaceContents);
+                    } catch (e) {
+                        console.error("Could not list workspace:", e);
+                    }
+
+                    // ========== CONFIGURATION FLAGS ==========
+                    var ENABLE_WARMUP = true;           // Set to false to skip warm-up call
+                    var ENABLE_TASK_MANAGER = true;    // Set to true to init task manager
+                    var COMMAND_DELAY_MS = 200;         // Delay before running actual command
+                    // ==========================================
+
+                    console.log("=== CONFIGURATION ===");
+                    console.log("ENABLE_WARMUP:", ENABLE_WARMUP);
+                    console.log("ENABLE_TASK_MANAGER:", ENABLE_TASK_MANAGER);
+                    console.log("COMMAND_DELAY_MS:", COMMAND_DELAY_MS);
+                    console.log("SharedArrayBuffer available:", typeof SharedArrayBuffer !== 'undefined');
+                    console.log("Hardware concurrency:", navigator.hardwareConcurrency || 'unknown');
+                    console.log("=====================");
+
+                    // *** WARM-UP CALL - may help prime pthread workers ***
+                    if (ENABLE_WARMUP) {
+                        console.log("Performing warm-up call to prime workers...");
+                        try {
+                            runMain(["--version"]);
+                            console.log("✓ Warm-up succeeded");
+                        } catch (e) {
+                            console.log("Warm-up completed with error (may be normal):", e.message || e);
+                        }
+                    } else {
+                        console.log("Warm-up SKIPPED (ENABLE_WARMUP=false)");
+                    }
+
+                    // *** Initialize task manager ***
+                    if (ENABLE_TASK_MANAGER) {
+                        console.log("Initializing task manager...");
+                        try {
+                            if (Module._lean_init_task_manager) {
+                                Module._lean_init_task_manager();
+                                console.log("✓ Task manager initialized via _lean_init_task_manager");
+                            } else if (Module._lean_init_task_manager_using) {
+                                var numWorkers = (typeof SharedArrayBuffer !== 'undefined' && navigator.hardwareConcurrency)
+                                    ? Math.min(navigator.hardwareConcurrency, 4)
+                                    : 1;
+                                Module._lean_init_task_manager_using(numWorkers);
+                                console.log("✓ Task manager initialized with", numWorkers, "workers");
+                            } else {
+                                console.warn("⚠ Task manager init functions not found");
+                            }
+                        } catch (e) {
+                            console.warn("⚠ Failed to initialize task manager:", e.message || e);
+                        }
+                    } else {
+                        console.log("Task manager SKIPPED (ENABLE_TASK_MANAGER=false)");
+                    }
+
+                    console.log("Ready to run command:", args);
+
+                    // Delay before running actual command
+                    setTimeout(function () {
+                        console.log("=== Starting actual command execution ===");
+
+                        // Set up a timeout to detect if Lean hangs
+                        var hangTimeout = setTimeout(function () {
+                            console.error("⚠️ TIMEOUT: Lean has been running for 30 seconds without returning");
+                            console.error("This suggests Lean is stuck in an infinite loop or deadlock");
+                            console.error("Possible causes:");
+                            console.error("  - IO.Promise waiting for task manager that's broken");
+                            console.error("  - Threading deadlock");
+                            console.error("  - Infinite loop in Lean code");
+                            parent.postMessage({
+                                type: "stderr",
+                                data: "TIMEOUT: Lean execution exceeded 30 seconds. It appears to be stuck."
+                            }, "*");
+                        }, 30000);  // 30 second timeout
+
+                        // Run the actual command
+                        try {
+                            console.log("Running with args:", args);
+                            console.log("⏳ This is where it might hang if Lean gets stuck...");
+
+                            var exitCode = 0;
+                            try {
+                                runMain(args);
+                                console.log("✓ main() returned normally");
+                            } catch (e) {
+                                console.log("main() threw exception:", e);
+                                // Handle ExitStatus exceptions (normal exit)
+                                if (e && (e.constructor.name === "ExitStatus" || typeof e.status === "number")) {
+                                    exitCode = e.status || 0;
+                                    console.log("✓ Normal exit via exception, code:", exitCode);
+                                } else {
+                                    console.error("❌ Unexpected exception:", e);
+                                    throw e;
+                                }
+                            }
+                            console.log("Final exit code:", exitCode);
+                            clearTimeout(hangTimeout);  // Clear the timeout since we completed
+                            parent.postMessage({ type: "done", exitCode: exitCode }, "*");
+                        } catch (e) {
+                            console.error("❌ Error running command:", e);
+                            console.error("Stack:", e.stack);
+                            clearTimeout(hangTimeout);  // Clear the timeout
+                            parent.postMessage({ type: "stderr", data: "Error: " + (e.message || e) }, "*");
+                            parent.postMessage({ type: "done", exitCode: 1 }, "*");
+                        }
+                    }, COMMAND_DELAY_MS);
+                },
+                onExit: function (code) {
+                    console.log("onExit:", code);
+                },
+                onAbort: function (what) {
+                    console.error("Aborted:", what);
+                    parent.postMessage({ type: "stderr", data: "Aborted: " + (what || "unknown") }, "*");
+                    parent.postMessage({ type: "done", exitCode: 1 }, "*");
+                }
+            };
+
+            // Load lean.js
+            console.log("Loading lean.js...");
+            var script = document.createElement("script");
+            script.src = "/lean-wasm/lean.js";
+            script.onload = () => console.log("lean.js loaded");
+            script.onerror = () => parent.postMessage({ type: "error", data: "Failed to load lean.js" }, "*");
+            document.body.appendChild(script);
+        }
+
+        parent.postMessage({ type: "iframe_ready" }, "*");
+    </script>
+</body>
+
+</html>
