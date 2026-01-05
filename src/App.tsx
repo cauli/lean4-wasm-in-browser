@@ -462,7 +462,7 @@ function App() {
           Lean 4 WASM Playground
         </h1>
         <p className="subtitle">
-          Run Lean 4 directly in your browser via WebAssembly
+          ⚠️ AI-generated demo
         </p>
       </header>
 
@@ -478,7 +478,7 @@ function App() {
         <div className="controls">
           {status === 'idle' && (
             <button onClick={loadLean} className="btn btn-primary">
-              🚀 Load Lean 4 WASM
+              Load Lean 4 WASM
             </button>
           )}
           {status === 'loading' && (
@@ -501,7 +501,7 @@ function App() {
                 className="btn btn-secondary"
                 title="Test basic initialization"
               >
-                🧪 --version
+                --version
               </button>
               <button 
                 onClick={testHelp} 
@@ -509,35 +509,35 @@ function App() {
                 className="btn btn-secondary"
                 title="Show help"
               >
-                ❓ --help
+                --help
               </button>
               <button 
                 onClick={runLean} 
                 disabled={status === 'running'}
                 className="btn btn-primary"
               >
-                {status === 'running' ? '⏳ Running...' : '▶️ Run Code'}
+                {status === 'running' ? 'Running...' : 'Run Code'}
               </button>
             </>
           )}
           {status === 'error' && (
             <button onClick={loadLean} className="btn btn-secondary">
-              🔄 Retry
+              Retry
             </button>
           )}
           <span className={`status status-${status}`}>
-            {status === 'idle' && '⚪ Not loaded'}
-            {status === 'loading' && '🟡 Loading...'}
-            {status === 'ready' && '🟢 Ready'}
-            {status === 'running' && '🔵 Running'}
-            {status === 'error' && '🔴 Error'}
+            {status === 'idle' && 'Not loaded'}
+            {status === 'loading' && 'Loading...'}
+            {status === 'ready' && 'Ready'}
+            {status === 'running' && 'Running'}
+            {status === 'error' && 'Error'}
           </span>
         </div>
 
         <div className="editor-container">
           <div className="panel">
             <div className="panel-header">
-              <span>📝 Lean Code</span>
+              <span>Code</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
                 <label htmlFor="lean-flags" style={{ opacity: 0.7 }}>Flags:</label>
                 <input
@@ -548,12 +548,12 @@ function App() {
                   placeholder="--json --quiet"
                   style={{
                     padding: '0.25rem 0.5rem',
-                    border: '1px solid #444',
-                    borderRadius: '4px',
-                    background: '#2a2a2a',
-                    color: '#fff',
+                    border: '1px solid #262626',
+                    background: '#0a0a0a',
+                    color: '#f5f5f5',
                     width: '200px',
-                    fontSize: '0.85rem'
+                    fontSize: '0.75rem',
+                    fontFamily: "'IBM Plex Mono', monospace"
                   }}
                   title="Additional flags to pass to Lean (e.g., --json, --quiet, --stats)"
                 />
@@ -570,7 +570,7 @@ function App() {
 
           <div className="panel">
             <div className="panel-header">
-              <span>📤 Output</span>
+              <span>Output</span>
               <button 
                 onClick={() => { setOutput(''); setError('') }}
                 className="btn btn-small"
@@ -584,8 +584,6 @@ function App() {
               {!output && !error && (
                 <span className="output-placeholder">
                   Output will appear here...
-                  {'\n\n'}
-                  💡 Tip: Try "🧪 --version" first to test basic initialization.
                 </span>
               )}
             </pre>
@@ -595,11 +593,7 @@ function App() {
 
       <footer className="footer">
         <p>
-          Built with ❤️ for testing Lean 4 WASM builds
-          <br />
-          <small>
-            Check browser console (F12) for detailed debugging info
-          </small>
+          Check browser console (F12) for detailed debugging info
         </p>
       </footer>
     </div>
