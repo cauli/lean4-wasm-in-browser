@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { gunzipSync } from 'fflate'
-import { parseTar, filesToTransferable } from './utils'
+import { analyzeCodeDependencies, fetchOleanFiles, loadManifest } from './lean-loader'
 import './App.css'
 
 // Type for the Lean WASM module
@@ -55,11 +54,11 @@ function App() {
   const [leanFlags, setLeanFlags] = useState<string>('--json')  // Additional flags for Lean
   const [loadingProgress, setLoadingProgress] = useState<string>('')
   const [wasmLoaded, setWasmLoaded] = useState(false)  // Track if WASM is cached
-  const [libraryLoaded, setLibraryLoaded] = useState(false)  // Track if library files are loaded
+  const [manifestLoaded, setManifestLoaded] = useState(false)  // Track if manifest is loaded
   const moduleRef = useRef<LeanModule | null>(null)
   const outputRef = useRef<HTMLPreElement>(null)
   const scriptRef = useRef<HTMLScriptElement | null>(null)
-  const libraryFilesRef = useRef<Array<{name: string, data: ArrayBuffer}>>([])  // Store extracted library files
+  const loadedOleansRef = useRef<Map<string, Uint8Array>>(new Map())  // Cache of loaded .olean files
 
   // Check if SharedArrayBuffer is available and cross-origin isolated
   const hasSharedArrayBuffer = typeof SharedArrayBuffer !== 'undefined'
@@ -173,7 +172,12 @@ function App() {
   }, [appendOutput])
 
   // Run Lean command in the iframe
-  const runInIframe = useCallback((args: string[], code?: string, path?: string, withLibrary: boolean = true): Promise<number> => {
+  const runInIframe = useCallback((
+    args: string[], 
+    code?: string, 
+    path?: string, 
+    libraryFiles?: Map<string, Uint8Array>
+  ): Promise<number> => {
     return new Promise((resolve, reject) => {
       const iframe = scriptRef.current as unknown as HTMLIFrameElement
       if (!iframe?.contentWindow) {
@@ -215,17 +219,31 @@ function App() {
         path 
       }, '*')
       
-      // Step 2: Send library files if needed
-      if (withLibrary && libraryFilesRef.current.length > 0) {
-        console.log(`Sending ${libraryFilesRef.current.length} library files to iframe...`)
-        setLoadingProgress(`Sending ${libraryFilesRef.current.length} library files...`)
-        iframe.contentWindow.postMessage({ 
-          type: 'load_library', 
-          files: libraryFilesRef.current 
-        }, '*')
+      // Step 2: Send library files if provided
+      if (libraryFiles && libraryFiles.size > 0) {
+        console.log(`Sending ${libraryFiles.size} library files to iframe...`)
+        setLoadingProgress(`Sending ${libraryFiles.size} library files...`)
+        
+        // Convert Map to array for postMessage
+        const filesArray: Array<{name: string, data: ArrayBuffer}> = []
+        libraryFiles.forEach((data, name) => {
+          const copy = new ArrayBuffer(data.byteLength)
+          new Uint8Array(copy).set(data)
+          filesArray.push({ name, data: copy })
+        })
+        
+        try {
+          iframe.contentWindow.postMessage({ 
+            type: 'load_library', 
+            files: filesArray 
+          }, '*')
+          console.log('postMessage for load_library sent successfully')
+        } catch (e) {
+          console.error('Failed to send library files:', e)
+        }
       } else {
         // No library needed, start immediately
-        console.log('No library needed, starting Lean...')
+        console.log('No library files, starting Lean...')
         iframe.contentWindow.postMessage({ type: 'start' }, '*')
       }
       
@@ -237,77 +255,64 @@ function App() {
     })
   }, [appendOutput])
 
-  // Download and extract library files
-  const loadLibraryFiles = useCallback(async () => {
-    setLoadingProgress('Downloading Lean standard library (~89MB)...')
+  // Load just the manifest (lightweight)
+  const loadDependencyManifest = useCallback(async () => {
+    setLoadingProgress('Loading dependency manifest...')
+    await loadManifest()
+    setManifestLoaded(true)
+    console.log('Manifest loaded')
+  }, [])
+
+  // Load required .olean files for given code
+  const loadRequiredOleans = useCallback(async (code: string): Promise<Map<string, Uint8Array>> => {
+    setLoadingProgress('Analyzing dependencies...')
+    const deps = await analyzeCodeDependencies(code)
     
-    const response = await fetch('/lean-wasm/lean-lib.tar.gz')
-    if (!response.ok) {
-      throw new Error('Failed to download library files. Make sure lean-lib.tar.gz exists in public/lean-wasm/')
-    }
+    console.log('Dependencies analysis:', {
+      explicit: deps.explicitImports,
+      implicit: deps.implicitImports,
+      totalModules: deps.allModules.length,
+      oleanFiles: deps.oleanPaths.length,
+    })
     
-    const contentLength = response.headers.get('content-length')
-    const total = contentLength ? parseInt(contentLength, 10) : 0
+    appendOutput(`Loading ${deps.oleanPaths.length} modules (${deps.allModules.length} with transitive deps)\n`)
     
-    // Stream the download with progress
-    const reader = response.body?.getReader()
-    if (!reader) {
-      throw new Error('Failed to get response reader')
-    }
-    
-    const chunks: Uint8Array[] = []
-    let received = 0
-    
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      chunks.push(value)
-      received += value.length
-      if (total > 0) {
-        const percent = Math.round((received / total) * 100)
-        setLoadingProgress(`Downloading library: ${percent}% (${(received / 1024 / 1024).toFixed(1)}MB / ${(total / 1024 / 1024).toFixed(1)}MB)`)
-      } else {
-        setLoadingProgress(`Downloading library: ${(received / 1024 / 1024).toFixed(1)}MB`)
+    // Check what's already cached
+    const needed: string[] = []
+    for (const path of deps.oleanPaths) {
+      if (!loadedOleansRef.current.has(path)) {
+        needed.push(path)
       }
     }
     
-    // Concatenate chunks
-    setLoadingProgress('Decompressing library...')
-    const compressedData = new Uint8Array(received)
-    let offset = 0
-    for (const chunk of chunks) {
-      compressedData.set(chunk, offset)
-      offset += chunk.length
-    }
-    
-    console.log(`Downloaded ${compressedData.length} bytes, first bytes:`, compressedData.slice(0, 10))
-    
-    // Check if it's actually gzip (magic bytes: 0x1f 0x8b)
-    let tarData: Uint8Array
-    if (compressedData[0] === 0x1f && compressedData[1] === 0x8b) {
-      // It's gzip compressed, decompress it
-      console.log('Detected gzip format, decompressing...')
-      tarData = gunzipSync(compressedData)
+    if (needed.length > 0) {
+      setLoadingProgress(`Downloading ${needed.length} .olean files...`)
+      const newFiles = await fetchOleanFiles(needed, (loaded, total) => {
+        setLoadingProgress(`Downloading: ${loaded}/${total} files`)
+      })
+      
+      // Add to cache
+      newFiles.forEach((data, path) => {
+        loadedOleansRef.current.set(path, data)
+      })
+      console.log(`Downloaded ${newFiles.size} new .olean files, cache size: ${loadedOleansRef.current.size}`)
     } else {
-      // Server might have already decompressed it, assume it's raw tar
-      console.log('Not gzip format, assuming raw tar data')
-      tarData = compressedData
+      console.log(`All ${deps.oleanPaths.length} .olean files already cached`)
     }
-    console.log(`Tar data size: ${(tarData.length / 1024 / 1024).toFixed(1)}MB`)
     
-    // Parse tar and extract files
-    setLoadingProgress('Extracting library files...')
-    const files = parseTar(tarData)
-    console.log(`Extracted ${files.size} files from tar`)
+    // Return only the files needed for this run
+    const result = new Map<string, Uint8Array>()
+    for (const path of deps.oleanPaths) {
+      const data = loadedOleansRef.current.get(path)
+      if (data) {
+        result.set(path, data)
+      }
+    }
     
-    // Convert to transferable format
-    libraryFilesRef.current = filesToTransferable(files)
-    setLibraryLoaded(true)
-    
-    return libraryFilesRef.current.length
-  }, [])
+    return result
+  }, [appendOutput])
 
-  // Initial load - download library and verify WASM
+  // Initial load - verify WASM and load manifest
   const loadLean = useCallback(async () => {
     if (!hasSharedArrayBuffer) {
       setError('SharedArrayBuffer is not available. This page must be served with proper COOP/COEP headers.')
@@ -327,10 +332,10 @@ function App() {
         throw new Error(`Lean WASM files not found. Please extract the WASM build to public/lean-wasm/`)
       }
 
-      // Download and extract library files first
-      if (!libraryLoaded) {
-        const fileCount = await loadLibraryFiles()
-        appendOutput(`Loaded ${fileCount} library files\n`)
+      // Load manifest for dependency resolution
+      if (!manifestLoaded) {
+        await loadDependencyManifest()
+        appendOutput('Dependency manifest loaded (dynamic loading enabled)\n')
       }
 
       setLoadingProgress('Loading Lean WASM module (~100MB, please wait)...')
@@ -338,9 +343,8 @@ function App() {
       // Load the module once to verify it works and cache the WASM
       await createFreshModule()
       
-      // Skip the --version test since it can fail with library loaded
-      // The module is ready, user can try running code
-      appendOutput('WASM module initialized with library\n')
+      appendOutput('WASM module ready\n')
+      appendOutput('Libraries will be loaded on-demand based on your imports.\n')
       
       setWasmLoaded(true)
       setLoadingProgress('Lean 4 WASM ready!')
@@ -351,7 +355,7 @@ function App() {
       setError(err instanceof Error ? err.message : 'Unknown error')
       setStatus('error')
     }
-  }, [hasSharedArrayBuffer, libraryLoaded, loadLibraryFiles, createFreshModule, runInIframe, appendOutput])
+  }, [hasSharedArrayBuffer, manifestLoaded, loadDependencyManifest, createFreshModule, appendOutput])
 
   // Test with --version (simplest test)
   const testVersion = useCallback(async () => {
@@ -373,7 +377,7 @@ function App() {
       // Add small delay to let pthread workers spawn
       await new Promise(resolve => setTimeout(resolve, 150))
       setLoadingProgress('Workers ready, running...')
-      const exitCode = await runInIframe(['--version'], undefined, undefined, false)
+      const exitCode = await runInIframe(['--version'])
       appendOutput(`\nExit code: ${exitCode}`)
     } catch (err) {
       console.error('Error running --version:', err)
@@ -402,7 +406,7 @@ function App() {
       // Add small delay to let pthread workers spawn
       await new Promise(resolve => setTimeout(resolve, 150))
       setLoadingProgress('Workers ready, running...')
-      const exitCode = await runInIframe(['--help'], undefined, undefined, false)
+      const exitCode = await runInIframe(['--help'])
       appendOutput(`\nExit code: ${exitCode}`)
     } catch (err) {
       console.error('Error running --help:', err)
@@ -423,7 +427,6 @@ function App() {
     setStatus('running')
     setOutput('')
     setError('')
-    setLoadingProgress('Creating fresh WASM instance...')
 
     const inputPath = '/workspace/input.lean'
     // Parse flags from the input field
@@ -432,11 +435,16 @@ function App() {
     appendOutput(`Running: lean ${args.join(' ')}\n`)
 
     try {
+      // First, load required .olean files based on the code
+      const requiredFiles = await loadRequiredOleans(leanCode)
+      appendOutput(`Loaded ${requiredFiles.size} .olean files\n\n`)
+      
+      setLoadingProgress('Creating fresh WASM instance...')
       await createFreshModule()
       // Add small delay to let pthread workers spawn
       await new Promise(resolve => setTimeout(resolve, 150))
-      setLoadingProgress('Workers ready, loading library...')
-      const exitCode = await runInIframe(args, leanCode, inputPath, true)
+      setLoadingProgress('Workers ready, running...')
+      const exitCode = await runInIframe(args, leanCode, inputPath, requiredFiles)
       appendOutput(`\nExit code: ${exitCode}`)
     } catch (err) {
       console.error('Error running code:', err)
@@ -445,7 +453,7 @@ function App() {
       setLoadingProgress('')
       setStatus('ready')
     }
-  }, [wasmLoaded, leanCode, leanFlags, appendOutput, createFreshModule, runInIframe])
+  }, [wasmLoaded, leanCode, leanFlags, appendOutput, createFreshModule, runInIframe, loadRequiredOleans])
 
   // Auto-scroll output
   useEffect(() => {

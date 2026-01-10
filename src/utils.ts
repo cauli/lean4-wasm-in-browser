@@ -13,7 +13,18 @@ export function parseTar(data: Uint8Array): Map<string, Uint8Array> {
     // Extract filename (first 100 bytes, null-terminated)
     let nameEnd = 0
     while (nameEnd < 100 && header[nameEnd] !== 0) nameEnd++
-    const name = new TextDecoder().decode(header.subarray(0, nameEnd))
+    let name = new TextDecoder().decode(header.subarray(0, nameEnd))
+    
+    // Check for USTAR format and handle prefix (bytes 345-499)
+    const magic = new TextDecoder().decode(header.subarray(257, 262))
+    if (magic === 'ustar') {
+      let prefixEnd = 345
+      while (prefixEnd < 500 && header[prefixEnd] !== 0) prefixEnd++
+      if (prefixEnd > 345) {
+        const prefix = new TextDecoder().decode(header.subarray(345, prefixEnd))
+        name = prefix + '/' + name
+      }
+    }
     
     // Extract file size (bytes 124-135, octal string)
     let sizeStr = ''
@@ -28,14 +39,25 @@ export function parseTar(data: Uint8Array): Map<string, Uint8Array> {
     
     offset += 512
     
-    // Type 0 or null = regular file
+    // Type 0 or null = regular file, skip directories (5) and pax headers (x, g)
     if ((typeFlag === 0 || typeFlag === 48) && size > 0 && name) {
-      const fileData = data.subarray(offset, offset + size)
-      files.set(name, new Uint8Array(fileData))
+      // Skip macOS AppleDouble files (._*)
+      if (!name.includes('/._') && !name.startsWith('._')) {
+        const fileData = data.slice(offset, offset + size)  // Use slice, not subarray
+        files.set(name, fileData)
+      }
     }
     
     // Move to next header (512-byte aligned)
     offset += Math.ceil(size / 512) * 512
+  }
+  
+  console.log(`Parsed ${files.size} files from tar`)
+  // Debug: check Init.olean size
+  for (const [name, data] of files) {
+    if (name.endsWith('Init.olean') && !name.includes('/')) {
+      console.log(`Found root Init.olean: ${name}, size: ${data.byteLength}`)
+    }
   }
   
   return files
