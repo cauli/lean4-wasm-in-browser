@@ -1,55 +1,139 @@
 #!/bin/bash
 #
-# Creates lean-lib.tar.gz from the lib/lean directory with only .olean files
+# Extracts Lean WASM distribution and copies library files
 # 
 # Usage: ./scripts/create-lean-lib.sh
 #
-# This script creates a tarball of the Lean standard library .olean files
-# that can be loaded into the WASM filesystem at runtime.
+# This script:
+# 1. Unzips build-Web Assembly.zip
+# 2. Extracts lean-4.28.0-pre-linux_wasm32.tar.zst
+# 3. Copies bin files to lean-wasm/
+# 4. Copies all .olean* files to lean-lib/ for dynamic loading
 #
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-LIB_DIR="$PROJECT_ROOT/public/lean-wasm/lib/lean"
-OUTPUT_FILE="$PROJECT_ROOT/public/lean-wasm/lean-lib.tar.gz"
+LEAN_WASM_DIR="$PROJECT_ROOT/public/lean-wasm"
+ZIP_FILE="$LEAN_WASM_DIR/build-Web Assembly.zip"
+LEAN_LIB_DIR="$LEAN_WASM_DIR/lean-lib"
 
-echo "=== Creating Lean Library Tarball ==="
-echo "Source directory: $LIB_DIR"
-echo "Output file: $OUTPUT_FILE"
+cd "$LEAN_WASM_DIR"
+
+# Step 1: Unzip build-Web Assembly.zip
+echo "=== Step 1: Unzipping build-Web Assembly.zip ==="
+if [ -f "$ZIP_FILE" ]; then
+    unzip -o "$ZIP_FILE"
+else
+    echo "Zip file not found, skipping: $ZIP_FILE"
+fi
+
+# Step 2: Extract .tar.zst file
 echo ""
+echo "=== Step 2: Extracting .tar.zst ==="
+ZSTD_FILE=$(find . -maxdepth 1 -name "*.tar.zst" | head -1)
+if [ -n "$ZSTD_FILE" ]; then
+    echo "Found: $ZSTD_FILE"
+    zstd -d -f "$ZSTD_FILE"
+else
+    echo "No .tar.zst file found, skipping"
+fi
 
-# Check if source directory exists
-if [ ! -d "$LIB_DIR" ]; then
-    echo "ERROR: Source directory does not exist: $LIB_DIR"
+# Step 3: Extract .tar file
+echo ""
+echo "=== Step 3: Extracting .tar ==="
+TAR_FILE=$(find . -maxdepth 1 -name "*.tar" | head -1)
+if [ -n "$TAR_FILE" ]; then
+    echo "Found: $TAR_FILE"
+    tar -xf "$TAR_FILE"
+else
+    echo "No .tar file found, skipping"
+fi
+
+# Find extracted directory (lean-*)
+EXTRACTED_DIR=$(find . -maxdepth 1 -type d -name "lean-*" | head -1)
+if [ -z "$EXTRACTED_DIR" ]; then
+    echo "ERROR: Could not find extracted lean-* directory"
+    exit 1
+fi
+echo "Extracted directory: $EXTRACTED_DIR"
+
+# Step 4: Copy bin files to lean-wasm/
+echo ""
+echo "=== Step 4: Copying bin files ==="
+if [ -d "$EXTRACTED_DIR/bin" ]; then
+    cp -v "$EXTRACTED_DIR/bin/"* "$LEAN_WASM_DIR/"
+    echo "Copied bin files to $LEAN_WASM_DIR"
+else
+    echo "WARNING: No bin directory found in $EXTRACTED_DIR"
+fi
+
+# Step 5: Copy all .olean* files to lean-lib/
+echo ""
+echo "=== Step 5: Copying library files to lean-lib/ ==="
+# Try both possible directory structures
+if [ -d "$EXTRACTED_DIR/lib/lean" ]; then
+    LIB_DIR="$EXTRACTED_DIR/lib/lean"
+elif [ -d "$EXTRACTED_DIR" ]; then
+    LIB_DIR="$EXTRACTED_DIR"
+else
+    echo "ERROR: Could not find library directory"
     exit 1
 fi
 
-# Count files before creating tarball
+# Count files to copy (all .olean variants)
 OLEAN_COUNT=$(find "$LIB_DIR" -name "*.olean" -type f | wc -l | tr -d ' ')
-echo "Found $OLEAN_COUNT .olean files"
+OLEAN_SERVER_COUNT=$(find "$LIB_DIR" -name "*.olean.server" -type f | wc -l | tr -d ' ')
+OLEAN_PRIVATE_COUNT=$(find "$LIB_DIR" -name "*.olean.private" -type f | wc -l | tr -d ' ')
+echo "Found in $LIB_DIR:"
+echo "  - $OLEAN_COUNT .olean files"
+echo "  - $OLEAN_SERVER_COUNT .olean.server files"
+echo "  - $OLEAN_PRIVATE_COUNT .olean.private files"
 
-# Create tarball with only .olean files
-# Using relative paths from the lib/lean directory
+# Clean and recreate lean-lib directory
+rm -rf "$LEAN_LIB_DIR"
+mkdir -p "$LEAN_LIB_DIR"
+
+# Copy all .olean* files preserving directory structure
 cd "$LIB_DIR"
+find . \( -name "*.olean" -o -name "*.olean.server" -o -name "*.olean.private" \) -type f | while read file; do
+    # Create parent directory
+    dir=$(dirname "$file")
+    mkdir -p "$LEAN_LIB_DIR/$dir"
+    # Copy file
+    cp "$file" "$LEAN_LIB_DIR/$file"
+done
+cd "$LEAN_WASM_DIR"
 
+# Count copied files
+TOTAL_FILES=$(find "$LEAN_LIB_DIR" -type f | wc -l | tr -d ' ')
+TOTAL_SIZE=$(du -sh "$LEAN_LIB_DIR" | cut -f1)
 echo ""
-echo "Creating tarball..."
-# Find all .olean files and create tar.gz
-# The paths in the tar will be relative (e.g., "Init.olean", "Init/Prelude.olean")
-find . -name "*.olean" -type f | sed 's|^\./||' | tar -czf "$OUTPUT_FILE" -T -
+echo "Copied to: $LEAN_LIB_DIR"
+echo "Total files: $TOTAL_FILES"
+echo "Total size: $TOTAL_SIZE"
 
-# Get output file size
-OUTPUT_SIZE=$(ls -lh "$OUTPUT_FILE" | awk '{print $5}')
+# Step 6: Cleanup
+echo ""
+echo "=== Step 6: Cleanup ==="
+# Delete temporary files
+if [ -f "$ZIP_FILE" ]; then
+    rm "$ZIP_FILE"
+    echo "Deleted: $ZIP_FILE"
+fi
+if [ -n "$ZSTD_FILE" ] && [ -f "$ZSTD_FILE" ]; then
+    rm "$ZSTD_FILE"
+    echo "Deleted: $ZSTD_FILE"
+fi
+if [ -n "$TAR_FILE" ] && [ -f "$TAR_FILE" ]; then
+    rm "$TAR_FILE"
+    echo "Deleted: $TAR_FILE"
+fi
 
 echo ""
 echo "=== Done ==="
-echo "Created: $OUTPUT_FILE"
-echo "Size: $OUTPUT_SIZE"
-echo "Files included: $OLEAN_COUNT .olean files"
+echo "Output directory: $LEAN_LIB_DIR"
 echo ""
 echo "To verify contents:"
-echo "  tar -tzf $OUTPUT_FILE | head -20"
-
-
+echo "  find $LEAN_LIB_DIR -name '*.olean*' | head -20"

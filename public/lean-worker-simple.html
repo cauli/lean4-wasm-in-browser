@@ -67,6 +67,7 @@
 
         window.addEventListener("message", (event) => {
             const msg = event.data || {};
+            console.log("[IFRAME] Received message type:", msg.type);
 
             if (msg.type === "configure") {
                 console.log("Received configuration:", msg.args);
@@ -74,13 +75,18 @@
             }
 
             if (msg.type === "load_library") {
-                console.log("Received library files");
-                libraryFiles = msg.files;
+                console.log("Received library files, count:", msg.files ? msg.files.length : 0);
+                if (msg.files && msg.files.length > 0) {
+                    console.log("First file:", msg.files[0].name, msg.files[0].data ? msg.files[0].data.byteLength : 'no data');
+                }
+                libraryFiles = msg.files || [];
+                console.log("libraryFiles set, length:", libraryFiles.length);
                 parent.postMessage({ type: "library_received" }, "*");
             }
 
             if (msg.type === "start") {
                 console.log("Starting Lean...");
+                console.log("libraryFiles.length at start:", libraryFiles.length);
                 startLean();
             }
         });
@@ -132,6 +138,8 @@
                     try { FS.mkdir("/lib/lean"); } catch (e) { }
                     try { FS.mkdir("/workspace"); } catch (e) { }
 
+
+
                     // Write library files directly to /lib/lean
                     var libraryWriteErrors = 0;
                     if (libraryFiles.length > 0) {
@@ -140,11 +148,19 @@
                         for (var i = 0; i < libraryFiles.length; i++) {
                             var file = libraryFiles[i];
                             try {
-                                // Strip "library/" prefix if present
+                                // In preRun, change the prefix stripping:
                                 var fileName = file.name;
+                                // Strip various possible prefixes
                                 if (fileName.startsWith("library/")) {
-                                    fileName = fileName.substring(8); // Remove "library/"
+                                    fileName = fileName.substring(8);
+                                } else if (fileName.startsWith("lean-lib/")) {
+                                    fileName = fileName.substring(9);
+                                } else if (fileName.startsWith("lib/lean/")) {
+                                    fileName = fileName.substring(9);
+                                } else if (fileName.startsWith("lean/")) {
+                                    fileName = fileName.substring(5);
                                 }
+
                                 var fullPath = "/lib/lean/" + fileName;
                                 var dirPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
                                 mkdirp(FS, dirPath);
@@ -201,7 +217,27 @@
                         }
                     }
 
+
+                    // After writing all files, check subdirectory contents
+                    try {
+                        var initContents = FS.readdir("/lib/lean/Init");
+                        console.log("[DEBUG] /lib/lean/Init contents:", initContents.slice(0, 10));
+                        var preludeStat = FS.stat("/lib/lean/Init/Prelude.olean");
+                        console.log("[DEBUG] Init/Prelude.olean size:", preludeStat.size);
+                    } catch (e) {
+                        console.error("[DEBUG] Init subdirectory check failed:", e.message);
+                    }
+
                     try { FS.chdir("/workspace"); } catch (e) { }
+
+                    // After writing library files, check for this specific file
+                    try {
+                        var stat = FS.stat("/lib/lean/Init/Data/String/Lemmas/Basic.olean");
+                        console.log("Init/Data/String/Lemmas/Basic.olean exists, size:", stat.size);
+                    } catch (e) {
+                        console.log("Init/Data/String/Lemmas/Basic.olean MISSING");
+                    }
+
                     console.log("Working directory:", FS.cwd());
                     console.log("Final ENV: LEAN_PATH=" + ENV["LEAN_PATH"]);
                     console.log("preRun complete");
@@ -220,8 +256,8 @@
                     }
 
                     // ========== CONFIGURATION FLAGS ==========
-                    var ENABLE_WARMUP = true;           // Set to false to skip warm-up call
-                    var ENABLE_TASK_MANAGER = true;    // Set to true to init task manager
+                    var ENABLE_WARMUP = false;          // Disabled - signature fixes should make this unnecessary
+                    var ENABLE_TASK_MANAGER = false;    // Set to true to init task manager
                     var COMMAND_DELAY_MS = 200;         // Delay before running actual command
                     // ==========================================
 
