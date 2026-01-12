@@ -131,9 +131,16 @@ if [ -n "$TAR_FILE" ] && [ -f "$TAR_FILE" ]; then
     echo "Deleted: $TAR_FILE"
 fi
 
+# Step 7: Generate lean-lib-files.json
+echo ""
+echo "=== Step 7: Generating lean-lib-files.json ==="
+cd "$PROJECT_ROOT"
+node scripts/gen-lib-files.mjs "$LEAN_LIB_DIR" "$LEAN_WASM_DIR/lean-lib-files.json"
+
 echo ""
 echo "=== Done ==="
 echo "Output directory: $LEAN_LIB_DIR"
+echo "File list: $LEAN_WASM_DIR/lean-lib-files.json"
 echo ""
 echo "To verify contents:"
 echo "  find $LEAN_LIB_DIR -name '*.olean*' | head -20"

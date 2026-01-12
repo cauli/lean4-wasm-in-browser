@@ -4,6 +4,8 @@
  * 
  * Usage: node scripts/gen-manifest.mjs <lean-src-dir> <output-manifest.json>
  * Example: node scripts/gen-manifest.mjs ../lean4/src public/lean-manifest.json
+ * 
+ * @note currently unused, we are testing with all files first (gen-lib-files)
  */
 
 import fs from 'fs';
