@@ -1,6 +1,39 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { analyzeCodeDependencies, fetchOleanFiles, loadManifest } from './lean-loader'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { fetchAllOleanFiles, fetchCompleteFileList } from './lean-loader'
 import './App.css'
+
+// Parsed Lean diagnostic message
+interface LeanDiagnostic {
+  severity: 'information' | 'warning' | 'error' | string
+  data: string
+  pos: { line: number; column: number }
+  endPos: { line: number; column: number }
+  fileName: string
+  caption?: string
+  kind?: string
+}
+
+// Parse JSON output lines from Lean
+function parseLeanOutput(output: string): { diagnostics: LeanDiagnostic[]; rawLines: string[] } {
+  const diagnostics: LeanDiagnostic[] = []
+  const rawLines: string[] = []
+  
+  for (const line of output.split('\n')) {
+    if (!line.trim()) continue
+    try {
+      const parsed = JSON.parse(line)
+      if (parsed.pos && parsed.data !== undefined) {
+        diagnostics.push(parsed as LeanDiagnostic)
+      } else {
+        rawLines.push(line)
+      }
+    } catch {
+      rawLines.push(line)
+    }
+  }
+  
+  return { diagnostics, rawLines }
+}
 
 // Type for the Lean WASM module
 interface LeanModule {
@@ -50,13 +83,16 @@ function App() {
   const [status, setStatus] = useState<Status>('idle')
   const [output, setOutput] = useState<string>('')
   const [error, setError] = useState<string>('')
-  const [leanCode, setLeanCode] = useState<string>(`#eval 2 + 2`)
+  const [leanCode, setLeanCode] = useState<string>(`#check 2 + 2
+#check Nat.add
+def hello := "Hello, WASM!"
+#check hello`)
   const [leanFlags, setLeanFlags] = useState<string>('--json')  // Additional flags for Lean
   const [loadingProgress, setLoadingProgress] = useState<string>('')
   const [wasmLoaded, setWasmLoaded] = useState(false)  // Track if WASM is cached
   const [manifestLoaded, setManifestLoaded] = useState(false)  // Track if manifest is loaded
   const moduleRef = useRef<LeanModule | null>(null)
-  const outputRef = useRef<HTMLPreElement>(null)
+  const outputRef = useRef<HTMLDivElement>(null)
   const scriptRef = useRef<HTMLScriptElement | null>(null)
   const loadedOleansRef = useRef<Map<string, Uint8Array>>(new Map())  // Cache of loaded .olean files
 
@@ -171,7 +207,7 @@ function App() {
     })
   }, [appendOutput])
 
-  // Run Lean command in the iframe
+  // Run Lean command in the iframe (one-shot mode)
   const runInIframe = useCallback((
     args: string[], 
     code?: string, 
@@ -255,61 +291,39 @@ function App() {
     })
   }, [appendOutput])
 
-  // Load just the manifest (lightweight)
-  const loadDependencyManifest = useCallback(async () => {
-    setLoadingProgress('Loading dependency manifest...')
-    await loadManifest()
+  // Pre-fetch the file list (lightweight)
+  const loadFileList = useCallback(async () => {
+    setLoadingProgress('Loading library file list...')
+    const files = await fetchCompleteFileList()
     setManifestLoaded(true)
-    console.log('Manifest loaded')
+    console.log(`File list loaded: ${files.length} files`)
   }, [])
 
-  // Load required .olean files for given code
-  const loadRequiredOleans = useCallback(async (code: string): Promise<Map<string, Uint8Array>> => {
-    setLoadingProgress('Analyzing dependencies...')
-    const deps = await analyzeCodeDependencies(code)
+  // Load ALL .olean files (complete library)
+  const loadAllOleans = useCallback(async (): Promise<Map<string, Uint8Array>> => {
+    // If already cached, return from cache
+    if (loadedOleansRef.current.size > 0) {
+      console.log(`Using cached ${loadedOleansRef.current.size} .olean files`)
+      return loadedOleansRef.current
+    }
     
-    console.log('Dependencies analysis:', {
-      explicit: deps.explicitImports,
-      implicit: deps.implicitImports,
-      totalModules: deps.allModules.length,
-      oleanFiles: deps.oleanPaths.length,
+    setLoadingProgress('Loading file list...')
+    const fileList = await fetchCompleteFileList()
+    console.log(`File list has ${fileList.length} entries`)
+    appendOutput(`Loading all ${fileList.length} library files...\n`)
+    
+    setLoadingProgress(`Downloading ${fileList.length} library files...`)
+    const files = await fetchAllOleanFiles((loaded, total) => {
+      setLoadingProgress(`Downloading: ${loaded}/${total} files`)
     })
     
-    appendOutput(`Loading ${deps.oleanPaths.length} modules (${deps.allModules.length} with transitive deps)\n`)
+    // Cache all files
+    files.forEach((data, path) => {
+      loadedOleansRef.current.set(path, data)
+    })
     
-    // Check what's already cached
-    const needed: string[] = []
-    for (const path of deps.oleanPaths) {
-      if (!loadedOleansRef.current.has(path)) {
-        needed.push(path)
-      }
-    }
-    
-    if (needed.length > 0) {
-      setLoadingProgress(`Downloading ${needed.length} .olean files...`)
-      const newFiles = await fetchOleanFiles(needed, (loaded, total) => {
-        setLoadingProgress(`Downloading: ${loaded}/${total} files`)
-      })
-      
-      // Add to cache
-      newFiles.forEach((data, path) => {
-        loadedOleansRef.current.set(path, data)
-      })
-      console.log(`Downloaded ${newFiles.size} new .olean files, cache size: ${loadedOleansRef.current.size}`)
-    } else {
-      console.log(`All ${deps.oleanPaths.length} .olean files already cached`)
-    }
-    
-    // Return only the files needed for this run
-    const result = new Map<string, Uint8Array>()
-    for (const path of deps.oleanPaths) {
-      const data = loadedOleansRef.current.get(path)
-      if (data) {
-        result.set(path, data)
-      }
-    }
-    
-    return result
+    console.log(`Downloaded ${files.size} .olean files`)
+    return files
   }, [appendOutput])
 
   // Initial load - verify WASM and load manifest
@@ -332,10 +346,10 @@ function App() {
         throw new Error(`Lean WASM files not found. Please extract the WASM build to public/lean-wasm/`)
       }
 
-      // Load manifest for dependency resolution
+      // Load file list for complete library loading
       if (!manifestLoaded) {
-        await loadDependencyManifest()
-        appendOutput('Dependency manifest loaded (dynamic loading enabled)\n')
+        await loadFileList()
+        appendOutput('Library file list loaded\n')
       }
 
       setLoadingProgress('Loading Lean WASM module (~100MB, please wait)...')
@@ -355,7 +369,7 @@ function App() {
       setError(err instanceof Error ? err.message : 'Unknown error')
       setStatus('error')
     }
-  }, [hasSharedArrayBuffer, manifestLoaded, loadDependencyManifest, createFreshModule, appendOutput])
+  }, [hasSharedArrayBuffer, manifestLoaded, loadFileList, createFreshModule, appendOutput])
 
   // Test with --version (simplest test)
   const testVersion = useCallback(async () => {
@@ -432,19 +446,16 @@ function App() {
     // Parse flags from the input field
     const flags = leanFlags.trim().split(/\s+/).filter(f => f.length > 0)
     const args = [...flags, inputPath]
-    appendOutput(`Running: lean ${args.join(' ')}\n`)
 
     try {
-      // First, load required .olean files based on the code
-      const requiredFiles = await loadRequiredOleans(leanCode)
-      appendOutput(`Loaded ${requiredFiles.size} .olean files\n\n`)
+      // Load ALL .olean files (complete library) - cached after first load
+      const allFiles = await loadAllOleans()
       
-      setLoadingProgress('Creating fresh WASM instance...')
+      setLoadingProgress('Creating WASM instance...')
       await createFreshModule()
-      // Add small delay to let pthread workers spawn
       await new Promise(resolve => setTimeout(resolve, 150))
-      setLoadingProgress('Workers ready, running...')
-      const exitCode = await runInIframe(args, leanCode, inputPath, requiredFiles)
+      setLoadingProgress('Running...')
+      const exitCode = await runInIframe(args, leanCode, inputPath, allFiles)
       appendOutput(`\nExit code: ${exitCode}`)
     } catch (err) {
       console.error('Error running code:', err)
@@ -453,7 +464,12 @@ function App() {
       setLoadingProgress('')
       setStatus('ready')
     }
-  }, [wasmLoaded, leanCode, leanFlags, appendOutput, createFreshModule, runInIframe, loadRequiredOleans])
+  }, [wasmLoaded, leanCode, leanFlags, appendOutput, createFreshModule, runInIframe, loadAllOleans])
+
+  // Parse output for display
+  const parsedOutput = useMemo(() => {
+    return parseLeanOutput(output)
+  }, [output])
 
   // Auto-scroll output
   useEffect(() => {
@@ -470,7 +486,7 @@ function App() {
           Lean 4 WASM Playground
         </h1>
         <p className="subtitle">
-          ⚠️ AI-generated demo
+          Run Lean 4 directly in your browser via WebAssembly
         </p>
       </header>
 
@@ -586,15 +602,45 @@ function App() {
                 Clear
               </button>
             </div>
-            <pre className="output" ref={outputRef}>
-              {output && <span className="output-text">{output}</span>}
+            <div className="output" ref={outputRef}>
+              {/* Show parsed diagnostics */}
+              {parsedOutput.diagnostics.length > 0 && (
+                <div className="diagnostics">
+                  {parsedOutput.diagnostics.map((diag, i) => (
+                    <div 
+                      key={i} 
+                      className={`diagnostic diagnostic-${diag.severity}`}
+                    >
+                      <div className="diagnostic-header">
+                        <span className="diagnostic-pos">
+                          {diag.pos.line}:{diag.pos.column}
+                        </span>
+                        <span className={`diagnostic-badge diagnostic-badge-${diag.severity}`}>
+                          {diag.severity === 'information' ? 'info' : diag.severity}
+                        </span>
+                      </div>
+                      <div className="diagnostic-data">{diag.data}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {/* Show raw lines (non-JSON output) */}
+              {parsedOutput.rawLines.length > 0 && (
+                <div className="raw-output">
+                  {parsedOutput.rawLines.map((line, i) => (
+                    <div key={i}>{line}</div>
+                  ))}
+                </div>
+              )}
+              {/* Show errors */}
               {error && <span className="output-error">{error}</span>}
+              {/* Placeholder */}
               {!output && !error && (
                 <span className="output-placeholder">
                   Output will appear here...
                 </span>
               )}
-            </pre>
+            </div>
           </div>
         </div>
       </main>

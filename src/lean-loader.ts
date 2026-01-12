@@ -253,3 +253,39 @@ export async function estimateDownloadSize(oleanPaths: string[]): Promise<number
   // This is a rough estimate for progress display
   return oleanPaths.length * 50 * 1024;
 }
+
+// Fetch complete file list from server
+// This bypasses manifest-based dependency resolution
+let fileListCache: string[] | null = null;
+
+export async function fetchCompleteFileList(): Promise<string[]> {
+  if (fileListCache) return fileListCache;
+  
+  try {
+    const response = await fetch('/lean-wasm/lean-lib-files.json');
+    if (response.ok) {
+      fileListCache = await response.json();
+      return fileListCache!;
+    }
+  } catch (e) {
+    console.warn('lean-lib-files.json not available:', e);
+  }
+  
+  // Fallback: return empty (caller should handle)
+  return [];
+}
+
+// Fetch ALL .olean files from the library (bypasses manifest)
+export async function fetchAllOleanFiles(
+  onProgress?: (loaded: number, total: number) => void
+): Promise<Map<string, Uint8Array>> {
+  const fileList = await fetchCompleteFileList();
+  
+  if (fileList.length === 0) {
+    console.error('No file list available! Generate lean-lib-files.json');
+    return new Map();
+  }
+  
+  console.log(`Fetching ALL ${fileList.length} library files...`);
+  return fetchOleanFiles(fileList, onProgress);
+}

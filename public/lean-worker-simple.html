@@ -145,6 +145,10 @@
                     if (libraryFiles.length > 0) {
                         console.log("Writing " + libraryFiles.length + " library files to /lib/lean/...");
                         console.log("First 5 file names:", libraryFiles.slice(0, 5).map(f => f.name));
+
+                        // Track problematic files
+                        var basicFiles = [];
+
                         for (var i = 0; i < libraryFiles.length; i++) {
                             var file = libraryFiles[i];
                             try {
@@ -165,6 +169,12 @@
                                 var dirPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
                                 mkdirp(FS, dirPath);
                                 FS.writeFile(fullPath, new Uint8Array(file.data));
+
+                                // Track Lemmas/Basic files
+                                if (fileName.includes("String/Lemmas/Basic")) {
+                                    basicFiles.push({ name: fileName, size: file.data.byteLength });
+                                }
+
                                 if (i < 5) {
                                     console.log("  ✓ Wrote:", fullPath, "(was: " + file.name + ",", file.data.byteLength, "bytes)");
                                 }
@@ -174,6 +184,13 @@
                                     console.error("  ✗ Failed to write " + file.name + ":", e.message || e);
                                 }
                             }
+                        }
+
+                        // Report Basic files found
+                        if (basicFiles.length > 0) {
+                            console.log("Basic.olean files written:", basicFiles);
+                        } else {
+                            console.error("NO Basic.olean files were in the library files list!");
                         }
                         if (libraryWriteErrors > 0) {
                             console.error("Total library write errors:", libraryWriteErrors);
@@ -230,13 +247,34 @@
 
                     try { FS.chdir("/workspace"); } catch (e) { }
 
-                    // After writing library files, check for this specific file
+                    // After writing library files, check for the problematic file
+                    console.log("=== VERIFICATION: Init.Data.String.Lemmas.Basic ===");
                     try {
                         var stat = FS.stat("/lib/lean/Init/Data/String/Lemmas/Basic.olean");
-                        console.log("Init/Data/String/Lemmas/Basic.olean exists, size:", stat.size);
+                        console.log("  ✓ Basic.olean exists, size:", stat.size);
                     } catch (e) {
-                        console.log("Init/Data/String/Lemmas/Basic.olean MISSING");
+                        console.error("  ✗ Basic.olean MISSING");
                     }
+                    try {
+                        var stat = FS.stat("/lib/lean/Init/Data/String/Lemmas/Basic.olean.server");
+                        console.log("  ✓ Basic.olean.server exists, size:", stat.size);
+                    } catch (e) {
+                        console.warn("  ⚠ Basic.olean.server MISSING (may be OK)");
+                    }
+                    try {
+                        var stat = FS.stat("/lib/lean/Init/Data/String/Lemmas/Basic.olean.private");
+                        console.log("  ✓ Basic.olean.private exists, size:", stat.size);
+                    } catch (e) {
+                        console.warn("  ⚠ Basic.olean.private MISSING (may be OK)");
+                    }
+                    // Check parent directory
+                    try {
+                        var lemmasDir = FS.readdir("/lib/lean/Init/Data/String/Lemmas");
+                        console.log("  Lemmas directory contents:", lemmasDir);
+                    } catch (e) {
+                        console.error("  ✗ Lemmas directory doesn't exist!");
+                    }
+                    console.log("=== END VERIFICATION ===");
 
                     console.log("Working directory:", FS.cwd());
                     console.log("Final ENV: LEAN_PATH=" + ENV["LEAN_PATH"]);

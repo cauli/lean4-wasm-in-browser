@@ -378,3 +378,79 @@ body {
 ::selection {
   background: var(--gray-700);
 }
+
+/* Diagnostics display */
+.diagnostics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.diagnostic {
+  padding: 0.5rem 0.75rem;
+  border-left: 2px solid var(--gray-600);
+  background: var(--bg-surface);
+}
+
+.diagnostic-information {
+  border-left-color: #3b82f6;
+}
+
+.diagnostic-warning {
+  border-left-color: var(--warning);
+}
+
+.diagnostic-error {
+  border-left-color: var(--error);
+}
+
+.diagnostic-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.diagnostic-pos {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.diagnostic-badge {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.3rem;
+  border-radius: 2px;
+}
+
+.diagnostic-badge-information {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.diagnostic-badge-warning {
+  background: rgba(202, 138, 4, 0.2);
+  color: var(--warning);
+}
+
+.diagnostic-badge-error {
+  background: rgba(220, 38, 38, 0.2);
+  color: var(--error);
+}
+
+.diagnostic-data {
+  color: var(--text-primary);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.raw-output {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
