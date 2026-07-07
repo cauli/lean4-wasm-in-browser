@@ -664,50 +664,34 @@ def hello := "Hello, WASM!"
             </div>
           )}
           {(status === 'ready' || status === 'running') && (
-            <>
-              {status === 'running' && loadingProgress && (
-                <div className="loading" style={{ marginRight: '1rem' }}>
-                  <div className="spinner"></div>
-                  <span>{loadingProgress}</span>
-                </div>
-              )}
-              <button 
-                onClick={testVersion} 
-                disabled={status === 'running'}
-                className="btn btn-secondary"
-                title="Test basic initialization"
-              >
-                --version
-              </button>
-              <button 
-                onClick={testHelp} 
-                disabled={status === 'running'}
-                className="btn btn-secondary"
-                title="Show help"
-              >
-                --help
-              </button>
-              <button 
-                onClick={runLean} 
-                disabled={status === 'running'}
-                className="btn btn-primary"
-              >
-                {status === 'running' ? 'Running...' : 'Run Code'}
-              </button>
-            </>
+            <button
+              onClick={runLean}
+              disabled={status === 'running'}
+              className="btn btn-primary"
+            >
+              {status === 'running' ? 'Running...' : 'Run Code'}
+            </button>
           )}
           {status === 'error' && (
             <button onClick={loadLean} className="btn btn-secondary">
               Retry
             </button>
           )}
-          <span className={`status status-${status}`}>
-            {status === 'idle' && 'Not loaded'}
-            {status === 'loading' && 'Loading...'}
-            {status === 'ready' && 'Ready'}
-            {status === 'running' && 'Running'}
-            {status === 'error' && 'Error'}
-          </span>
+          {/* Right side: while running, the spinner + progress; otherwise the status. */}
+          {status === 'running' && loadingProgress ? (
+            <div className="loading" style={{ marginLeft: 'auto' }}>
+              <span>{loadingProgress}</span>
+              <div className="spinner"></div>
+            </div>
+          ) : (
+            <span className={`status status-${status}`}>
+              {status === 'idle' && 'Not loaded'}
+              {status === 'loading' && 'Loading...'}
+              {status === 'ready' && 'Ready'}
+              {status === 'running' && 'Running'}
+              {status === 'error' && 'Error'}
+            </span>
+          )}
         </div>
 
         <div className="editor-container">
@@ -813,8 +797,41 @@ def hello := "Hello, WASM!"
       </main>
 
       <footer className="footer">
-        <p>
-          Check browser console (F12) for detailed debugging info
+        <div className="footer-tools">
+          <button
+            onClick={testVersion}
+            disabled={status !== 'ready'}
+            className="btn btn-small"
+            title="Run lean --version"
+          >
+            lean --version
+          </button>
+          <button
+            onClick={testHelp}
+            disabled={status !== 'ready'}
+            className="btn btn-small"
+            title="Run lean --help"
+          >
+            lean --help
+          </button>
+        </div>
+        <p className="footer-meta">
+          Lean 4.28.0-pre ·{' '}
+          <a
+            href="https://github.com/cauli/lean4/tree/wasm-fast-exported"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            lean4 fork
+          </a>
+          {' · '}
+          <a
+            href="https://github.com/cauli/lean4-wasm-in-browser"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            playground
+          </a>
         </p>
       </footer>
     </div>

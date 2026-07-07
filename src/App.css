@@ -425,12 +425,36 @@ body {
 
 /* Footer */
 .footer {
-  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   padding: 1.5rem 0 0.5rem;
   color: var(--text-muted);
   font-size: 0.75rem;
   border-top: 1px solid var(--border-color);
   margin-top: 2rem;
+}
+
+.footer-tools {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.footer-meta {
+  margin: 0;
+}
+
+.footer-meta a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.footer-meta a:hover {
+  color: var(--text-primary);
+  border-bottom-color: var(--text-primary);
 }
 
 /* Scrollbar styling */
