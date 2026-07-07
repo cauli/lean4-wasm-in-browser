@@ -333,18 +333,51 @@ body {
   letter-spacing: 0.1em;
 }
 
-.code-editor {
+/* Editor: a highlighted <pre> layer behind a transparent <textarea>. Both share
+   identical box + text metrics so the caret and glyphs line up exactly; the
+   textarea's text is transparent and only its caret shows. */
+.code-editor-wrap {
+  position: relative;
   flex: 1;
-  width: 100%;
-  padding: 1rem;
+  overflow: hidden;
   background: var(--bg-primary);
-  color: var(--text-primary);
+}
+
+.code-editor,
+.code-highlight {
+  margin: 0;
+  padding: 1rem;
   border: none;
-  resize: none;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 13px;
   line-height: 1.7;
   tab-size: 2;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+.code-highlight {
+  position: absolute;
+  inset: 0;
+  overflow: hidden; /* scroll is mirrored from the textarea in JS */
+  color: var(--text-primary);
+  pointer-events: none;
+}
+
+.code-highlight code {
+  font: inherit;
+}
+
+.code-editor {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  resize: none;
+  overflow: auto;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--text-primary);
 }
 
 .code-editor:focus {
@@ -354,6 +387,16 @@ body {
 .code-editor::placeholder {
   color: var(--text-muted);
 }
+
+/* Lean token colours (see leanHighlight.ts) */
+.tok-keyword { color: #7aa2f7; }
+.tok-command { color: #bb9af7; }
+.tok-tactic  { color: #7dcfff; }
+.tok-type    { color: #2ac3de; }
+.tok-string  { color: #9ece6a; }
+.tok-number  { color: #ff9e64; }
+.tok-attr    { color: #e0af68; }
+.tok-comment { color: #6b7089; font-style: italic; }
 
 .output {
   flex: 1;
