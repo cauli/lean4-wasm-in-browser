@@ -1,16 +1,14 @@
 name: playground tests
 
 # Integration tests that boot the real Lean WASM compiler headless in Node and
-# check it compiles a suite of Lean snippets correctly. They run against the
-# DEPLOYED artifacts (fetched from lean.cau.li) — the multi-GB wasm/oleans aren't
-# in the repo — so this doubles as a smoke test of the live playground.
+# check it compiles a suite of Lean snippets correctly. The multi-GB wasm/oleans
+# aren't in the repo, so fetch-artifacts.mjs pulls them from a GitHub release
+# fixture (GitHub-hosted — the live deploy behind Cloudflare 403s CI IPs).
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
-  schedule:
-    - cron: '17 8 * * *' # daily, catches deploy/artifact regressions
 
 # One run at a time; a newer trigger cancels an in-flight one.
 concurrency:
