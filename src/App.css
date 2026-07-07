@@ -388,6 +388,17 @@ body {
   color: var(--text-muted);
 }
 
+/* The editor's text is transparent (the colours come from the .code-highlight
+   layer behind it). The global ::selection is opaque grey, which would paint over
+   that layer and hide the code — so give the editor a translucent selection the
+   highlight shows through. */
+.code-editor::selection {
+  background: rgba(122, 162, 247, 0.3);
+}
+.code-editor::-moz-selection {
+  background: rgba(122, 162, 247, 0.3);
+}
+
 /* Lean token colours (see leanHighlight.ts) */
 .tok-keyword { color: #7aa2f7; }
 .tok-command { color: #bb9af7; }

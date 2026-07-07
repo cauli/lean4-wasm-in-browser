@@ -103,6 +103,7 @@ def hello := "Hello, WASM!"
   const moduleRef = useRef<LeanModule | null>(null)
   const outputRef = useRef<HTMLDivElement>(null)
   const highlightRef = useRef<HTMLPreElement>(null)
+  const tabEscapeRef = useRef(false)  // Esc arms the next Tab to move focus out
   const scriptRef = useRef<HTMLScriptElement | null>(null)
   const loadedOleansRef = useRef<Map<string, Uint8Array>>(new Map())  // Cache of loaded .olean files
   // Persistent worker: one live wasm instance serving repeated compiles via
@@ -727,6 +728,32 @@ def hello := "Hello, WASM!"
                 className="code-editor"
                 value={leanCode}
                 onChange={(e) => setLeanCode(e.target.value)}
+                onKeyDown={(e) => {
+                  // Esc arms the next Tab to move focus out of the editor (the
+                  // accessible way to escape a Tab-inserting textarea).
+                  if (e.key === 'Escape') {
+                    tabEscapeRef.current = true
+                    return
+                  }
+                  if (e.key === 'Tab') {
+                    if (tabEscapeRef.current) {
+                      tabEscapeRef.current = false
+                      return // let Tab move focus normally
+                    }
+                    // Otherwise insert two spaces (matches tab-size) at the caret
+                    // instead of leaving the field, keeping focus (and Cmd+A) here.
+                    e.preventDefault()
+                    const el = e.currentTarget
+                    const { selectionStart: s, selectionEnd: en, value } = el
+                    const indent = '  '
+                    setLeanCode(value.slice(0, s) + indent + value.slice(en))
+                    requestAnimationFrame(() => {
+                      el.selectionStart = el.selectionEnd = s + indent.length
+                    })
+                    return
+                  }
+                  tabEscapeRef.current = false // any other key disarms
+                }}
                 onScroll={(e) => {
                   const el = highlightRef.current
                   if (el) {
