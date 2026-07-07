@@ -12,6 +12,11 @@ on:
   schedule:
     - cron: '17 8 * * *' # daily, catches deploy/artifact regressions
 
+# One run at a time; a newer trigger cancels an in-flight one.
+concurrency:
+  group: playground-tests
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -21,7 +26,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # Node 24+: earlier V8 caps WASM exports at 100k, but the -sEXPORT_ALL
+          # lean.wasm has ~201k exports and won't instantiate below that.
+          node-version: 24
 
       # No `npm ci`: the tests use only Node built-ins (node:test, node:vm, fetch).
       - name: Fetch deployed Lean artifacts
