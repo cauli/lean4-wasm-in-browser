@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "gen-lib-files": "node scripts/gen-lib-files.mjs public/lean-wasm/lean-lib public/lean-wasm/lean-lib-files.json",
     "gen-manifest": "node scripts/gen-manifest.mjs ../lean4/src public/lean-manifest.json public/lean-wasm/lean-lib",
-    "compress-oleans": "node scripts/compress-oleans.mjs public/lean-wasm/lean-lib"
+    "compress-oleans": "node scripts/compress-oleans.mjs public/lean-wasm/lean-lib",
+    "test": "node --test tests/*.test.mjs",
+    "test:fetch": "node tests/fetch-artifacts.mjs"
   },
   "dependencies": {
     "fflate": "^0.8.2",

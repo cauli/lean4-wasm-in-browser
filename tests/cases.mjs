@@ -1,19 +1,15 @@
-// lean.cau.li compiler test suite.
+// Test cases for the lean.cau.li playground, shared by the Playwright e2e suite.
 //
-// Paste this whole file into the browser DevTools console at https://lean.cau.li
-// once the page shows "Ready". It drives the real editor (sets the source, clicks
-// Run, reads the diagnostics) and reports pass/fail for each case.
-//
-// The playground compiles in a resident, Init-only Lean environment: core tactics
-// work (induction, rw, simp, omega, decide) but there is NO Mathlib/Std, and an
-// `import` in user code hangs the worker — so every case here is pure Init.
+// The playground compiles against a resident, Init-only Lean environment: core
+// tactics work (induction, rw, simp, omega, decide) but there is no Mathlib/Std,
+// and an `import` in user code hangs the worker — so every case is pure Init.
 //
 // Each case is { name, code, expect } where expect is:
 //   'ok'          the code compiles with zero errors
 //   'error'       the code reports >= 1 error (proves the checker actually checks)
 //   { has: 's' }  some diagnostic contains substring s (checks #eval output)
 
-const cases = [
+export const cases = [
   // Natural Number Game territory: Nat lemmas proved from core, by induction.
   { name: 'add_comm by induction', expect: 'ok', code:
 `example (a b : Nat) : a + b = b + a := by
@@ -99,63 +95,3 @@ example : fib 10 = 55 := by decide` },
   { name: 'false goal rejected by omega', expect: 'error', code:
 `example (n : Nat) : n = n + 1 := by omega` },
 ];
-
-// Drive one compile: set the source, click Run, wait for a unique marker command
-// (#eval of a random token, appended) to appear in the diagnostics, then read
-// them back. The marker is the last command, so its output means the whole
-// compile finished — even when the user's own code produces no output.
-async function leanCompile(code, timeoutMs = 20000) {
-  const ta = document.querySelector('textarea');
-  const runBtn = [...document.querySelectorAll('button')].find(b => /run code/i.test(b.textContent));
-  const setVal = (el, v) => {
-    const setter = Object.getOwnPropertyDescriptor(el.constructor.prototype, 'value').set;
-    setter.call(el, v);
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-  };
-  const token = 'DONE' + Date.now() + Math.floor(Math.random() * 1e6);
-  setVal(ta, code + `\n#eval "${token}"`);
-  const t0 = performance.now();
-  runBtn.click();
-  while (performance.now() - t0 < timeoutMs) {
-    await new Promise(r => setTimeout(r, 120));
-    if ([...document.querySelectorAll('.diagnostic')].some(d => d.textContent.includes(token))) break;
-  }
-  const finished = performance.now() - t0 < timeoutMs;
-  const diags = [...document.querySelectorAll('.diagnostic')]
-    .map(d => ({ text: d.textContent.trim(), error: d.className.includes('diagnostic-error') }))
-    .filter(d => !d.text.includes(token));
-  return { ms: Math.round(performance.now() - t0), finished, diags };
-}
-
-function verdict(expect, res) {
-  if (!res.finished) return { pass: false, why: 'timed out (worker stuck?)' };
-  const errors = res.diags.filter(d => d.error);
-  if (expect === 'ok') return { pass: errors.length === 0, why: errors[0]?.text.split('\n')[0] || '' };
-  if (expect === 'error') return { pass: errors.length > 0, why: errors.length ? '' : 'expected an error, got none' };
-  if (expect && expect.has) {
-    const hit = res.diags.some(d => d.text.includes(expect.has));
-    return { pass: hit, why: hit ? '' : `no diagnostic contained "${expect.has}"` };
-  }
-  return { pass: false, why: 'unknown expectation' };
-}
-
-async function runSuite() {
-  if (!/ready/i.test(document.querySelector('.status')?.textContent || '')) {
-    console.warn('Playground is not "Ready" yet — wait for it to boot, then re-run.');
-    return;
-  }
-  console.log(`Running ${cases.length} cases against ${location.host} …`);
-  const results = [];
-  for (const c of cases) {
-    const res = await leanCompile(c.code);
-    const v = verdict(c.expect, res);
-    results.push({ case: c.name, result: v.pass ? 'PASS' : 'FAIL', ms: res.ms, note: v.why });
-    console.log(`${v.pass ? '✅' : '❌'} ${c.name}${v.why ? '  — ' + v.why : ''}`);
-  }
-  const passed = results.filter(r => r.result === 'PASS').length;
-  console.log(`\n${passed}/${cases.length} passed`);
-  console.table(results);
-  return results;
-}
-
-runSuite();
