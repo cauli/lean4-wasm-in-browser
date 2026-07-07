@@ -1,40 +1,37 @@
 #!/usr/bin/env bash
-# Upload the heavy, immutable Lean assets (lean.js, lean.wasm, the .olean
-# library, and its file list) to the R2 bucket that sits behind the CDN.
+# Upload the two large assets to R2. Everything else (the .olean tree, the file
+# list) ships as static Pages assets, so only lean.js and lean.wasm — which
+# exceed Pages' 25MB/file limit — need R2. Just two objects, so plain wrangler
+# does it; no rclone or R2 API token required.
 #
-# These files are content-addressed by the Lean build: they never change for a
-# given artifact, so they get a one-year immutable cache. When you swap in a new
-# artifact, re-run this — rclone only uploads what changed.
+# Account safety: pin the target account so this can never hit the wrong one.
+#   export CLOUDFLARE_ACCOUNT_ID=<your personal account id>
+#   deploy/upload-r2.sh
 #
-# Prereqs:
-#   - rclone installed (brew install rclone)
-#   - an rclone remote for R2 (S3 API). Configure once with:
-#       rclone config   # new remote, type "s3", provider "Cloudflare",
-#                       # endpoint https://<ACCOUNT_ID>.r2.cloudflarestorage.com
-#     or set the R2_* env vars below inline.
-#
-# Usage:
-#   R2_BUCKET=lean-assets deploy/upload-r2.sh
+# Re-run after swapping in a new Lean artifact (same keys, immutable cache — the
+# Pages Function serves them, so purge Cloudflare cache after a swap).
 set -euo pipefail
+cd "$(dirname "$0")/.."
 
-REMOTE="${R2_REMOTE:-r2}"        # rclone remote name
+: "${CLOUDFLARE_ACCOUNT_ID:?set CLOUDFLARE_ACCOUNT_ID to your personal account id}"
 BUCKET="${R2_BUCKET:-lean-assets}"
-SRC="public/lean-wasm"           # contains lean.js, lean.wasm, lean-lib/, lean-lib-files.json
-CACHE="public, max-age=31536000, immutable"
 
-if [ ! -e "$SRC/lean.wasm" ]; then
-  echo "error: $SRC/lean.wasm not found — put the WASM artifact in place first." >&2
+if [ ! -e public/lean-wasm/lean.wasm ]; then
+  echo "error: public/lean-wasm/lean.wasm not found — put the WASM artifact in place first." >&2
   exit 1
 fi
 
-# --copy-links: follow the symlinks that point at the extracted artifact.
-# --header-upload: mark every object immutable for a year.
-# Junk and the optional .gz siblings are handled explicitly below.
-rclone copy --copy-links --progress --transfers 16 --checkers 32 \
-  --header-upload "Cache-Control: $CACHE" \
-  --exclude ".gitkeep" --exclude ".DS_Store" --exclude "*.map" \
-  "$SRC" "$REMOTE:$BUCKET/"
+put() { # <key> <file> <content-type>
+  echo "→ $BUCKET/$1  ($(du -hL "$2" | cut -f1))"
+  npx wrangler r2 object put "$BUCKET/$1" --file "$2" --content-type "$3" --remote
+}
+
+# Upload raw. We do NOT pre-gzip + content-encoding: Cloudflare re-compresses the
+# already-encoded body (double-gzip) regardless of `no-transform`, breaking the
+# browser. Instead the raw bytes are served and Cloudflare compresses on the fly
+# (cached at the edge after the first cold request per PoP).
+put lean.js   public/lean-wasm/lean.js   text/javascript
+put lean.wasm public/lean-wasm/lean.wasm application/wasm
 
 echo
-echo "Uploaded to $REMOTE:$BUCKET/ — verify: rclone ls $REMOTE:$BUCKET/ | head"
-echo "If you ran 'npm run compress-oleans', the .olean.gz siblings were included."
+echo "Done. Verify: wrangler r2 object get $BUCKET/lean.wasm --file /tmp/x.wasm --remote && ls -la /tmp/x.wasm"
