@@ -15,13 +15,42 @@ const WASM_BASE = `${BASE}/lean-wasm`;
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = process.env.LEAN_ROOT || path.join(repoRoot, 'tests/.artifacts');
 
+// Browser-like headers: Cloudflare's Browser Integrity Check 403s requests that
+// don't look like a browser (a bare fetch), which is what blocked the wasm from
+// CI's datacenter IPs. Retry network/5xx; on a hard 4xx surface the block reason.
+const HEADERS = {
+  'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+  accept: '*/*',
+  'accept-language': 'en-US,en;q=0.9',
+};
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 async function download(url, dest) {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`${r.status} ${r.statusText} for ${url}`);
-  const buf = Buffer.from(await r.arrayBuffer());
-  fs.mkdirSync(path.dirname(dest), { recursive: true });
-  fs.writeFileSync(dest, buf);
-  return buf.length;
+  for (let attempt = 1; ; attempt++) {
+    let r;
+    try {
+      r = await fetch(url, { headers: HEADERS });
+    } catch (e) {
+      if (attempt >= 4) throw e;
+      await sleep(500 * attempt);
+      continue;
+    }
+    if (r.ok) {
+      const buf = Buffer.from(await r.arrayBuffer());
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, buf);
+      return buf.length;
+    }
+    if (r.status >= 500 && attempt < 4) {
+      await sleep(500 * attempt);
+      continue;
+    }
+    const body = (await r.text()).replace(/\s+/g, ' ').slice(0, 160);
+    throw new Error(
+      `${r.status} ${r.statusText} for ${url}\n` +
+      `  cf-ray=${r.headers.get('cf-ray')} cf-mitigated=${r.headers.get('cf-mitigated')} server=${r.headers.get('server')}\n  ${body}`,
+    );
+  }
 }
 
 // bounded-concurrency map
