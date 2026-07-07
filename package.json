@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "gen-lib-files": "node scripts/gen-lib-files.mjs"
+    "gen-lib-files": "node scripts/gen-lib-files.mjs public/lean-wasm/lean-lib public/lean-wasm/lean-lib-files.json",
+    "gen-manifest": "node scripts/gen-manifest.mjs ../lean4/src public/lean-manifest.json public/lean-wasm/lean-lib",
+    "compress-oleans": "node scripts/compress-oleans.mjs public/lean-wasm/lean-lib"
   },
   "dependencies": {
     "fflate": "^0.8.2",

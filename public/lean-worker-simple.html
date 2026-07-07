@@ -8,32 +8,21 @@
 
 <body>
     <script>
-        // ============================================
-        // CROSS-ORIGIN ISOLATION CHECK (required for pthreads)
-        // ============================================
-        console.log("=== CROSS-ORIGIN ISOLATION STATUS ===");
-        console.log("crossOriginIsolated:", crossOriginIsolated);
-        console.log("SharedArrayBuffer available:", typeof SharedArrayBuffer !== 'undefined');
-        console.log("Location:", window.location.href);
-
-        if (!crossOriginIsolated) {
-            console.warn("⚠️ NOT cross-origin isolated!");
-            console.warn("   pthreads will NOT work properly.");
-            console.warn("   Required headers:");
-            console.warn("   • Cross-Origin-Opener-Policy: same-origin");
-            console.warn("   • Cross-Origin-Embedder-Policy: require-corp");
-            parent.postMessage({
-                type: "stderr",
-                data: "⚠️ Warning: Not cross-origin isolated. pthreads may fail.\n"
-            }, "*");
-        } else {
-            console.log("✓ Cross-origin isolated - pthreads should work");
-        }
-        console.log("=====================================");
-        // ============================================
+        // Single-threaded build: no pthreads, so cross-origin isolation is not
+        // required. (Logged for reference only.)
+        console.log("crossOriginIsolated:", crossOriginIsolated, "| location:", window.location.href);
 
         var pendingConfig = null;
         var libraryFiles = [];
+
+        // Keep the build's verbose [DEBUG:...]/[WASM DEBUG] tracing out of the UI.
+        function isDebugLine(text) {
+            return /^\s*\[(WASM DEBUG|DEBUG|IFRAME|PROFILE|PWORKER|COMPILE)/.test(text);
+        }
+
+        // Base URL for lean.js / lean.wasm. Same-origin "/lean-wasm" in dev;
+        // the parent passes the R2/CDN base in production via ?assetBase=.
+        var assetBase = (new URLSearchParams(location.search).get("assetBase") || "/lean-wasm").replace(/\/$/, "");
 
         function mkdirp(FS, path) {
             const parts = path.split("/").filter(p => p);
@@ -102,14 +91,18 @@
             var codePath = pendingConfig.path;
 
             window.Module = {
-                locateFile: (path) => "/lean-wasm/" + path,
+                // The 4.28 build ships with a 16MB memory cap (patched to a 2GB
+                // MAX in lean.wasm); the glue must be told to create the 2GB
+                // shared memory up front. Drop this for a growth-enabled build.
+                INITIAL_MEMORY: 2048 * 1024 * 1024,
+                locateFile: (path) => assetBase + "/" + path,
                 print: (text) => {
                     console.log("stdout:", text);
-                    parent.postMessage({ type: "stdout", data: text }, "*");
+                    if (!isDebugLine(text)) parent.postMessage({ type: "stdout", data: text }, "*");
                 },
                 printErr: (text) => {
                     console.error("stderr:", text);
-                    parent.postMessage({ type: "stderr", data: text }, "*");
+                    if (!isDebugLine(text)) parent.postMessage({ type: "stderr", data: text }, "*");
                 },
                 setStatus: (text) => {
                     if (text) {
@@ -295,8 +288,8 @@
 
                     // ========== CONFIGURATION FLAGS ==========
                     var ENABLE_WARMUP = false;          // Disabled - signature fixes should make this unnecessary
-                    var ENABLE_TASK_MANAGER = false;    // Set to true to init task manager
-                    var COMMAND_DELAY_MS = 200;         // Delay before running actual command
+                    var ENABLE_TASK_MANAGER = false;    // No effect on speed (main() makes its own); leave off
+                    var COMMAND_DELAY_MS = 0;           // Delay before running actual command
                     // ==========================================
 
                     console.log("=== CONFIGURATION ===");
@@ -408,7 +401,7 @@
             // Load lean.js
             console.log("Loading lean.js...");
             var script = document.createElement("script");
-            script.src = "/lean-wasm/lean.js";
+            script.src = assetBase + "/lean.js";
             script.onload = () => console.log("lean.js loaded");
             script.onerror = () => parent.postMessage({ type: "error", data: "Failed to load lean.js" }, "*");
             document.body.appendChild(script);

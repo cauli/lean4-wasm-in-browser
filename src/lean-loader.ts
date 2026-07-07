@@ -3,9 +3,12 @@
  * Parses user code for imports and computes required .olean files
  */
 
+import { LEAN_WASM_BASE } from './config';
+
 interface ModuleInfo {
   path: string;
   imports: string[];
+  size?: number; // .olean byte size, when the manifest was generated with a lib dir
 }
 
 interface Manifest {
@@ -21,7 +24,7 @@ let manifestPromise: Promise<Manifest> | null = null;
 export async function loadManifest(): Promise<Manifest> {
   if (manifest) return manifest;
   if (manifestPromise) return manifestPromise;
-  
+
   manifestPromise = fetch('/lean-manifest.json')
     .then(r => {
       if (!r.ok) throw new Error('Failed to load lean-manifest.json');
@@ -31,8 +34,73 @@ export async function loadManifest(): Promise<Manifest> {
       manifest = m;
       return m;
     });
-  
+
   return manifestPromise;
+}
+
+// ---------------------------------------------------------------------------
+// Persistent olean cache (survives reloads) + optional gzip transport.
+//
+// .olean files are immutable for a given library build, so once fetched they
+// can live in the Cache API indefinitely. The cache is keyed by the manifest's
+// `generated` timestamp, which changes whenever a new artifact is swapped in,
+// so a new build automatically orphans (and we prune) the previous cache.
+//
+// Cached entries hold DECOMPRESSED olean bytes under their canonical URL, so
+// compression is purely a network detail invisible to callers. If a sibling
+// `<path>.gz` exists on the server it's fetched and inflated via
+// DecompressionStream; otherwise the raw `.olean` is fetched. Whether `.gz`
+// files exist is probed once (see gzipAvailable).
+// ---------------------------------------------------------------------------
+
+const CACHE_PREFIX = 'lean-olean-';
+let cachePromise: Promise<Cache | null> | null = null;
+
+async function openOleanCache(): Promise<Cache | null> {
+  if (cachePromise) return cachePromise;
+  cachePromise = (async () => {
+    if (typeof caches === 'undefined') return null; // e.g. non-secure context
+    const m = await loadManifest();
+    const name = CACHE_PREFIX + m.generated;
+    // Prune caches from previous library builds.
+    try {
+      for (const key of await caches.keys()) {
+        if (key.startsWith(CACHE_PREFIX) && key !== name) await caches.delete(key);
+      }
+    } catch { /* non-fatal */ }
+    try {
+      return await caches.open(name);
+    } catch {
+      return null;
+    }
+  })();
+  return cachePromise;
+}
+
+// Probe once whether the server ships precompressed `<olean>.gz` siblings.
+// A plain `r.ok` check isn't enough: the Vite dev server (and SPA hosts)
+// answer a missing `.gz` with index.html at 200. So GET the probe file and
+// require the gzip magic bytes (0x1f 0x8b) — that only passes on a real gzip.
+let gzipProbe: Promise<boolean> | null = null;
+function gzipAvailable(): Promise<boolean> {
+  if (gzipProbe) return gzipProbe;
+  gzipProbe = (async () => {
+    if (typeof DecompressionStream === 'undefined') return false;
+    try {
+      const r = await fetch(`${LEAN_WASM_BASE}/lean-lib/Init/Prelude.olean.gz`);
+      if (!r.ok) return false;
+      const head = new Uint8Array(await r.arrayBuffer());
+      return head.length >= 2 && head[0] === 0x1f && head[1] === 0x8b;
+    } catch {
+      return false;
+    }
+  })();
+  return gzipProbe;
+}
+
+async function inflateGzip(data: ArrayBuffer): Promise<Uint8Array<ArrayBuffer>> {
+  const stream = new Response(data).body!.pipeThrough(new DecompressionStream('gzip'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
 // Parse import statements from user's Lean code
@@ -113,13 +181,14 @@ function getTransitiveDeps(
   return deps;
 }
 
-// Get all required .olean paths for given imports
-// Returns all possible file paths (.olean, .olean.server, .olean.private)
+// Get all required .olean paths for given imports.
+// Only base .olean files: the WASM build imports at the `exported` olean level,
+// so the .olean.server/.olean.private parts are never read.
 export async function getRequiredOleanPaths(imports: string[]): Promise<string[]> {
   const m = await loadManifest();
   const allModules = new Set<string>();
   const cache = new Map<string, Set<string>>();
-  
+
   // Add each import and its transitive deps
   for (const imp of imports) {
     allModules.add(imp);
@@ -128,17 +197,12 @@ export async function getRequiredOleanPaths(imports: string[]): Promise<string[]
       allModules.add(dep);
     }
   }
-  
-  // Convert module names to all possible .olean paths
-  // Modules using `module` keyword have .olean.server and .olean.private files
+
   const paths: string[] = [];
   for (const mod of allModules) {
-    const basePath = mod.replace(/\./g, '/');
-    paths.push(`${basePath}.olean`);
-    paths.push(`${basePath}.olean.server`);
-    paths.push(`${basePath}.olean.private`);
+    paths.push(`${mod.replace(/\./g, '/')}.olean`);
   }
-  
+
   return paths.sort();
 }
 
@@ -188,8 +252,9 @@ function isValidOlean(data: Uint8Array): boolean {
   return true;
 }
 
-// Fetch specific .olean files from the server
-// Silently ignores 404s for .olean.server/.olean.private (they don't exist for all modules)
+// Fetch specific .olean files, using the persistent cache and gzip transport
+// when available. 404s are tolerated (a module may be in the manifest but not
+// the shipped library); lean itself reports missing modules precisely.
 export async function fetchOleanFiles(
   paths: string[],
   onProgress?: (loaded: number, total: number) => void
@@ -198,60 +263,111 @@ export async function fetchOleanFiles(
   const total = paths.length;
   let loaded = 0;
   let invalidCount = 0;
-  
-  // Fetch in parallel with concurrency limit
-  const concurrency = 20;  // Increase for many small files
+  let fromCache = 0;
+
+  let cache = await openOleanCache();
+  const useGzip = await gzipAvailable();
+
+  const concurrency = 20;  // Many small files: fetch in parallel
   const queue = [...paths];
   const workers: Promise<void>[] = [];
-  
+
   const fetchOne = async () => {
     while (queue.length > 0) {
       const path = queue.shift()!;
+      const url = `${LEAN_WASM_BASE}/lean-lib/${path}`;
       try {
-        const response = await fetch(`/lean-wasm/lean-lib/${path}`);
+        // 1. Persistent cache (holds decompressed bytes under the canonical URL)
+        if (cache) {
+          const cached = await cache.match(url);
+          if (cached) {
+            files.set(path, new Uint8Array(await cached.arrayBuffer()));
+            fromCache++;
+            loaded++;
+            onProgress?.(loaded, total);
+            continue;
+          }
+        }
+
+        // 2. Network — gzip sibling if the deployment ships one, else raw
+        const response = useGzip
+          ? await fetch(`${url}.gz`)
+          : await fetch(url);
         if (response.ok) {
-          const data = new Uint8Array(await response.arrayBuffer());
-          // Validate the file looks like an .olean
+          const buf = await response.arrayBuffer();
+          const data: Uint8Array<ArrayBuffer> = useGzip ? await inflateGzip(buf) : new Uint8Array(buf);
           if (isValidOlean(data)) {
             files.set(path, data);
-          } else if (!path.includes('.olean.server') && !path.includes('.olean.private')) {
-            // Only warn for base .olean files (not optional .server/.private)
+            // Store decompressed so cache hits skip the inflate step. Cache
+            // writes are best-effort: on quota exhaustion, stop caching for the
+            // rest of this run rather than throw per file (the data is already
+            // in `files`, so the run still succeeds without persistence).
+            if (cache) {
+              try {
+                await cache.put(url, new Response(data));
+              } catch (e) {
+                console.warn('Olean cache write failed, disabling cache for this run:', e);
+                cache = null;
+              }
+            }
+          } else {
             invalidCount++;
             if (invalidCount <= 3) {
               console.error(`Invalid .olean file: ${path} (size=${data.length}, first bytes: ${Array.from(data.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join(' ')})`);
             }
           }
         }
-        // Silently ignore 404s - .olean.server/.olean.private may not exist
       } catch (e) {
-        // Network error - also ignore for optional files
-        if (!path.includes('.olean.')) {
-          console.warn(`Error fetching ${path}:`, e);
-        }
+        console.warn(`Error fetching ${path}:`, e);
       }
       loaded++;
       onProgress?.(loaded, total);
     }
   };
-  
+
   for (let i = 0; i < concurrency; i++) {
     workers.push(fetchOne());
   }
-  
+
   await Promise.all(workers);
-  
+
+  if (fromCache > 0) {
+    console.log(`Olean cache: ${fromCache}/${total} served from persistent cache`);
+  }
   if (invalidCount > 0) {
     console.error(`Found ${invalidCount} invalid .olean files. Make sure .olean files match the lean.wasm version!`);
   }
-  
+
   return files;
 }
 
-// Quick estimate of download size (approximate)
+// Sum the manifest-recorded byte sizes for a set of .olean paths. Returns
+// { bytes, known } where `known` is how many paths had a recorded size, so
+// callers can tell an accurate total from a fallback estimate.
+export async function closureDownloadSize(
+  oleanPaths: string[]
+): Promise<{ bytes: number; known: number; total: number }> {
+  const m = await loadManifest();
+  const byOleanPath = new Map<string, ModuleInfo>();
+  for (const info of Object.values(m.modules)) byOleanPath.set(info.path, info);
+
+  let bytes = 0;
+  let known = 0;
+  for (const p of oleanPaths) {
+    const size = byOleanPath.get(p)?.size;
+    if (typeof size === 'number') {
+      bytes += size;
+      known++;
+    }
+  }
+  return { bytes, known, total: oleanPaths.length };
+}
+
+// Best-effort byte estimate for a set of paths: exact where the manifest has
+// sizes, ~50KB/file for any remainder.
 export async function estimateDownloadSize(oleanPaths: string[]): Promise<number> {
-  // Average .olean file size is roughly 50KB based on typical stdlib
-  // This is a rough estimate for progress display
-  return oleanPaths.length * 50 * 1024;
+  const { bytes, known, total } = await closureDownloadSize(oleanPaths);
+  return bytes + (total - known) * 50 * 1024;
 }
 
 // Fetch complete file list from server
@@ -262,7 +378,7 @@ export async function fetchCompleteFileList(): Promise<string[]> {
   if (fileListCache) return fileListCache;
   
   try {
-    const response = await fetch('/lean-wasm/lean-lib-files.json');
+    const response = await fetch(`${LEAN_WASM_BASE}/lean-lib-files.json`);
     if (response.ok) {
       fileListCache = await response.json();
       return fileListCache!;

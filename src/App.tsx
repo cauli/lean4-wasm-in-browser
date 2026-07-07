@@ -1,5 +1,12 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { fetchAllOleanFiles, fetchCompleteFileList } from './lean-loader'
+import {
+  fetchCompleteFileList,
+  fetchOleanFiles,
+  getRequiredOleanPaths,
+  parseUserImports,
+  closureDownloadSize,
+} from './lean-loader'
+import { LEAN_WASM_BASE } from './config'
 import './App.css'
 
 // Parsed Lean diagnostic message
@@ -89,30 +96,20 @@ def hello := "Hello, WASM!"
 #check hello`)
   const [leanFlags, setLeanFlags] = useState<string>('--json')  // Additional flags for Lean
   const [loadingProgress, setLoadingProgress] = useState<string>('')
+  const [loadPercent, setLoadPercent] = useState<number>(0)  // 0-100 for the preload bar
   const [wasmLoaded, setWasmLoaded] = useState(false)  // Track if WASM is cached
   const [manifestLoaded, setManifestLoaded] = useState(false)  // Track if manifest is loaded
   const moduleRef = useRef<LeanModule | null>(null)
   const outputRef = useRef<HTMLDivElement>(null)
   const scriptRef = useRef<HTMLScriptElement | null>(null)
   const loadedOleansRef = useRef<Map<string, Uint8Array>>(new Map())  // Cache of loaded .olean files
-
-  // Check if SharedArrayBuffer is available and cross-origin isolated
-  const hasSharedArrayBuffer = typeof SharedArrayBuffer !== 'undefined'
-  const isCrossOriginIsolated = typeof crossOriginIsolated !== 'undefined' && crossOriginIsolated
-  
-  // Log isolation status on mount
-  useEffect(() => {
-    console.log('=== PARENT CROSS-ORIGIN ISOLATION STATUS ===')
-    console.log('crossOriginIsolated:', crossOriginIsolated)
-    console.log('SharedArrayBuffer available:', hasSharedArrayBuffer)
-    if (!isCrossOriginIsolated) {
-      console.warn('⚠️ Parent page is NOT cross-origin isolated!')
-      console.warn('   pthreads will NOT work in iframes.')
-    } else {
-      console.log('✓ Parent is cross-origin isolated')
-    }
-    console.log('=============================================')
-  }, [])
+  // Persistent worker: one live wasm instance serving repeated compiles via
+  // lean_wasm_compile. The first compile imports Init inside Lean and caches the
+  // environment; later compiles skip the import entirely (~0.2s each).
+  const persistentIframeRef = useRef<HTMLIFrameElement | null>(null)
+  const persistentReadyRef = useRef(false)
+  const persistentCompiledOnceRef = useRef(false)
+  const persistentPendingRef = useRef<{ resolve: (r: { success: boolean; error?: string }) => void } | null>(null)
 
   const appendOutput = useCallback((text: string, isError = false) => {
     if (isError) {
@@ -194,7 +191,7 @@ def hello := "Hello, WASM!"
       window.addEventListener('message', messageHandler)
       
       // Load the iframe content from separate HTML file
-      iframe.src = '/lean-worker-simple.html'
+      iframe.src = `/lean-worker-simple.html?assetBase=${encodeURIComponent(LEAN_WASM_BASE)}`
       document.body.appendChild(iframe)
       
       // Timeout for loading
@@ -299,77 +296,214 @@ def hello := "Hello, WASM!"
     console.log(`File list loaded: ${files.length} files`)
   }, [])
 
-  // Load ALL .olean files (complete library)
-  const loadAllOleans = useCallback(async (): Promise<Map<string, Uint8Array>> => {
-    // If already cached, return from cache
-    if (loadedOleansRef.current.size > 0) {
-      console.log(`Using cached ${loadedOleansRef.current.size} .olean files`)
-      return loadedOleansRef.current
+  // Fetch the .olean files needed for the given imports, reusing the cache.
+  // We start from the COMPLETE base-.olean file list rather than a manifest
+  // closure: the manifest is parsed from source `import` lines, which diverge
+  // from the modules an .olean actually pulls in (e.g. auto-bound helpers), so
+  // a closure can miss files and the import then fails with "object file ...
+  // does not exist".
+  //
+  // Exception: the resident worker only ever elaborates Init-only code, so it
+  // needs just Init's closure — which is exactly the `Init` namespace, since
+  // Init is the base library and doesn't depend on Std/Lean. Loading those ~506
+  // files (~65MB) instead of all ~2098 (~240MB) cuts the dominant preload cost:
+  // transferring the oleans into the in-WASM filesystem.
+  const loadOleansFor = useCallback(async (imports: string[]): Promise<Map<string, Uint8Array>> => {
+    let paths: string[]
+    try {
+      paths = await fetchCompleteFileList()
+      if (paths.length === 0) throw new Error('empty file list')
+      if (imports.length === 1 && imports[0] === 'Init') {
+        paths = paths.filter(p => p === 'Init.olean' || p.startsWith('Init/'))
+      }
+    } catch (e) {
+      console.warn('Complete file list unavailable, falling back to manifest closure:', e)
+      paths = await getRequiredOleanPaths(imports)
     }
-    
-    setLoadingProgress('Loading file list...')
-    const fileList = await fetchCompleteFileList()
-    console.log(`File list has ${fileList.length} entries`)
-    appendOutput(`Loading all ${fileList.length} library files...\n`)
-    
-    setLoadingProgress(`Downloading ${fileList.length} library files...`)
-    const files = await fetchAllOleanFiles((loaded, total) => {
-      setLoadingProgress(`Downloading: ${loaded}/${total} files`)
-    })
-    
-    // Cache all files
-    files.forEach((data, path) => {
-      loadedOleansRef.current.set(path, data)
-    })
-    
-    console.log(`Downloaded ${files.size} .olean files`)
-    return files
-  }, [appendOutput])
+    const missing = paths.filter(p => !loadedOleansRef.current.has(p))
+    if (missing.length > 0) {
+      const { bytes, known } = await closureDownloadSize(missing)
+      const mb = (bytes / 1048576).toFixed(0)
+      // Only claim a size when the manifest actually knew most files' sizes.
+      const sizeLabel = known >= missing.length * 0.9 ? ` (~${mb} MB)` : ''
+      setLoadingProgress(`Downloading ${missing.length} library files${sizeLabel}...`)
+      const fetched = await fetchOleanFiles(missing, (loaded, total) => {
+        setLoadingProgress(`Downloading: ${loaded}/${total} files${sizeLabel}`)
+      })
+      fetched.forEach((data, path) => loadedOleansRef.current.set(path, data))
+    }
+    const result = new Map<string, Uint8Array>()
+    for (const p of paths) {
+      const data = loadedOleansRef.current.get(p)
+      if (data) result.set(p, data)
+    }
+    console.log(`Library ready: ${result.size} files for imports [${imports.join(', ')}] (${missing.length} newly fetched)`)
+    return result
+  }, [])
 
-  // Initial load - verify WASM and load manifest
+  // Boot the persistent worker: fetch the library, load one wasm instance, and
+  // initialize the Lean runtime without running main(). Returns once ready.
+  const ensurePersistentWorker = useCallback(async (): Promise<void> => {
+    if (persistentIframeRef.current && persistentReadyRef.current) return
+
+    const files = await loadOleansFor(['Init'])
+
+    setLoadingProgress('Starting persistent Lean instance…')
+    await new Promise<void>((resolve, reject) => {
+      const iframe = document.createElement('iframe')
+      iframe.style.display = 'none'
+      persistentIframeRef.current = iframe
+
+      const timeout = setTimeout(() => {
+        window.removeEventListener('message', handler)
+        reject(new Error('Persistent worker initialization timeout'))
+      }, 300000)
+
+      const handler = (event: MessageEvent) => {
+        if (event.source !== iframe.contentWindow) return
+        const { type, data, error } = event.data || {}
+        if (type === 'iframe_ready') {
+          const filesArray: Array<{ name: string, data: ArrayBuffer }> = []
+          files.forEach((d, name) => {
+            const copy = new ArrayBuffer(d.byteLength)
+            new Uint8Array(copy).set(d)
+            filesArray.push({ name, data: copy })
+          })
+          iframe.contentWindow?.postMessage({ type: 'load_library', files: filesArray }, '*')
+        } else if (type === 'library_received') {
+          iframe.contentWindow?.postMessage({ type: 'start_worker' }, '*')
+        } else if (type === 'worker_ready') {
+          persistentReadyRef.current = true
+          clearTimeout(timeout)
+          // Keep this handler installed: it also serves compile traffic below.
+          resolve()
+        } else if (type === 'stdout') {
+          appendOutput(data)
+        } else if (type === 'stderr') {
+          appendOutput(data, true)
+        } else if (type === 'progress') {
+          setLoadingProgress(data)
+        } else if (type === 'import_progress') {
+          const { loaded, total } = event.data
+          // The import spans the 70–95% band of the preload bar.
+          setLoadPercent(70 + Math.round(25 * loaded / Math.max(total, 1)))
+          setLoadingProgress(`Importing Lean core: ${loaded} / ${total} modules…`)
+        } else if (type === 'compile_result') {
+          persistentPendingRef.current?.resolve(event.data)
+          persistentPendingRef.current = null
+        } else if (type === 'error') {
+          clearTimeout(timeout)
+          persistentReadyRef.current = false
+          const err = new Error(error || data || 'persistent worker error')
+          if (persistentPendingRef.current) {
+            persistentPendingRef.current.resolve({ success: false, error: err.message })
+            persistentPendingRef.current = null
+          } else {
+            reject(err)
+          }
+        }
+      }
+      window.addEventListener('message', handler)
+
+      iframe.src = `/lean-worker-persistent.html?assetBase=${encodeURIComponent(LEAN_WASM_BASE)}`
+      document.body.appendChild(iframe)
+    })
+  }, [appendOutput, loadOleansFor])
+
+  // Compile Init-only code in the resident instance (fast path).
+  const runPersistent = useCallback(async (code: string): Promise<void> => {
+    await ensurePersistentWorker()
+    const iframe = persistentIframeRef.current
+    if (!iframe?.contentWindow) throw new Error('Persistent worker not available')
+
+    setLoadingProgress(persistentCompiledOnceRef.current
+      ? 'Running…'
+      : 'First compile: importing Init inside WASM…')
+
+    const result = await new Promise<{ success: boolean; error?: string }>((resolve) => {
+      persistentPendingRef.current = { resolve }
+      iframe.contentWindow!.postMessage({ type: 'compile', code, path: '/workspace/input.lean' }, '*')
+      setTimeout(() => {
+        if (persistentPendingRef.current) {
+          persistentPendingRef.current = null
+          resolve({ success: false, error: 'Compile timeout (240s)' })
+        }
+      }, 240000)
+    })
+
+    if (!result.success) {
+      throw new Error(result.error || 'compile failed')
+    }
+    persistentCompiledOnceRef.current = true
+  }, [ensurePersistentWorker])
+
+  // Preload everything up front so pressing Run does no network I/O: download
+  // Init's closure, boot the resident worker, and warm the Init import — all
+  // behind the progress bar on page load. Guarded so it can't run twice (React
+  // strict-mode double-invoke, or a re-render re-firing the mount effect),
+  // which would boot two workers and import Init twice.
+  const loadStartedRef = useRef(false)
   const loadLean = useCallback(async () => {
-    if (!hasSharedArrayBuffer) {
-      setError('SharedArrayBuffer is not available. This page must be served with proper COOP/COEP headers.')
-      setStatus('error')
-      return
-    }
-
+    if (loadStartedRef.current) return
+    loadStartedRef.current = true
     setStatus('loading')
-    setLoadingProgress('Checking WASM files...')
-    setOutput('')
+    setLoadPercent(0)
+    setLoadingProgress('Checking WASM files…')
     setError('')
 
     try {
-      // Check if lean.js exists in public folder
-      const checkResponse = await fetch('/lean-wasm/lean.js', { method: 'HEAD' })
+      const checkResponse = await fetch(`${LEAN_WASM_BASE}/lean.js`, { method: 'HEAD' })
       if (!checkResponse.ok) {
-        throw new Error(`Lean WASM files not found. Please extract the WASM build to public/lean-wasm/`)
+        throw new Error(`Lean WASM files not found at ${LEAN_WASM_BASE}. In dev, extract the WASM build to public/lean-wasm/.`)
       }
 
-      // Load file list for complete library loading
       if (!manifestLoaded) {
         await loadFileList()
-        appendOutput('Library file list loaded\n')
       }
 
-      setLoadingProgress('Loading Lean WASM module (~100MB, please wait)...')
-      
-      // Load the module once to verify it works and cache the WASM
-      await createFreshModule()
-      
-      appendOutput('WASM module ready\n')
-      appendOutput('Libraries will be loaded on-demand based on your imports.\n')
-      
+      // Download just Init's closure (the `Init` namespace) — all the resident
+      // worker needs. Cached in the Cache API on later visits. Code with
+      // explicit non-Init imports takes the one-shot path, which fetches the
+      // rest of the library on demand.
+      const allPaths = (await fetchCompleteFileList())
+        .filter(p => p === 'Init.olean' || p.startsWith('Init/'))
+      const cached = loadedOleansRef.current
+      const missing = allPaths.filter(p => !cached.has(p))
+      if (missing.length > 0) {
+        setLoadingProgress(`Downloading Lean library (${missing.length} files)…`)
+        const fetched = await fetchOleanFiles(missing, (loaded, total) => {
+          // Reserve the last 40% of the bar for booting + importing Init.
+          setLoadPercent(Math.round(60 * loaded / total))
+          setLoadingProgress(`Downloading Lean library: ${loaded} / ${total} files`)
+        })
+        fetched.forEach((d, p) => cached.set(p, d))
+      }
+      setLoadPercent(60)
+
+      // Boot the resident Lean instance (loads the .oleans into the in-WASM
+      // filesystem and initializes the runtime), then warm it with an empty
+      // compile that imports Init inside Lean. Both are one-time costs; doing
+      // them here means the first real Run is as fast as every subsequent one.
+      setLoadingProgress('Starting Lean instance…')
+      await ensurePersistentWorker()
+      setLoadPercent(70)
+      setLoadingProgress('Importing Lean core (one-time, about a minute)…')
+      await runPersistent('')
+      setOutput('')
+      setError('')
+
       setWasmLoaded(true)
-      setLoadingProgress('Lean 4 WASM ready!')
+      setLoadPercent(100)
+      setLoadingProgress('Ready')
       setStatus('ready')
 
     } catch (err) {
       console.error('Load error:', err)
       setError(err instanceof Error ? err.message : 'Unknown error')
       setStatus('error')
+      loadStartedRef.current = false  // allow Retry
     }
-  }, [hasSharedArrayBuffer, manifestLoaded, loadFileList, createFreshModule, appendOutput])
+  }, [manifestLoaded, loadFileList, ensurePersistentWorker, runPersistent])
 
   // Test with --version (simplest test)
   const testVersion = useCallback(async () => {
@@ -431,7 +565,15 @@ def hello := "Hello, WASM!"
     }
   }, [wasmLoaded, appendOutput, createFreshModule, runInIframe])
 
-  // Run user's Lean code
+  // Run user's Lean code via a one-shot `lean input.lean` invocation.
+  //
+  // We deliberately do NOT use the resident `lean_wasm_compile` fast path: on
+  // this 4.28 build it can't elaborate numerals/infix (`#check 2+2` fails), and
+  // its cached environment is single-shot (the 2nd compile returns an IO error
+  // from corrupted task-manager/env state). The one-shot frontend runs the real
+  // `lean` pipeline, so it's correct for all code and reliable across runs; it
+  // re-imports Init each run (~6-10s, mostly cached). Init is imported
+  // implicitly when the code has no explicit `import`.
   const runLean = useCallback(async () => {
     if (!wasmLoaded) {
       setError('Lean WASM not loaded yet')
@@ -442,29 +584,39 @@ def hello := "Hello, WASM!"
     setOutput('')
     setError('')
 
-    const inputPath = '/workspace/input.lean'
-    // Parse flags from the input field
-    const flags = leanFlags.trim().split(/\s+/).filter(f => f.length > 0)
-    const args = [...flags, inputPath]
+    const explicitImports = parseUserImports(leanCode)
+    // Code that needs only Init goes through the resident instance
+    // (lean_wasm_compile, env cached across runs → ~0.2s repeat compiles). Code
+    // with other explicit imports needs a full `lean` run, so it takes the
+    // one-shot worker with a manifest-resolved subset of the library.
+    const initOnly = explicitImports.every(i => i === 'Init')
 
     try {
-      // Load ALL .olean files (complete library) - cached after first load
-      const allFiles = await loadAllOleans()
-      
-      setLoadingProgress('Creating WASM instance...')
-      await createFreshModule()
-      await new Promise(resolve => setTimeout(resolve, 150))
-      setLoadingProgress('Running...')
-      const exitCode = await runInIframe(args, leanCode, inputPath, allFiles)
-      appendOutput(`\nExit code: ${exitCode}`)
+      if (initOnly) {
+        await runPersistent(leanCode)
+      } else {
+        const inputPath = '/workspace/input.lean'
+        const flags = leanFlags.trim().split(/\s+/).filter(f => f.length > 0)
+        const args = [...flags, inputPath]
+        const files = await loadOleansFor([...new Set(['Init', ...explicitImports])])
+
+        setLoadingProgress('Creating WASM instance...')
+        await createFreshModule()
+        await new Promise(resolve => setTimeout(resolve, 150))
+        setLoadingProgress('Running...')
+        const exitCode = await runInIframe(args, leanCode, inputPath, files)
+        appendOutput(`\nExit code: ${exitCode}`)
+      }
     } catch (err) {
       console.error('Error running code:', err)
-      setError(err instanceof Error ? err.message : String(err))
+      const msg = err instanceof Error ? err.message : String(err)
+      // Append: stderr collected so far (e.g. the decoded IO error) must stay visible
+      setError(prev => prev ? `${prev}\n${msg}` : msg)
     } finally {
       setLoadingProgress('')
       setStatus('ready')
     }
-  }, [wasmLoaded, leanCode, leanFlags, appendOutput, createFreshModule, runInIframe, loadAllOleans])
+  }, [wasmLoaded, leanCode, leanFlags, appendOutput, createFreshModule, runInIframe, loadOleansFor, runPersistent])
 
   // Parse output for display
   const parsedOutput = useMemo(() => {
@@ -477,6 +629,15 @@ def hello := "Hello, WASM!"
       outputRef.current.scrollTop = outputRef.current.scrollHeight
     }
   }, [output, error])
+
+  // Preload the library + WASM as soon as the page opens, so the first Run is
+  // fast. Guard against React strict-mode's double-invoke in dev.
+  const startedLoadRef = useRef(false)
+  useEffect(() => {
+    if (startedLoadRef.current) return
+    startedLoadRef.current = true
+    loadLean()
+  }, [loadLean])
 
   return (
     <div className="app">
@@ -491,24 +652,13 @@ def hello := "Hello, WASM!"
       </header>
 
       <main className="main">
-        {!hasSharedArrayBuffer && (
-          <div className="warning">
-            ⚠️ SharedArrayBuffer is not available. Make sure the server sends:
-            <code>Cross-Origin-Opener-Policy: same-origin</code>
-            <code>Cross-Origin-Embedder-Policy: require-corp</code>
-          </div>
-        )}
-
         <div className="controls">
-          {status === 'idle' && (
-            <button onClick={loadLean} className="btn btn-primary">
-              Load Lean 4 WASM
-            </button>
-          )}
-          {status === 'loading' && (
-            <div className="loading">
-              <div className="spinner"></div>
-              <span>{loadingProgress}</span>
+          {(status === 'idle' || status === 'loading') && (
+            <div className="preload">
+              <div className="progress-bar">
+                <div className="progress-fill" style={{ width: `${loadPercent}%` }} />
+              </div>
+              <span className="preload-label">{loadingProgress || 'Starting…'}</span>
             </div>
           )}
           {(status === 'ready' || status === 'running') && (

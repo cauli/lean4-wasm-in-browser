@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Lean WASM Worker (Persistent)</title>
+</head>
+
+<body>
+    <script>
+        // Capture full (untruncated) wasm stack traces for debugging the
+        // import-time trap. Default is 10 frames, which hides the entry point.
+        Error.stackTraceLimit = 1000;
+        // ============================================
+        // LEAN WASM WORKER - persistent instance
+        //
+        // Initializes the Lean runtime ONCE (without running main(), which
+        // would tear the runtime down via EXIT_RUNTIME=1) and then serves
+        // repeated compiles through the fork's `lean_wasm_compile` export.
+        // The first compile imports Init and caches the environment inside
+        // Lean (wasmEnvCache in Shell.lean); subsequent compiles reuse it.
+        //
+        // Limitation: lean_wasm_compile elaborates against an Init-only
+        // environment, so code with explicit imports must use the one-shot
+        // worker (lean-worker-simple.html) instead. The parent decides.
+        // ============================================
+
+        var libraryFiles = [];
+        var moduleReady = false;
+
+        // The Lean build and wasmCompile emit verbose tracing on stdout/stderr
+        // ([DEBUG:...], [WASM DEBUG], progress counters). Keep it out of the UI.
+        function isDebugLine(text) {
+            return /^\s*\[(WASM DEBUG|DEBUG|IFRAME|PROFILE|PWORKER|COMPILE)/.test(text);
+        }
+
+        // The Init import logs "[DEBUG:PROGRESS] N/506: <module>" per module.
+        // Surface it as a structured progress event so the loading bar can move
+        // during the ~1 min first-import instead of sitting frozen.
+        function reportImportProgress(text) {
+            const m = /\[DEBUG:PROGRESS\]\s*(\d+)\/(\d+)/.exec(text);
+            if (!m) return false;
+            parent.postMessage({ type: "import_progress", loaded: +m[1], total: +m[2] }, "*");
+            return true;
+        }
+
+        // Base URL for lean.js / lean.wasm. Same-origin "/lean-wasm" in dev;
+        // the parent passes the R2/CDN base in production via ?assetBase=.
+        var assetBase = (new URLSearchParams(location.search).get("assetBase") || "/lean-wasm").replace(/\/$/, "");
+
+        function mkdirp(FS, path) {
+            const parts = path.split("/").filter(p => p);
+            let current = "";
+            for (const part of parts) {
+                current += "/" + part;
+                try { FS.mkdir(current); } catch (e) { }
+            }
+        }
+
+        // Build a Lean String object from a JS string. This build exposes the
+        // classic Emscripten runtime helpers directly on Module (EXPORT_ALL).
+        function mkLeanString(str) {
+            const ptr = Module.stringToNewUTF8(str);
+            const obj = Module._lean_mk_string(ptr);
+            Module._free(ptr);
+            return obj;
+        }
+
+        var compileBusy = false;
+
+        function compileCode(code, fileName) {
+            if (!moduleReady) return { success: false, error: "Module not ready" };
+            if (compileBusy) return { success: false, error: "Compile already in progress" };
+            compileBusy = true;
+
+            const t0 = performance.now();
+            try {
+                const codeObj = mkLeanString(code);
+                const fnameObj = mkLeanString(fileName || "/workspace/input.lean");
+                // wasmCompile : String → String → IO UInt32
+                // C ABI: lean_wasm_compile(code, fileName, world); the world
+                // token is boxed unit = ((0 << 1) | 1) = 1.
+                const resObj = Module._lean_wasm_compile(codeObj, fnameObj);
+                const elapsed = performance.now() - t0;
+                // resObj is an IO result: ctor tag 0 = ok, 1 = error. The tag
+                // byte sits at offset 7 of the object header on wasm32.
+                const tag = Module.getValue(resObj + 7, 'i8') & 0xff;
+                console.log(`[COMPILE] done in ${elapsed.toFixed(0)}ms (result obj ${resObj}, tag ${tag})`);
+                if (tag !== 0) {
+                    // Prints the contained IO.Error to stderr, which the parent
+                    // surfaces in the UI.
+                    try { Module._lean_io_result_show_error(resObj); } catch (e) { }
+                    return { success: false, error: "lean_wasm_compile returned an IO error (see output)", elapsed };
+                }
+                return { success: true, elapsed };
+            } catch (e) {
+                console.error("[COMPILE] threw:", e);
+                window.__lastErrorStack = (e && e.stack) || String(e);
+                return { success: false, error: e.message || String(e) };
+            } finally {
+                compileBusy = false;
+            }
+        }
+
+        window.addEventListener("message", (event) => {
+            const msg = event.data || {};
+
+            if (msg.type === "load_library") {
+                libraryFiles = msg.files || [];
+                parent.postMessage({ type: "library_received" }, "*");
+            }
+
+            if (msg.type === "add_files") {
+                // Write additional olean files into the live filesystem
+                // (used when a later compile needs modules not yet present).
+                let written = 0;
+                for (const file of (msg.files || [])) {
+                    try {
+                        writeLibFile(Module.FS, file);
+                        written++;
+                    } catch (e) { /* keep going */ }
+                }
+                parent.postMessage({ type: "files_added", count: written }, "*");
+            }
+
+            if (msg.type === "start_worker") {
+                startLeanModule();
+            }
+
+            if (msg.type === "compile") {
+                const result = compileCode(msg.code, msg.path);
+                parent.postMessage({ type: "compile_result", ...result }, "*");
+            }
+        });
+
+        function writeLibFile(FS, file) {
+            let fileName = file.name;
+            for (const prefix of ["library/", "lean-lib/", "lib/lean/", "lean/"]) {
+                if (fileName.startsWith(prefix)) {
+                    fileName = fileName.substring(prefix.length);
+                    break;
+                }
+            }
+            const fullPath = "/lib/lean/" + fileName;
+            const dirPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
+            mkdirp(FS, dirPath);
+            FS.writeFile(fullPath, new Uint8Array(file.data));
+        }
+
+        function startLeanModule() {
+            window.Module = {
+                // 4.28 ships a 16MB memory cap (patched to 2GB MAX in lean.wasm);
+                // create the 2GB shared memory up front. Drop for growth builds.
+                INITIAL_MEMORY: 2048 * 1024 * 1024,
+                locateFile: (path) => assetBase + "/" + path,
+                // Filter the build's copious [DEBUG:...]/[WASM DEBUG] tracing out
+                // of the UI (keep it in the console). Posting every line to the
+                // parent triggers a React setState + full re-parse per line,
+                // which dominated warm-run time; the real diagnostics are JSON.
+                print: (text) => { if (reportImportProgress(text)) return; if (isDebugLine(text)) { console.log(text); } else { parent.postMessage({ type: "stdout", data: text }, "*"); } },
+                printErr: (text) => { if (reportImportProgress(text)) return; if (isDebugLine(text)) { console.log(text); } else { parent.postMessage({ type: "stderr", data: text }, "*"); } },
+                setStatus: (text) => { if (text) parent.postMessage({ type: "progress", data: text }, "*"); },
+                noInitialRun: true,
+
+                preRun: [function () {
+                    const FS = Module.FS;
+                    Module.ENV["LEAN_PATH"] = "/lib/lean";
+                    try { FS.mkdir("/lib"); } catch (e) { }
+                    try { FS.mkdir("/lib/lean"); } catch (e) { }
+                    try { FS.mkdir("/workspace"); } catch (e) { }
+                    // lean_init_search_path -> getBuildDir stats the executable's
+                    // /bin dir, which doesn't exist in MEMFS unless we make it.
+                    try { FS.mkdir("/bin"); } catch (e) { }
+
+                    let errors = 0;
+                    for (const file of libraryFiles) {
+                        try { writeLibFile(FS, file); } catch (e) { errors++; }
+                    }
+                    if (errors > 0) console.error("library write errors:", errors);
+                    try { FS.chdir("/workspace"); } catch (e) { }
+                }],
+
+                onRuntimeInitialized: function () {
+                    // Standard Lean embedding sequence (what main() would do
+                    // before dispatching, minus the exit):
+                    //   initialize runtime, run all module initializers,
+                    //   mark end of initialization.
+                    try {
+                        console.log("initializing Lean runtime...");
+                        Module._lean_initialize_runtime_module();
+                        Module._lean_initialize();
+                        Module._lean_io_mark_end_initialization();
+                        // The pthread build needs its task manager up before any
+                        // elaboration (main() sets this up via scoped_task_manager;
+                        // without it, processCommands hits `g_task_manager`
+                        // assertion). 0-arg form uses the default thread count.
+                        if (Module._lean_init_task_manager) {
+                            Module._lean_init_task_manager();
+                        }
+                        // Must be called BEFORE importModules (which happens on
+                        // the first wasmCompile) so the imported modules' [init]
+                        // initializers run — these register notation/instances
+                        // (e.g. `+`, OfNat). Without it, elaboration fails with
+                        // "type class instance expected OfNat" / "unexpected '+'".
+                        if (Module._lean_enable_initializer_execution) {
+                            Module._lean_enable_initializer_execution();
+                        }
+                        // Populate Lean's search path from LEAN_PATH (normally
+                        // done by main(), which we don't run). Surface an IO
+                        // error here rather than proceeding with an empty path
+                        // (which would fail every import with "unknown module").
+                        var spRes = Module._lean_init_search_path();
+                        if ((Module.getValue(spRes + 7, "i8") & 0xff) !== 0) {
+                            try { Module._lean_io_result_show_error(spRes); } catch (e) { }
+                            throw new Error("lean_init_search_path failed (see stderr)");
+                        }
+                        console.log("Lean runtime initialized");
+                        moduleReady = true;
+                        parent.postMessage({ type: "worker_ready" }, "*");
+                    } catch (e) {
+                        console.error("Lean initialization failed:", e);
+                        parent.postMessage({ type: "error", data: "Lean init failed: " + (e.message || e) }, "*");
+                    }
+                },
+
+                onAbort: function (what) {
+                    moduleReady = false;
+                    parent.postMessage({ type: "error", data: "Aborted: " + (what || "unknown") }, "*");
+                }
+            };
+
+            const script = document.createElement("script");
+            script.src = assetBase + "/lean.js";
+            script.onerror = () => parent.postMessage({ type: "error", data: "Failed to load lean.js" }, "*");
+            document.body.appendChild(script);
+        }
+
+        parent.postMessage({ type: "iframe_ready" }, "*");
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,11 @@
+[
+  {
+    "AllowedOrigins": [
+      "https://lean.cau.li",
+      "http://localhost:5173"
+    ],
+    "AllowedMethods": ["GET", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "MaxAgeSeconds": 86400
+  }
+]
