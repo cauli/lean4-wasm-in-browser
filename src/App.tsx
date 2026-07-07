@@ -7,6 +7,7 @@ import {
   closureDownloadSize,
 } from './lean-loader'
 import { LEAN_WASM_BASE } from './config'
+import { highlightLean } from './leanHighlight'
 import './App.css'
 
 // Parsed Lean diagnostic message
@@ -101,6 +102,7 @@ def hello := "Hello, WASM!"
   const [manifestLoaded, setManifestLoaded] = useState(false)  // Track if manifest is loaded
   const moduleRef = useRef<LeanModule | null>(null)
   const outputRef = useRef<HTMLDivElement>(null)
+  const highlightRef = useRef<HTMLPreElement>(null)
   const scriptRef = useRef<HTMLScriptElement | null>(null)
   const loadedOleansRef = useRef<Map<string, Uint8Array>>(new Map())  // Cache of loaded .olean files
   // Persistent worker: one live wasm instance serving repeated compiles via
@@ -733,13 +735,28 @@ def hello := "Hello, WASM!"
                 />
               </div>
             </div>
-            <textarea
-              className="code-editor"
-              value={leanCode}
-              onChange={(e) => setLeanCode(e.target.value)}
-              placeholder="Enter Lean 4 code here..."
-              spellCheck={false}
-            />
+            <div className="code-editor-wrap">
+              <pre className="code-highlight" aria-hidden="true" ref={highlightRef}>
+                <code dangerouslySetInnerHTML={{ __html: highlightLean(leanCode) + '\n' }} />
+              </pre>
+              <textarea
+                className="code-editor"
+                value={leanCode}
+                onChange={(e) => setLeanCode(e.target.value)}
+                onScroll={(e) => {
+                  const el = highlightRef.current
+                  if (el) {
+                    el.scrollTop = e.currentTarget.scrollTop
+                    el.scrollLeft = e.currentTarget.scrollLeft
+                  }
+                }}
+                placeholder="Enter Lean 4 code here..."
+                spellCheck={false}
+                autoCapitalize="off"
+                autoCorrect="off"
+                wrap="off"
+              />
+            </div>
           </div>
 
           <div className="panel">
