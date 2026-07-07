@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 /**
  * Generate a dependency manifest from Lean source files.
- * 
- * Usage: node scripts/gen-manifest.mjs <lean-src-dir> <output-manifest.json>
- * Example: node scripts/gen-manifest.mjs ../lean4/src public/lean-manifest.json
- * 
- * @note currently unused, we are testing with all files first (gen-lib-files)
+ *
+ * Usage: node scripts/gen-manifest.mjs <lean-src-dir> <output-manifest.json> [lean-lib-dir]
+ * Example: node scripts/gen-manifest.mjs ../lean4/src public/lean-manifest.json public/lean-wasm/lean-lib
+ *
+ * Each module entry records its direct imports and, when the .olean is present
+ * in [lean-lib-dir], its byte size — so the UI can show an accurate download
+ * total for a given import before fetching anything.
  */
 
 import fs from 'fs';
@@ -70,28 +72,19 @@ function findLeanFiles(dir, basePath = '') {
   return files;
 }
 
-// Compute transitive closure of dependencies
-function computeTransitiveDeps(moduleName, modules, cache = new Map()) {
-  if (cache.has(moduleName)) {
-    return cache.get(moduleName);
-  }
-  
+// Compute the transitive closure of a module's dependencies. Iterative with a
+// visited set so import cycles don't recurse forever and deep chains (Lean's
+// closure is thousands of modules) don't overflow the call stack.
+function computeTransitiveDeps(moduleName, modules) {
   const deps = new Set();
-  const moduleInfo = modules[moduleName];
-  
-  if (!moduleInfo) {
-    return deps;
+  const stack = [...(modules[moduleName]?.imports || [])];
+  while (stack.length) {
+    const m = stack.pop();
+    if (deps.has(m)) continue;
+    deps.add(m);
+    const info = modules[m];
+    if (info) for (const imp of info.imports) if (!deps.has(imp)) stack.push(imp);
   }
-  
-  for (const imp of moduleInfo.imports) {
-    deps.add(imp);
-    const transitive = computeTransitiveDeps(imp, modules, cache);
-    for (const t of transitive) {
-      deps.add(t);
-    }
-  }
-  
-  cache.set(moduleName, deps);
   return deps;
 }
 
@@ -106,41 +99,52 @@ function main() {
   
   const srcDir = args[0];
   const outputPath = args[1];
-  
+  const libDir = args[2]; // optional: enables per-module .olean sizes
+
   if (!fs.existsSync(srcDir)) {
     console.error(`Source directory not found: ${srcDir}`);
     process.exit(1);
   }
-  
+  if (libDir && !fs.existsSync(libDir)) {
+    console.error(`Library directory not found: ${libDir}`);
+    process.exit(1);
+  }
+
+  // Byte size of a module's .olean, or undefined if absent / not requested.
+  const oleanSize = (oleanPath) => {
+    if (!libDir) return undefined;
+    try {
+      return fs.statSync(path.join(libDir, oleanPath)).size;
+    } catch {
+      return undefined;
+    }
+  };
+
   console.log(`Scanning ${srcDir} for .lean files...`);
   const leanFiles = findLeanFiles(srcDir);
   console.log(`Found ${leanFiles.length} .lean files`);
-  
+
   const modules = {};
-  
+
   // Process each .lean file
   for (const file of leanFiles) {
     const fullPath = path.join(srcDir, file);
     const content = fs.readFileSync(fullPath, 'utf-8');
     const moduleName = pathToModuleName(file);
     const imports = parseImports(content);
-    
-    modules[moduleName] = {
-      path: moduleToOleanPath(moduleName),
-      imports,
-    };
+    const oleanPath = moduleToOleanPath(moduleName);
+
+    modules[moduleName] = { path: oleanPath, imports, size: oleanSize(oleanPath) };
   }
-  
+
   // Also add root modules (Init, Std, Lean) from their .lean files
   for (const rootModule of ['Init', 'Std', 'Lean']) {
     const rootFile = path.join(srcDir, `${rootModule}.lean`);
     if (fs.existsSync(rootFile)) {
       const content = fs.readFileSync(rootFile, 'utf-8');
       const imports = parseImports(content);
-      modules[rootModule] = {
-        path: `${rootModule}.olean`,
-        imports,
-      };
+      const oleanPath = `${rootModule}.olean`;
+      modules[rootModule] = { path: oleanPath, imports, size: oleanSize(oleanPath) };
     }
   }
   
@@ -167,6 +171,23 @@ function main() {
   console.log(`  Std: ${stdModules.length} modules`);
   console.log(`  Lean: ${leanModules.length} modules`);
   
+  // Download totals for the common entry points, if sizes are available.
+  if (libDir) {
+    const mb = (bytes) => (bytes / 1048576).toFixed(1);
+    const closureBytes = (root) => {
+      const deps = new Set([root, ...computeTransitiveDeps(root, modules)]);
+      let total = 0;
+      for (const m of deps) total += modules[m]?.size || 0;
+      return { count: deps.size, bytes: total };
+    };
+    console.log('\nClosure download sizes:');
+    for (const root of ['Init', 'Std', 'Lean']) {
+      if (!modules[root]) continue;
+      const { count, bytes } = closureBytes(root);
+      console.log(`  ${root}: ${count} modules, ${mb(bytes)} MB`);
+    }
+  }
+
   // Example: show what Init.Data.String needs
   const exampleModule = 'Init.Data.String';
   if (modules[exampleModule]) {

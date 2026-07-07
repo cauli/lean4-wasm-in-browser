@@ -22,8 +22,10 @@ function findAllFiles(dir, basePath = '') {
     if (entry.isDirectory()) {
       files.push(...findAllFiles(fullPath, relativePath));
     } else if (entry.isFile()) {
-      // Include all .olean, .olean.server, .olean.private files
-      if (entry.name.includes('.olean')) {
+      // Only base .olean files: the WASM build imports at the `exported` olean
+      // level, so .olean.server/.olean.private (and .ir/.ir.sig) are never read
+      // and shipping them just inflates the download.
+      if (entry.name.endsWith('.olean')) {
         files.push(relativePath);
       }
     }
