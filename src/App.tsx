@@ -8,6 +8,7 @@ import {
 } from './lean-loader'
 import { LEAN_WASM_BASE } from './config'
 import { highlightLean } from './leanHighlight'
+import { examples } from './examples'
 import './App.css'
 
 // Parsed Lean diagnostic message
@@ -674,13 +675,30 @@ def hello := "Hello, WASM!"
             </div>
           )}
           {(status === 'ready' || status === 'running') && (
-            <button
-              onClick={runLean}
-              disabled={status === 'running'}
-              className="btn btn-primary"
-            >
-              {status === 'running' ? 'Running...' : 'Run Code'}
-            </button>
+            <>
+              <button
+                onClick={runLean}
+                disabled={status === 'running'}
+                className="btn btn-primary"
+              >
+                {status === 'running' ? 'Running...' : 'Run Code'}
+              </button>
+              <select
+                className="example-select"
+                disabled={status === 'running'}
+                value=""
+                onChange={(e) => {
+                  const ex = examples.find((x) => x.name === e.target.value)
+                  if (ex) setLeanCode(ex.code)
+                }}
+                title="Load an example into the editor"
+              >
+                <option value="" disabled>Load example…</option>
+                {examples.map((ex) => (
+                  <option key={ex.name} value={ex.name}>{ex.name}</option>
+                ))}
+              </select>
+            </>
           )}
           {status === 'error' && (
             <button onClick={loadLean} className="btn btn-secondary">

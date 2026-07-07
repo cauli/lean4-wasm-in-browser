@@ -173,6 +173,32 @@ body {
   border-color: var(--text-secondary);
 }
 
+/* Example picker, sits right of Run Code */
+.example-select {
+  padding: 0.5rem 0.6rem;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.8125rem;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.example-select:hover:not(:disabled) {
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+}
+
+.example-select:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.example-select option {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
 .status {
   margin-left: auto;
   font-weight: 500;
