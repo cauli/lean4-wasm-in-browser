@@ -31,6 +31,13 @@ export async function onRequest(context) {
 
   if (!FROM_R2.has(key)) return next()
 
+  // Serve raw bytes; Cloudflare compresses on the fly. Pre-gzipping in R2 +
+  // content-encoding does NOT survive Cloudflare here: with default compression
+  // it double-gzips the already-encoded body, and with a Compression Rule set to
+  // "off" it strips the content-encoding header while keeping the gzip body — the
+  // browser then gets gzip where it expects wasm. Neither is fixable from the
+  // Function, so raw it is. (A true fix needs the files on an R2 custom domain
+  // served directly, not proxied through a Worker.)
   const obj = await env.LEAN_ASSETS.get(key)
   if (!obj) return new Response(`Not found: ${key}`, { status: 404 })
 
@@ -39,10 +46,6 @@ export async function onRequest(context) {
   headers.set('etag', obj.httpEtag)
   const ext = key.slice(key.lastIndexOf('.') + 1)
   headers.set('content-type', TYPES[ext] || 'application/octet-stream')
-  // NB: we serve the raw bytes and let Cloudflare compress on the fly. Pre-
-  // gzipping in R2 + content-encoding does NOT work here: Cloudflare re-
-  // compresses the already-encoded body (double-gzip) regardless of
-  // `no-transform`, and the browser then gets gzip where it expects wasm/js.
   // Immutable per build (a new Lean build re-uploads under the same keys, and
   // Cloudflare keys the cache on the URL — bump a query string or purge on swap).
   headers.set('cache-control', 'public, max-age=31536000, immutable')
