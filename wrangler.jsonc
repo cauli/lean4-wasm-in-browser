@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "lean-playground",
+  "pages_build_output_dir": "dist",
+  "compatibility_date": "2026-07-01",
+
+  // Account is pinned at deploy time via the CLOUDFLARE_ACCOUNT_ID environment
+  // variable (kept out of this file since the repo is public). Set it to your
+  // personal account id so no command can target the wrong (e.g. work) account.
+
+  // The Pages Function in functions/lean-wasm/ reads the heavy assets (lean.js,
+  // lean.wasm, the .olean tree) from this R2 bucket and serves them same-origin.
+  // Create it once: `wrangler r2 bucket create lean-assets`.
+  "r2_buckets": [
+    { "binding": "LEAN_ASSETS", "bucket_name": "lean-assets" }
+  ]
+}

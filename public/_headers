@@ -1,14 +1,20 @@
 # Cloudflare Pages response headers.
-#
-# The heavy immutable assets (lean.js, lean.wasm, oleans) live in R2, not here —
-# this only tunes the small app shell that Pages serves.
 
-# The manifest is regenerated whenever the WASM artifact changes, so keep its
-# cache short so an artifact swap propagates quickly.
+# Cross-origin isolation. This is a pthread build with SHARED WebAssembly
+# memory, which requires SharedArrayBuffer — only available in a
+# cross-origin-isolated context. Must be present on the top-level document AND
+# the worker iframes. Assets served from R2 by the Pages Function are
+# same-origin, so they need no CORP under `require-corp`.
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+
+# The manifest is regenerated whenever the WASM artifact changes; keep it short
+# so an artifact swap propagates quickly.
 /lean-manifest.json
   Cache-Control: public, max-age=300
 
-# The worker iframes are tiny and may change with app logic; keep them fresh.
+# The worker iframes are tiny and change with app logic; keep them fresh.
 /lean-worker-persistent.html
   Cache-Control: public, max-age=300
 /lean-worker-simple.html

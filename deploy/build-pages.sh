@@ -1,18 +1,38 @@
 #!/usr/bin/env bash
-# Build the Pages app shell. Vite copies everything under public/ into dist/,
-# which includes the symlinked public/lean-wasm (lean.js, lean.wasm, the whole
-# olean tree) — gigabytes that belong in R2, not in the Pages deploy. Strip them
-# so only the small app shell ships to Pages.
+# Build the Pages deployment.
 #
-# Usage: VITE_LEAN_WASM_BASE=https://assets.cau.li deploy/build-pages.sh
+# Hybrid hosting to stay well inside Cloudflare's free tier:
+#   - lean.js + lean.wasm (too big for Pages' 25MB/file limit) -> R2, served
+#     same-origin by functions/lean-wasm/. Uploaded separately (deploy/upload-r2.sh).
+#   - the base .olean tree + lean-lib-files.json -> STATIC Pages assets (free,
+#     unlimited, CDN-cached, and they don't count against the Functions quota).
+#
+# The app fetches everything under the relative `/lean-wasm` base at runtime, so
+# the assets don't need to exist during `vite build`. We move the (symlinked,
+# multi-GB) public/lean-wasm aside so Vite doesn't copy it, then place exactly
+# the static subset into dist afterward.
 set -euo pipefail
+cd "$(dirname "$0")/.."
 
-: "${VITE_LEAN_WASM_BASE:?set VITE_LEAN_WASM_BASE, e.g. https://assets.cau.li}"
+export VITE_LEAN_WASM_BASE=/lean-wasm
+
+STASH="$(mktemp -d)"
+restore() { [ -e "$STASH/lean-wasm" ] && mv "$STASH/lean-wasm" public/lean-wasm || true; rmdir "$STASH" 2>/dev/null || true; }
+trap restore EXIT
+mv public/lean-wasm "$STASH/lean-wasm"
 
 npm run build
 
-# These are served from R2 (see VITE_LEAN_WASM_BASE), never from Pages.
-rm -rf dist/lean-wasm
+restore
+trap - EXIT
 
-echo "Pages output ready in dist/ ($(du -sh dist | cut -f1)):"
-find dist -maxdepth 1 -mindepth 1 -printf '  %f\n' 2>/dev/null || ls -1 dist | sed 's/^/  /'
+# Static subset Pages should host: base .olean files only (skip .olean.server /
+# .olean.private / .c / .ilean and the js/wasm), plus the file list.
+mkdir -p dist/lean-wasm/lean-lib
+cp -L public/lean-wasm/lean-lib-files.json dist/lean-wasm/lean-lib-files.json
+rsync -aL --prune-empty-dirs --include='*/' --include='*.olean' --exclude='*' \
+  public/lean-wasm/lean-lib/ dist/lean-wasm/lean-lib/
+
+echo "Pages output ready in dist/ ($(du -shL dist | cut -f1)):"
+echo "  static .olean files: $(find dist/lean-wasm/lean-lib -name '*.olean' | wc -l | tr -d ' ')"
+echo "  R2 (upload via deploy/upload-r2.sh): lean.js, lean.wasm"
