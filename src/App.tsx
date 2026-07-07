@@ -109,7 +109,7 @@ def hello := "Hello, WASM!"
   // Persistent worker: one live wasm instance serving repeated compiles via
   // lean_wasm_compile. The first compile imports Init inside Lean and caches the
   // environment; later compiles skip the import entirely (~0.2s each).
-  const persistentIframeRef = useRef<HTMLIFrameElement | null>(null)
+  const persistentWorkerRef = useRef<Worker | null>(null)
   const persistentReadyRef = useRef(false)
   const persistentCompiledOnceRef = useRef(false)
   const persistentPendingRef = useRef<{ resolve: (r: { success: boolean; error?: string }) => void } | null>(null)
@@ -347,34 +347,41 @@ def hello := "Hello, WASM!"
   // Boot the persistent worker: fetch the library, load one wasm instance, and
   // initialize the Lean runtime without running main(). Returns once ready.
   const ensurePersistentWorker = useCallback(async (): Promise<void> => {
-    if (persistentIframeRef.current && persistentReadyRef.current) return
+    if (persistentWorkerRef.current && persistentReadyRef.current) return
 
     const files = await loadOleansFor(['Init'])
 
     setLoadingProgress('Starting persistent Lean instance…')
     await new Promise<void>((resolve, reject) => {
-      const iframe = document.createElement('iframe')
-      iframe.style.display = 'none'
-      persistentIframeRef.current = iframe
+      // A Web Worker (not a same-origin iframe): the ~1-minute synchronous Init
+      // import runs on the worker's own thread, so the page stays responsive.
+      const worker = new Worker(
+        `/lean-worker-persistent.worker.js?assetBase=${encodeURIComponent(LEAN_WASM_BASE)}`,
+      )
+      persistentWorkerRef.current = worker
 
       const timeout = setTimeout(() => {
-        window.removeEventListener('message', handler)
+        worker.terminate()
+        persistentWorkerRef.current = null
         reject(new Error('Persistent worker initialization timeout'))
       }, 300000)
 
-      const handler = (event: MessageEvent) => {
-        if (event.source !== iframe.contentWindow) return
+      worker.onmessage = (event: MessageEvent) => {
         const { type, data, error } = event.data || {}
-        if (type === 'iframe_ready') {
+        if (type === 'worker_boot') {
+          // Hand the olean buffers to the worker as transferables — no copy on
+          // the main thread (those copies were part of the ~1s load stalls).
           const filesArray: Array<{ name: string, data: ArrayBuffer }> = []
+          const transfer: ArrayBuffer[] = []
           files.forEach((d, name) => {
             const copy = new ArrayBuffer(d.byteLength)
             new Uint8Array(copy).set(d)
             filesArray.push({ name, data: copy })
+            transfer.push(copy)
           })
-          iframe.contentWindow?.postMessage({ type: 'load_library', files: filesArray }, '*')
+          worker.postMessage({ type: 'load_library', files: filesArray }, transfer)
         } else if (type === 'library_received') {
-          iframe.contentWindow?.postMessage({ type: 'start_worker' }, '*')
+          worker.postMessage({ type: 'start_worker' })
         } else if (type === 'worker_ready') {
           persistentReadyRef.current = true
           clearTimeout(timeout)
@@ -406,18 +413,20 @@ def hello := "Hello, WASM!"
           }
         }
       }
-      window.addEventListener('message', handler)
 
-      iframe.src = `/lean-worker-persistent.html?assetBase=${encodeURIComponent(LEAN_WASM_BASE)}`
-      document.body.appendChild(iframe)
+      worker.onerror = (e) => {
+        clearTimeout(timeout)
+        persistentReadyRef.current = false
+        reject(new Error(`Worker failed: ${e.message || 'could not start'}`))
+      }
     })
   }, [appendOutput, loadOleansFor])
 
   // Compile Init-only code in the resident instance (fast path).
   const runPersistent = useCallback(async (code: string): Promise<void> => {
     await ensurePersistentWorker()
-    const iframe = persistentIframeRef.current
-    if (!iframe?.contentWindow) throw new Error('Persistent worker not available')
+    const worker = persistentWorkerRef.current
+    if (!worker) throw new Error('Persistent worker not available')
 
     setLoadingProgress(persistentCompiledOnceRef.current
       ? 'Running…'
@@ -425,7 +434,7 @@ def hello := "Hello, WASM!"
 
     const result = await new Promise<{ success: boolean; error?: string }>((resolve) => {
       persistentPendingRef.current = { resolve }
-      iframe.contentWindow!.postMessage({ type: 'compile', code, path: '/workspace/input.lean' }, '*')
+      worker.postMessage({ type: 'compile', code, path: '/workspace/input.lean' })
       setTimeout(() => {
         if (persistentPendingRef.current) {
           persistentPendingRef.current = null
