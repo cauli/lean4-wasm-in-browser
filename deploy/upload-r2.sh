@@ -26,10 +26,12 @@ put() { # <key> <file> <content-type>
   npx wrangler r2 object put "$BUCKET/$1" --file "$2" --content-type "$3" --remote
 }
 
-# Upload raw. We do NOT pre-gzip + content-encoding: Cloudflare re-compresses the
-# already-encoded body (double-gzip) regardless of `no-transform`, breaking the
-# browser. Instead the raw bytes are served and Cloudflare compresses on the fly
-# (cached at the edge after the first cold request per PoP).
+# Raw only. Cloudflare compresses on the fly per request. Pre-gzipping in R2 +
+# content-encoding was tried and abandoned: through a Pages Function, Cloudflare
+# either double-gzips the encoded body (default) or strips the content-encoding
+# header (Compression Rule "off"), both of which break the browser. Serving
+# pre-compressed correctly would require an R2 custom domain (direct, not proxied
+# through a Worker) — see deploy notes.
 put lean.js   public/lean-wasm/lean.js   text/javascript
 put lean.wasm public/lean-wasm/lean.wasm application/wasm
 
