@@ -70,16 +70,14 @@ example : fib 10 = 55 := by decide` },
   { name: 'factorial #eval = 120', expect: { has: '120' }, code:
 `#eval (List.range 5).foldl (fun a b => a * (b + 1)) 1` },
 
-  // Known playground limitations, NOT Lean bugs: #eval of tail-recursive List
-  // ops fails because their compiled `._redArg` helper is absent from the
-  // resident exported-level Init env (getOrCreateWasmEnv imports with
-  // level := .exported). The same operations succeed inside proofs. These cases
-  // assert the limitation still holds — if a future build fixes it they flip to
-  // FAIL, which is the signal to update this suite.
-  { name: 'known limit: #eval List.reverse fails (redArg)', expect: 'error', code:
+  // #eval of library functions: the build ships each module's compiled IR
+  // (`.ir`) next to its `.olean`, so the interpreter has executable code for
+  // tail-recursive List ops and friends (these used to be a pinned limitation:
+  // "Unknown constant 'List.reverse._redArg'").
+  { name: '#eval List.reverse runs (library IR)', expect: { has: '[3, 2, 1]' }, code:
 `#eval [1, 2, 3].reverse` },
 
-  { name: 'known limit: #eval List.map fails (redArg)', expect: 'error', code:
+  { name: '#eval List.map runs (library IR)', expect: { has: '[2, 3, 4]' }, code:
 `#eval [1, 2, 3].map (· + 1)` },
 
   // Error cases: a correct checker must REJECT wrong code, not rubber-stamp it.

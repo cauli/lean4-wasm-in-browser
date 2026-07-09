@@ -49,12 +49,10 @@ fork's `getOrCreateWasmEnv` imports `Init` once at `level := .exported`). Confir
 - **Core tactics work**: `induction`, `rw`, `simp`, `omega`, `decide`, term-mode.
 - **No Mathlib / Std**: e.g. `Nat.Prime` is an unknown constant.
 - **`import` in user code hangs the worker** — the suite is deliberately pure Init.
-- **`#eval` limitation**: evaluating tail-recursive `List` ops (`reverse`, `map`,
-  `filter`, `++`) fails with `Unknown constant 'List.reverse._redArg'` — those
-  compiler-generated specializations aren't in the exported-level env. The same
-  operations succeed **inside proofs**; only runtime `#eval` trips. `foldl`,
-  `List.range`, and `String` / arithmetic evaluation work. Two cases pin this as a
-  regression test — if a future build ships the helpers, they flip to FAIL.
+- **`#eval` of library functions works**: the build ships each module's compiled
+  IR (`.ir`) next to its `.olean`, so tail-recursive `List` ops (`reverse`, `map`,
+  `filter`, `++`) evaluate (these used to fail with
+  `Unknown constant 'List.reverse._redArg'`). Two cases pin the fix.
 
 ## Coverage
 
@@ -65,4 +63,4 @@ fork's `getOrCreateWasmEnv` imports `Init` once at `level := .exported`). Confir
   `#eval` output checks (Gauss sum = 5050, factorial = 120, string concat).
 - **Rejection**: a false equation, a type mismatch, an unknown identifier, a false
   goal fed to `omega`.
-- **Known limitations pinned as regression tests**: `#eval` of `List.reverse` / `List.map`.
+- **Library-IR evaluation pinned as regression tests**: `#eval` of `List.reverse` / `List.map`.
