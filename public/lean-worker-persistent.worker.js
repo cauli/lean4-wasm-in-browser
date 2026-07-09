@@ -17,6 +17,10 @@ let moduleReady = false;
 let compileBusy = false;
 
 const assetBase = (new URLSearchParams(location.search).get('assetBase') || '/lean-wasm').replace(/\/$/, '');
+// Per-build version, appended to lean.js/lean.wasm so each build is a distinct
+// (safely-immutable) CDN URL and a redeploy is picked up without a cache purge.
+const assetVer = new URLSearchParams(location.search).get('v') || '';
+const assetQ = assetVer ? '?v=' + encodeURIComponent(assetVer) : '';
 
 // The build and wasmCompile emit verbose tracing; keep it out of the UI.
 function isDebugLine(text) {
@@ -106,10 +110,10 @@ function startLeanModule() {
   self.Module = {
     // 4.28 ships a 16MB memory cap (patched to 2GB MAX in lean.wasm).
     INITIAL_MEMORY: 2048 * 1024 * 1024,
-    locateFile: (path) => assetBase + '/' + path,
+    locateFile: (path) => assetBase + '/' + path + assetQ,
     // Tell Emscripten where the runtime script is, so the pthread sub-workers
     // this Worker spawns can load lean.js (the Worker's own script is this file).
-    mainScriptUrlOrBlob: assetBase + '/lean.js',
+    mainScriptUrlOrBlob: assetBase + '/lean.js' + assetQ,
     print: (text) => { if (reportImportProgress(text)) return; if (isDebugLine(text)) console.log(text); else self.postMessage({ type: 'stdout', data: text }); },
     printErr: (text) => { if (reportImportProgress(text)) return; if (isDebugLine(text)) console.log(text); else self.postMessage({ type: 'stderr', data: text }); },
     setStatus: (text) => { if (text) self.postMessage({ type: 'progress', data: text }); },
@@ -152,7 +156,7 @@ function startLeanModule() {
   };
 
   try {
-    importScripts(assetBase + '/lean.js');
+    importScripts(assetBase + '/lean.js' + assetQ);
   } catch (e) {
     self.postMessage({ type: 'error', data: 'Failed to load lean.js: ' + ((e && e.message) || e) });
   }

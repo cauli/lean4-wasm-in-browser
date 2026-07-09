@@ -15,6 +15,9 @@
 Error.stackTraceLimit = 1000;
 
 const assetBase = (new URLSearchParams(location.search).get('assetBase') || '/lean-wasm').replace(/\/$/, '');
+// Per-build version → versioned lean.js/lean.wasm URLs (see the persistent worker).
+const assetVer = new URLSearchParams(location.search).get('v') || '';
+const assetQ = assetVer ? '?v=' + encodeURIComponent(assetVer) : '';
 
 // Keep the build's verbose [DEBUG:...]/[WASM DEBUG] tracing out of the UI, but
 // use the per-module "loading" lines to drive a progress counter.
@@ -80,9 +83,9 @@ self.onmessage = (event) => {
     // 4.28 ships a 16MB memory cap (patched to 2GB MAX in lean.wasm); create the
     // 2GB shared memory up front (shared memory does not grow in this build).
     INITIAL_MEMORY: 2048 * 1024 * 1024,
-    locateFile: (path) => assetBase + '/' + path,
+    locateFile: (path) => assetBase + '/' + path + assetQ,
     // pthread sub-workers this Worker spawns load lean.js (not this file).
-    mainScriptUrlOrBlob: assetBase + '/lean.js',
+    mainScriptUrlOrBlob: assetBase + '/lean.js' + assetQ,
     noInitialRun: true,
     arguments: args,
     print: (text) => { if (reportImportProgress(text)) return; if (isDebugLine(text)) console.log(text); else self.postMessage({ type: 'stdout', data: text }); },
@@ -122,7 +125,7 @@ self.onmessage = (event) => {
   };
 
   try {
-    importScripts(assetBase + '/lean.js');
+    importScripts(assetBase + '/lean.js' + assetQ);
   } catch (e) {
     self.postMessage({ type: 'stderr', data: 'Failed to load lean.js: ' + ((e && e.message) || e) });
     self.postMessage({ type: 'done', exitCode: 1 });

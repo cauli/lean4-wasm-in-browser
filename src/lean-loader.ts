@@ -3,7 +3,7 @@
  * Parses user code for imports and computes required .olean files
  */
 
-import { LEAN_WASM_BASE } from './config';
+import { LEAN_WASM_BASE, LEAN_ASSET_VERSION } from './config';
 
 interface ModuleInfo {
   path: string;
@@ -61,7 +61,11 @@ async function openOleanCache(): Promise<Cache | null> {
   cachePromise = (async () => {
     if (typeof caches === 'undefined') return null; // e.g. non-secure context
     const m = await loadManifest();
-    const name = CACHE_PREFIX + m.generated;
+    // Key by the build githash so the cache invalidates on every new artifact
+    // (the wasm strictly rejects oleans with a mismatched githash, so a stale
+    // cache would break the app after a deploy). Fall back to the manifest's
+    // `generated` timestamp in dev, where no version is baked in.
+    const name = CACHE_PREFIX + (LEAN_ASSET_VERSION || m.generated);
     // Prune caches from previous library builds.
     try {
       for (const key of await caches.keys()) {

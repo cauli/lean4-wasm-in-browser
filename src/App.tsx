@@ -6,7 +6,7 @@ import {
   parseUserImports,
   closureDownloadSize,
 } from './lean-loader'
-import { LEAN_WASM_BASE } from './config'
+import { LEAN_WASM_BASE, workerAssetQuery } from './config'
 import { highlightLean } from './leanHighlight'
 import { examples } from './examples'
 import './App.css'
@@ -217,7 +217,7 @@ def hello := "Hello, WASM!"
       window.addEventListener('message', messageHandler)
       
       // Load the iframe content from separate HTML file
-      iframe.src = `/lean-worker-simple.html?assetBase=${encodeURIComponent(LEAN_WASM_BASE)}`
+      iframe.src = `/lean-worker-simple.html?${workerAssetQuery}`
       document.body.appendChild(iframe)
       
       // Timeout for loading
@@ -326,7 +326,7 @@ def hello := "Hello, WASM!"
   ): Promise<number> => {
     return new Promise((resolve, reject) => {
       const worker = new Worker(
-        `/lean-worker-oneshot.worker.js?assetBase=${encodeURIComponent(LEAN_WASM_BASE)}`,
+        `/lean-worker-oneshot.worker.js?${workerAssetQuery}`,
       )
       let settled = false
       const finish = (fn: () => void) => {
@@ -437,7 +437,7 @@ def hello := "Hello, WASM!"
       // A Web Worker (not a same-origin iframe): the ~1-minute synchronous Init
       // import runs on the worker's own thread, so the page stays responsive.
       const worker = new Worker(
-        `/lean-worker-persistent.worker.js?assetBase=${encodeURIComponent(LEAN_WASM_BASE)}`,
+        `/lean-worker-persistent.worker.js?${workerAssetQuery}`,
       )
       persistentWorkerRef.current = worker
 

@@ -23,6 +23,9 @@
         // Base URL for lean.js / lean.wasm. Same-origin "/lean-wasm" in dev;
         // the parent passes the R2/CDN base in production via ?assetBase=.
         var assetBase = (new URLSearchParams(location.search).get("assetBase") || "/lean-wasm").replace(/\/$/, "");
+        // Per-build version → versioned lean.js/lean.wasm URLs (cache-busting on redeploy).
+        var assetVer = new URLSearchParams(location.search).get("v") || "";
+        var assetQ = assetVer ? "?v=" + encodeURIComponent(assetVer) : "";
 
         function mkdirp(FS, path) {
             const parts = path.split("/").filter(p => p);
@@ -95,7 +98,7 @@
                 // MAX in lean.wasm); the glue must be told to create the 2GB
                 // shared memory up front. Drop this for a growth-enabled build.
                 INITIAL_MEMORY: 2048 * 1024 * 1024,
-                locateFile: (path) => assetBase + "/" + path,
+                locateFile: (path) => assetBase + "/" + path + assetQ,
                 print: (text) => {
                     console.log("stdout:", text);
                     if (!isDebugLine(text)) parent.postMessage({ type: "stdout", data: text }, "*");
@@ -401,7 +404,7 @@
             // Load lean.js
             console.log("Loading lean.js...");
             var script = document.createElement("script");
-            script.src = assetBase + "/lean.js";
+            script.src = assetBase + "/lean.js" + assetQ;
             script.onload = () => console.log("lean.js loaded");
             script.onerror = () => parent.postMessage({ type: "error", data: "Failed to load lean.js" }, "*");
             document.body.appendChild(script);

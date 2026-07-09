@@ -16,6 +16,15 @@ cd "$(dirname "$0")/.."
 
 export VITE_LEAN_WASM_BASE=/lean-wasm
 
+# Per-build asset version = the Lean githash (baked into every olean/lean.wasm at
+# build time). The app appends it as `?v=<hash>` to the lean.js / lean.wasm URLs
+# so each build is a unique, safely-immutable CDN cache key: a redeploy is picked
+# up without a cache purge, and app-only redeploys (same binary → same hash) keep
+# reusing the cached lean.js / lean.wasm. Falls back to a timestamp if unreadable.
+VITE_LEAN_ASSET_VERSION=$(node -e "const b=require('fs').readFileSync('public/lean-wasm/lean-lib/Init.olean'); const m=b.subarray(0,120).toString('latin1').match(/[0-9a-f]{40}/); process.stdout.write(m?m[0]:'')" 2>/dev/null || true)
+export VITE_LEAN_ASSET_VERSION="${VITE_LEAN_ASSET_VERSION:-$(date -u +%Y%m%d%H%M%S)}"
+echo "Asset version (lean.js/lean.wasm ?v=): $VITE_LEAN_ASSET_VERSION"
+
 STASH="$(mktemp -d)"
 restore() { [ -e "$STASH/lean-wasm" ] && mv "$STASH/lean-wasm" public/lean-wasm || true; rmdir "$STASH" 2>/dev/null || true; }
 trap restore EXIT
