@@ -292,6 +292,56 @@ def hello := "Hello, WASM!"
     })
   }, [appendOutput])
 
+  // Run a one-shot `lean <args>` in a Web Worker (off the page's main thread).
+  // The same-origin iframe path above shares the main thread, so a multi-minute
+  // `import Std` froze the whole tab; a Worker keeps the page responsive and
+  // streams per-module import progress.
+  const runOneShot = useCallback((
+    args: string[],
+    code: string,
+    path: string,
+    libraryFiles: Map<string, Uint8Array>,
+  ): Promise<number> => {
+    return new Promise((resolve, reject) => {
+      const worker = new Worker(
+        `/lean-worker-oneshot.worker.js?assetBase=${encodeURIComponent(LEAN_WASM_BASE)}`,
+      )
+      let settled = false
+      const finish = (fn: () => void) => {
+        if (settled) return
+        settled = true
+        clearTimeout(timeout)
+        worker.terminate()
+        fn()
+      }
+      // Generous cap: a large import (Std/Lean) can take a few minutes.
+      const timeout = setTimeout(
+        () => finish(() => reject(new Error('Lean execution timed out (5 min)'))),
+        300000,
+      )
+      worker.onmessage = (event: MessageEvent) => {
+        const { type, exitCode, data, loaded, total } = event.data || {}
+        if (type === 'stdout') appendOutput(data)
+        else if (type === 'stderr') appendOutput(data, true)
+        else if (type === 'import_progress') setLoadingProgress(
+          total ? `Importing modules: ${loaded} / ${total}…` : `Importing modules: ${loaded}…`)
+        else if (type === 'progress') setLoadingProgress(data)
+        else if (type === 'done') finish(() => resolve(exitCode))
+      }
+      worker.onerror = (e) => finish(() => reject(new Error(e.message || 'one-shot worker error')))
+
+      const filesArray: Array<{ name: string, data: ArrayBuffer }> = []
+      const transfer: ArrayBuffer[] = []
+      libraryFiles.forEach((d, name) => {
+        const copy = new ArrayBuffer(d.byteLength)
+        new Uint8Array(copy).set(d)
+        filesArray.push({ name, data: copy })
+        transfer.push(copy)
+      })
+      worker.postMessage({ type: 'run', files: filesArray, args, code, path }, transfer)
+    })
+  }, [appendOutput])
+
   // Pre-fetch the file list (lightweight)
   const loadFileList = useCallback(async () => {
     setLoadingProgress('Loading library file list...')
@@ -317,9 +367,17 @@ def hello := "Hello, WASM!"
     try {
       paths = await fetchCompleteFileList()
       if (paths.length === 0) throw new Error('empty file list')
-      if (imports.length === 1 && imports[0] === 'Init') {
-        paths = paths.filter(p => p === 'Init.olean' || p.startsWith('Init/'))
-      }
+      // Load the namespace closure for the requested imports. The shipped library
+      // is layered Init < Std < Lean < Lake, and each layer's oleans are self-
+      // contained given the layers below it, so we load Init plus every layer up
+      // to the highest one referenced. This keeps an Init-only run at ~65MB and a
+      // Std import at ~135MB instead of transferring the whole ~240MB library.
+      const tops = new Set(imports.map(i => i.split('.')[0]))
+      const load = new Set(['Init'])
+      if (tops.has('Std') || tops.has('Lean') || tops.has('Lake')) load.add('Std')
+      if (tops.has('Lean') || tops.has('Lake')) load.add('Lean')
+      if (tops.has('Lake')) load.add('Lake')
+      paths = paths.filter(p => load.has(p.split('/')[0].replace(/\.olean$/, '')))
     } catch (e) {
       console.warn('Complete file list unavailable, falling back to manifest closure:', e)
       paths = await getRequiredOleanPaths(imports)
@@ -613,11 +671,8 @@ def hello := "Hello, WASM!"
         const args = [...flags, inputPath]
         const files = await loadOleansFor([...new Set(['Init', ...explicitImports])])
 
-        setLoadingProgress('Creating WASM instance...')
-        await createFreshModule()
-        await new Promise(resolve => setTimeout(resolve, 150))
-        setLoadingProgress('Running...')
-        const exitCode = await runInIframe(args, leanCode, inputPath, files)
+        setLoadingProgress(`Importing ${explicitImports.join(', ')} (first run, ~1–2 min)…`)
+        const exitCode = await runOneShot(args, leanCode, inputPath, files)
         appendOutput(`\nExit code: ${exitCode}`)
       }
     } catch (err) {
@@ -629,7 +684,7 @@ def hello := "Hello, WASM!"
       setLoadingProgress('')
       setStatus('ready')
     }
-  }, [wasmLoaded, leanCode, leanFlags, appendOutput, createFreshModule, runInIframe, loadOleansFor, runPersistent])
+  }, [wasmLoaded, leanCode, leanFlags, appendOutput, runOneShot, loadOleansFor, runPersistent])
 
   // Parse output for display
   const parsedOutput = useMemo(() => {
