@@ -6,6 +6,9 @@
 export interface Example {
   name: string
   code: string
+  /** Library this example needs (matches a Libraries dropdown entry). Undefined
+   *  means it only needs Init and always works. */
+  requires?: string
 }
 
 export const examples: Example[] = [
@@ -126,5 +129,69 @@ example (n : Nat) : n + 1 = n := by rfl`,
   {
     name: 'error: omega on a false goal',
     code: `example (n : Nat) : n = n + 1 := by omega`,
+  },
+
+  // ── Requires the Std library (enable it in "Libraries") ──
+  // NOTE: this base build ships oleans without compiled IR, so `#eval` of
+  // library functions doesn't run (only type-checking / proofs do). These
+  // examples use `#check` and definitions to show the API is available.
+  {
+    name: 'Std.HashMap — the API',
+    requires: 'Std',
+    code: `import Std.Data.HashMap
+-- Std adds hash maps, sets, trees, and more on top of Init. Its API is fully
+-- available to type-check against (running #eval on it needs the compiled IR,
+-- which this base build doesn't ship).
+#check @Std.HashMap.insert
+#check @Std.HashMap.get?
+#check @Std.HashMap.size`,
+  },
+  {
+    name: 'Std.HashMap — build a map',
+    requires: 'Std',
+    code: `import Std.Data.HashMap
+open Std
+-- ∅ is the empty map (via its EmptyCollection instance). \`noncomputable\` skips
+-- code generation (which #eval would need) so this type-checks in the base
+-- build; #check still shows the types.
+noncomputable def fruit : HashMap String Nat :=
+  (∅ : HashMap String Nat).insert "apple" 3 |>.insert "pear" 5
+#check fruit                 -- Std.HashMap String Nat
+#check fruit.get? "apple"    -- Option Nat`,
+  },
+  {
+    name: 'Std.HashSet',
+    requires: 'Std',
+    code: `import Std.Data.HashSet
+open Std
+noncomputable def primes : HashSet Nat :=
+  (∅ : HashSet Nat).insert 2 |>.insert 3 |>.insert 5
+#check primes                -- Std.HashSet Nat
+#check primes.contains 3     -- Bool`,
+  },
+
+  // ── Requires the Lean library — metaprogramming (enable in "Libraries") ──
+  {
+    name: 'Lean — the metaprogramming API',
+    requires: 'Lean',
+    code: `import Lean
+open Lean
+-- \`import Lean\` exposes the compiler/prover framework itself: the syntax and
+-- term representations, the elaboration monads, and the tactic infrastructure —
+-- the machinery you'd use to write your own tactics, macros, and elaborators.
+#check Lean.Syntax                   -- surface syntax trees
+#check Lean.Expr                     -- the internal term representation
+#check @Lean.Elab.Tactic.getMainGoal -- read the current goal in a tactic`,
+  },
+  {
+    name: 'Lean — building terms (Expr)',
+    requires: 'Lean',
+    code: `import Lean
+open Lean
+-- Metaprograms build and inspect \`Expr\`, Lean's internal term representation.
+-- Here are some of its constructors and helpers:
+#check @Lean.Expr.app        -- function application
+#check @Lean.mkApp           -- smart constructor
+#check @Lean.Expr.isApp`,
   },
 ]

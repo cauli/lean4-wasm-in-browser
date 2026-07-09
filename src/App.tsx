@@ -840,9 +840,25 @@ def hello := "Hello, WASM!"
                 title="Load an example into the editor"
               >
                 <option value="" disabled>Load example…</option>
-                {examples.map((ex) => (
-                  <option key={ex.name} value={ex.name}>{ex.name}</option>
-                ))}
+                <optgroup label="Core (Init)">
+                  {examples.filter((ex) => !ex.requires).map((ex) => (
+                    <option key={ex.name} value={ex.name}>{ex.name}</option>
+                  ))}
+                </optgroup>
+                {AVAILABLE_LIBS.map((lib) => {
+                  const exs = examples.filter((ex) => ex.requires === lib.name)
+                  if (exs.length === 0) return null
+                  const loaded = enabledLibs.includes(lib.name)
+                  return (
+                    <optgroup key={lib.name} label={loaded ? lib.label : `${lib.label} — enable in Libraries`}>
+                      {exs.map((ex) => (
+                        <option key={ex.name} value={ex.name} disabled={!loaded}>
+                          {ex.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )
+                })}
               </select>
               <details className="lib-dropdown">
                 <summary className="example-select">
