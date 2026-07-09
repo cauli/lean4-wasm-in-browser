@@ -11,6 +11,15 @@ import { highlightLean } from './leanHighlight'
 import { examples } from './examples'
 import './App.css'
 
+// Libraries that can be preloaded into the resident worker. Each maps to a
+// top-level olean namespace that ships in the build; enabling it fetches that
+// namespace's closure so `import <name>…` needs no download on first use.
+// (Init is always loaded; Lean's closure includes Std.)
+const AVAILABLE_LIBS: Array<{ name: string; label: string; size: string }> = [
+  { name: 'Std', label: 'Std', size: '~70 MB' },
+  { name: 'Lean', label: 'Lean (metaprogramming)', size: '~230 MB' },
+]
+
 // Parsed Lean diagnostic message
 interface LeanDiagnostic {
   severity: 'information' | 'warning' | 'error' | string
@@ -101,6 +110,13 @@ def hello := "Hello, WASM!"
   const [loadPercent, setLoadPercent] = useState<number>(0)  // 0-100 for the preload bar
   const [wasmLoaded, setWasmLoaded] = useState(false)  // Track if WASM is cached
   const [manifestLoaded, setManifestLoaded] = useState(false)  // Track if manifest is loaded
+  // Libraries the user has opted into. Enabling one downloads its oleans into
+  // the resident worker's filesystem (so `import <Lib>…` skips that download on
+  // first use) and is remembered in localStorage as a permanent preference.
+  const [enabledLibs, setEnabledLibs] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('leanEnabledLibs') || '[]') } catch { return [] }
+  })
+  const [libLoading, setLibLoading] = useState<string | null>(null)  // lib currently being fetched
   const moduleRef = useRef<LeanModule | null>(null)
   const outputRef = useRef<HTMLDivElement>(null)
   const highlightRef = useRef<HTMLPreElement>(null)
@@ -544,6 +560,28 @@ def hello := "Hello, WASM!"
     })
   }, [loadOleansFor])
 
+  // Toggle a library preference. Enabling it downloads its oleans into the
+  // resident worker now (if the worker is up) and persists the choice; on later
+  // visits the preload step loads it automatically. Import stays lazy — this
+  // only puts the oleans on disk so the first `import` skips the download.
+  const toggleLib = useCallback(async (name: string) => {
+    const enabling = !enabledLibs.includes(name)
+    const next = enabling ? [...enabledLibs, name] : enabledLibs.filter(l => l !== name)
+    setEnabledLibs(next)
+    try { localStorage.setItem('leanEnabledLibs', JSON.stringify(next)) } catch { /* ignore */ }
+    if (enabling && persistentReadyRef.current) {
+      setLibLoading(name)
+      try {
+        await ensureResidentOleans(['Init', name])
+      } catch (e) {
+        console.error(`Failed to preload ${name}:`, e)
+      } finally {
+        setLibLoading(null)
+        setLoadingProgress('')
+      }
+    }
+  }, [enabledLibs, ensureResidentOleans])
+
   // Preload everything up front so pressing Run does no network I/O: download
   // Init's closure, boot the resident worker, and warm the Init import — all
   // behind the progress bar on page load. Guarded so it can't run twice (React
@@ -604,13 +642,31 @@ def hello := "Hello, WASM!"
       setLoadingProgress('Ready')
       setStatus('ready')
 
+      // Background-load any libraries the user has enabled (persisted). The app
+      // is already usable; these just put the oleans on disk so the first
+      // `import` skips the download. Read localStorage directly so this doesn't
+      // depend on React state timing.
+      let savedLibs: string[] = []
+      try { savedLibs = JSON.parse(localStorage.getItem('leanEnabledLibs') || '[]') } catch { /* ignore */ }
+      for (const lib of savedLibs) {
+        setLibLoading(lib)
+        try {
+          await ensureResidentOleans(['Init', lib])
+        } catch (e) {
+          console.error(`Failed to preload ${lib}:`, e)
+        } finally {
+          setLibLoading(null)
+          setLoadingProgress('')
+        }
+      }
+
     } catch (err) {
       console.error('Load error:', err)
       setError(err instanceof Error ? err.message : 'Unknown error')
       setStatus('error')
       loadStartedRef.current = false  // allow Retry
     }
-  }, [manifestLoaded, loadFileList, ensurePersistentWorker, runPersistent])
+  }, [manifestLoaded, loadFileList, ensurePersistentWorker, runPersistent, ensureResidentOleans])
 
   // Test with --version (simplest test)
   const testVersion = useCallback(async () => {
@@ -788,6 +844,30 @@ def hello := "Hello, WASM!"
                   <option key={ex.name} value={ex.name}>{ex.name}</option>
                 ))}
               </select>
+              <details className="lib-dropdown">
+                <summary className="example-select">
+                  Libraries{enabledLibs.length ? ` (${enabledLibs.length})` : ''}
+                </summary>
+                <div className="lib-menu">
+                  <div className="lib-menu-hint">
+                    Preload a library so <code>import</code> needs no download. Init is always loaded.
+                  </div>
+                  {AVAILABLE_LIBS.map((lib) => (
+                    <label key={lib.name} className="lib-item">
+                      <input
+                        type="checkbox"
+                        checked={enabledLibs.includes(lib.name)}
+                        disabled={libLoading !== null}
+                        onChange={() => toggleLib(lib.name)}
+                      />
+                      <span className="lib-item-label">{lib.label}</span>
+                      <span className="lib-size">
+                        {libLoading === lib.name ? 'loading…' : lib.size}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </details>
             </>
           )}
           {status === 'error' && (
