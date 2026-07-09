@@ -114,6 +114,12 @@ def hello := "Hello, WASM!"
   const persistentReadyRef = useRef(false)
   const persistentCompiledOnceRef = useRef(false)
   const persistentPendingRef = useRef<{ resolve: (r: { success: boolean; error?: string }) => void } | null>(null)
+  // Which .olean paths are present in the resident worker's in-WASM filesystem,
+  // and a pending resolver for the worker's `files_added` ack. The resident
+  // worker imports whatever the user's code imports, so we push the needed
+  // oleans into its FS on demand (Init's closure is written at boot).
+  const residentOleansRef = useRef<Set<string>>(new Set())
+  const residentAddPendingRef = useRef<{ resolve: () => void } | null>(null)
 
   const appendOutput = useCallback((text: string, isError = false) => {
     if (isError) {
@@ -437,10 +443,14 @@ def hello := "Hello, WASM!"
             new Uint8Array(copy).set(d)
             filesArray.push({ name, data: copy })
             transfer.push(copy)
+            residentOleansRef.current.add(name)
           })
           worker.postMessage({ type: 'load_library', files: filesArray }, transfer)
         } else if (type === 'library_received') {
           worker.postMessage({ type: 'start_worker' })
+        } else if (type === 'files_added') {
+          residentAddPendingRef.current?.resolve()
+          residentAddPendingRef.current = null
         } else if (type === 'worker_ready') {
           persistentReadyRef.current = true
           clearTimeout(timeout)
@@ -507,6 +517,32 @@ def hello := "Hello, WASM!"
     }
     persistentCompiledOnceRef.current = true
   }, [ensurePersistentWorker])
+
+  // Make sure the resident worker's in-WASM filesystem has the oleans for the
+  // given imports, writing any that aren't there yet. The resident `wasmCompile`
+  // reads the file's `import` header and imports that closure, so the modules
+  // must be on disk first. Init's closure is written at boot.
+  const ensureResidentOleans = useCallback(async (imports: string[]): Promise<void> => {
+    const worker = persistentWorkerRef.current
+    if (!worker) return
+    const files = await loadOleansFor(imports)
+    const missing: Array<{ name: string, data: ArrayBuffer }> = []
+    const transfer: ArrayBuffer[] = []
+    files.forEach((d, name) => {
+      if (residentOleansRef.current.has(name)) return
+      const copy = new ArrayBuffer(d.byteLength)
+      new Uint8Array(copy).set(d)
+      missing.push({ name, data: copy })
+      transfer.push(copy)
+      residentOleansRef.current.add(name)
+    })
+    if (missing.length === 0) return
+    setLoadingProgress(`Adding ${missing.length} library files…`)
+    await new Promise<void>((resolve) => {
+      residentAddPendingRef.current = { resolve }
+      worker.postMessage({ type: 'add_files', files: missing }, transfer)
+    })
+  }, [loadOleansFor])
 
   // Preload everything up front so pressing Run does no network I/O: download
   // Init's closure, boot the resident worker, and warm the Init import — all
@@ -636,15 +672,12 @@ def hello := "Hello, WASM!"
     }
   }, [wasmLoaded, appendOutput, createFreshModule, runInIframe])
 
-  // Run user's Lean code via a one-shot `lean input.lean` invocation.
-  //
-  // We deliberately do NOT use the resident `lean_wasm_compile` fast path: on
-  // this 4.28 build it can't elaborate numerals/infix (`#check 2+2` fails), and
-  // its cached environment is single-shot (the 2nd compile returns an IO error
-  // from corrupted task-manager/env state). The one-shot frontend runs the real
-  // `lean` pipeline, so it's correct for all code and reliable across runs; it
-  // re-imports Init each run (~6-10s, mostly cached). Init is imported
-  // implicitly when the code has no explicit `import`.
+  // Run the user's Lean code in the resident instance. Its `wasmCompile` reads
+  // the file's `import` header and imports that closure into a per-import-set
+  // environment cache, so the first compile of a given import set is slow and
+  // every repeat is ~0.2s — Init-only *and* `import Std …` code alike. We push
+  // the needed oleans into the resident filesystem first. If the resident
+  // compile fails for any reason, we fall back to a one-shot `lean` run.
   const runLean = useCallback(async () => {
     if (!wasmLoaded) {
       setError('Lean WASM not loaded yet')
@@ -656,35 +689,37 @@ def hello := "Hello, WASM!"
     setError('')
 
     const explicitImports = parseUserImports(leanCode)
-    // Code that needs only Init goes through the resident instance
-    // (lean_wasm_compile, env cached across runs → ~0.2s repeat compiles). Code
-    // with other explicit imports needs a full `lean` run, so it takes the
-    // one-shot worker with a manifest-resolved subset of the library.
-    const initOnly = explicitImports.every(i => i === 'Init')
+    const extraImports = explicitImports.filter(i => i !== 'Init')
 
     try {
-      if (initOnly) {
-        await runPersistent(leanCode)
-      } else {
+      await ensurePersistentWorker()
+      if (extraImports.length > 0) {
+        setLoadingProgress(`Importing ${extraImports.join(', ')} (first run is slow)…`)
+        await ensureResidentOleans([...new Set(['Init', ...explicitImports])])
+      }
+      await runPersistent(leanCode)
+    } catch (err) {
+      // Fall back to a one-shot `lean` run (a fresh module + the standard
+      // frontend), which is slower but independent of the resident state.
+      console.error('Resident compile failed; falling back to one-shot:', err)
+      try {
         const inputPath = '/workspace/input.lean'
         const flags = leanFlags.trim().split(/\s+/).filter(f => f.length > 0)
         const args = [...flags, inputPath]
         const files = await loadOleansFor([...new Set(['Init', ...explicitImports])])
-
-        setLoadingProgress(`Importing ${explicitImports.join(', ')} (first run, ~1–2 min)…`)
+        setOutput('')
+        setError('')
         const exitCode = await runOneShot(args, leanCode, inputPath, files)
         appendOutput(`\nExit code: ${exitCode}`)
+      } catch (err2) {
+        const msg = err2 instanceof Error ? err2.message : String(err2)
+        setError(prev => prev ? `${prev}\n${msg}` : msg)
       }
-    } catch (err) {
-      console.error('Error running code:', err)
-      const msg = err instanceof Error ? err.message : String(err)
-      // Append: stderr collected so far (e.g. the decoded IO error) must stay visible
-      setError(prev => prev ? `${prev}\n${msg}` : msg)
     } finally {
       setLoadingProgress('')
       setStatus('ready')
     }
-  }, [wasmLoaded, leanCode, leanFlags, appendOutput, runOneShot, loadOleansFor, runPersistent])
+  }, [wasmLoaded, leanCode, leanFlags, appendOutput, ensurePersistentWorker, ensureResidentOleans, runPersistent, runOneShot, loadOleansFor])
 
   // Parse output for display
   const parsedOutput = useMemo(() => {
