@@ -31,9 +31,14 @@ function isDebugLine(text) {
 // the loading bar can move (and now it actually can, off the main thread).
 function reportImportProgress(text) {
   const m = /\[DEBUG:PROGRESS\]\s*(\d+)\/(\d+)/.exec(text);
-  if (!m) return false;
-  self.postMessage({ type: 'import_progress', loaded: +m[1], total: +m[2] });
-  return true;
+  if (m) {
+    self.postMessage({ type: 'import_progress', loaded: +m[1], total: +m[2] });
+    return true;
+  }
+  // The build also prints bare "  - /lib/lean/<Mod>.olean" lines while loading
+  // modules; keep them out of the user-visible output (the one-shot worker
+  // filters the same pattern).
+  return /^\s*-\s+\/lib\/lean\/.*\.olean\s*$/.test(text);
 }
 
 function mkdirp(FS, path) {

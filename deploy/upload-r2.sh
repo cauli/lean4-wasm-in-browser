@@ -8,8 +8,12 @@
 #   export CLOUDFLARE_ACCOUNT_ID=<your personal account id>
 #   deploy/upload-r2.sh
 #
-# Re-run after swapping in a new Lean artifact (same keys, immutable cache — the
-# Pages Function serves them, so purge Cloudflare cache after a swap).
+# Objects are stored under a per-build githash prefix (`<githash>/lean.wasm`),
+# matching the `?v=<githash>` the app requests: builds coexist in the bucket,
+# so uploading a new one never changes what an already-deployed app serves —
+# no cache purge, no coordination with the Pages deploy. The bare `lean.js` /
+# `lean.wasm` keys are the fallback for sessions predating URL versioning and
+# are deliberately left alone here.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -20,6 +24,12 @@ if [ ! -e public/lean-wasm/lean.wasm ]; then
   echo "error: public/lean-wasm/lean.wasm not found — put the WASM artifact in place first." >&2
   exit 1
 fi
+
+# Same per-build version build-pages.sh bakes into the app's asset URLs: the
+# Lean githash read from Init.olean's header.
+VER=$(node -e "const b=require('fs').readFileSync('public/lean-wasm/lean-lib/Init.olean'); const m=b.subarray(0,120).toString('latin1').match(/[0-9a-f]{40}/); process.stdout.write(m?m[0]:'')")
+[ -n "$VER" ] || { echo "error: could not read the Lean githash from Init.olean" >&2; exit 1; }
+echo "Build version (R2 prefix): $VER"
 
 put() { # <key> <file> <content-type>
   echo "→ $BUCKET/$1  ($(du -hL "$2" | cut -f1))"
@@ -32,8 +42,8 @@ put() { # <key> <file> <content-type>
 # header (Compression Rule "off"), both of which break the browser. Serving
 # pre-compressed correctly would require an R2 custom domain (direct, not proxied
 # through a Worker) — see deploy notes.
-put lean.js   public/lean-wasm/lean.js   text/javascript
-put lean.wasm public/lean-wasm/lean.wasm application/wasm
+put "$VER/lean.js"   public/lean-wasm/lean.js   text/javascript
+put "$VER/lean.wasm" public/lean-wasm/lean.wasm application/wasm
 
 echo
-echo "Done. Verify: wrangler r2 object get $BUCKET/lean.wasm --file /tmp/x.wasm --remote && ls -la /tmp/x.wasm"
+echo "Done. Verify: wrangler r2 object get $BUCKET/$VER/lean.wasm --file /tmp/x.wasm --remote && ls -la /tmp/x.wasm"

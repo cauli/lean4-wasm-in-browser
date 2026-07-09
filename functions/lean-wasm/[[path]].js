@@ -38,7 +38,15 @@ export async function onRequest(context) {
   // browser then gets gzip where it expects wasm. Neither is fixable from the
   // Function, so raw it is. (A true fix needs the files on an R2 custom domain
   // served directly, not proxied through a Worker.)
-  const obj = await env.LEAN_ASSETS.get(key)
+  //
+  // The app requests these with `?v=<lean githash>`; builds are stored under
+  // that prefix (`<githash>/lean.wasm`), so several builds coexist in the
+  // bucket and uploading a new one never changes the bytes an already-open
+  // session gets. The bare key is the fallback for pre-versioning sessions.
+  const version = new URL(request.url).searchParams.get('v')
+  const versionedKey = version && /^[0-9a-zA-Z._-]+$/.test(version) ? `${version}/${key}` : null
+  const obj = (versionedKey && await env.LEAN_ASSETS.get(versionedKey))
+    || await env.LEAN_ASSETS.get(key)
   if (!obj) return new Response(`Not found: ${key}`, { status: 404 })
 
   const headers = new Headers()
@@ -46,8 +54,8 @@ export async function onRequest(context) {
   headers.set('etag', obj.httpEtag)
   const ext = key.slice(key.lastIndexOf('.') + 1)
   headers.set('content-type', TYPES[ext] || 'application/octet-stream')
-  // Immutable per build (a new Lean build re-uploads under the same keys, and
-  // Cloudflare keys the cache on the URL — bump a query string or purge on swap).
+  // Immutable is safe: each build lives at its own `?v=` URL (and R2 prefix),
+  // so a cached response can never be paired with a different build's files.
   headers.set('cache-control', 'public, max-age=31536000, immutable')
   headers.set('cross-origin-resource-policy', 'same-origin')
   // lean.js is loaded as a pthread Worker script; the worker only joins the

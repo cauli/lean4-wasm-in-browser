@@ -404,12 +404,21 @@ def hello := "Hello, WASM!"
       console.warn('Complete file list unavailable, falling back to manifest closure:', e)
       paths = await getRequiredOleanPaths(imports)
     }
-    const missing = paths.filter(p => !loadedOleansRef.current.has(p))
+    // Also load each module's sibling `.ir` part: it carries the compiled
+    // bodies the interpreter needs to `#eval` library code (the exported
+    // `.olean` alone has none). They're olean-format (same magic/validation)
+    // and small (~17% of the closure). A few modules ship no `.ir`; those
+    // 404s are tolerated by fetchOleanFiles.
+    const irPaths = paths.map(p => p.replace(/\.olean$/, '.ir'))
+    const allPaths = [...paths, ...irPaths]
+    const missing = allPaths.filter(p => !loadedOleansRef.current.has(p))
     if (missing.length > 0) {
-      const { bytes, known } = await closureDownloadSize(missing)
+      // Only oleans have manifest-recorded sizes; base the label on them so the
+      // untracked `.ir` sizes don't suppress it.
+      const missingOleans = missing.filter(p => p.endsWith('.olean'))
+      const { bytes, known } = await closureDownloadSize(missingOleans)
       const mb = (bytes / 1048576).toFixed(0)
-      // Only claim a size when the manifest actually knew most files' sizes.
-      const sizeLabel = known >= missing.length * 0.9 ? ` (~${mb} MB)` : ''
+      const sizeLabel = known >= missingOleans.length * 0.9 ? ` (~${mb} MB +ir)` : ''
       setLoadingProgress(`Downloading ${missing.length} library files${sizeLabel}...`)
       const fetched = await fetchOleanFiles(missing, (loaded, total) => {
         setLoadingProgress(`Downloading: ${loaded}/${total} files${sizeLabel}`)
@@ -417,7 +426,7 @@ def hello := "Hello, WASM!"
       fetched.forEach((data, path) => loadedOleansRef.current.set(path, data))
     }
     const result = new Map<string, Uint8Array>()
-    for (const p of paths) {
+    for (const p of allPaths) {
       const data = loadedOleansRef.current.get(p)
       if (data) result.set(p, data)
     }
@@ -610,8 +619,11 @@ def hello := "Hello, WASM!"
       // worker needs. Cached in the Cache API on later visits. Code with
       // explicit non-Init imports takes the one-shot path, which fetches the
       // rest of the library on demand.
-      const allPaths = (await fetchCompleteFileList())
+      const oleanPaths = (await fetchCompleteFileList())
         .filter(p => p === 'Init.olean' || p.startsWith('Init/'))
+      // Prefetch the sibling `.ir` parts too (needed so `#eval` runs library
+      // code); loadOleansFor loads the same set into the worker.
+      const allPaths = [...oleanPaths, ...oleanPaths.map(p => p.replace(/\.olean$/, '.ir'))]
       const cached = loadedOleansRef.current
       const missing = allPaths.filter(p => !cached.has(p))
       if (missing.length > 0) {
