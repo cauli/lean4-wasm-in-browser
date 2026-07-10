@@ -99,7 +99,11 @@
             // patched module's declared import; ALLOW_MEMORY_GROWTH=0 means
             // the pick is the heap for the whole run.
             function pickWasmMemory() {
-                for (const mb of [2048, 1536, 1024, 768]) {
+                // iOS jetsam-kills on touch of oversized commits; start low there.
+                const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
+                    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+                const candidates = isIOS ? [1024, 768, 512] : [2048, 1536, 1024, 768];
+                for (const mb of candidates) {
                     try {
                         const memory = new WebAssembly.Memory({ initial: (mb * 1024 * 1024) / 65536, maximum: 32768, shared: true });
                         if (mb < 2048) console.warn("[MEM] reduced wasm memory: " + mb + "MB (device limit)");

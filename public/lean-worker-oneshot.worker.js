@@ -49,7 +49,13 @@ function reportImportProgress(text) {
 // match the patched module's declared import.
 function pickWasmMemory() {
   const PAGE = 65536;
-  for (const mb of [2048, 1536, 1024, 768]) {
+  // iOS reports allocation success and then jetsam-kills the tab when the
+  // pages are actually touched, so don't even attempt desktop-sized commits
+  // there — start at 1GB and step down.
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const candidates = isIOS ? [1024, 768, 512] : [2048, 1536, 1024, 768];
+  for (const mb of candidates) {
     try {
       const memory = new WebAssembly.Memory({ initial: (mb * 1024 * 1024) / PAGE, maximum: 32768, shared: true });
       if (mb < 2048) console.warn('[MEM] reduced wasm memory: ' + mb + 'MB (device limit)');
