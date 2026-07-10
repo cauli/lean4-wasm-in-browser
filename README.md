@@ -17,108 +17,104 @@ theorem add_comm (a b : Nat) : a + b = b + a := by
 
 The hard part of "Lean in the browser" isn't compiling Lean to WASM — it's making
 it *fast enough to be interactive*. A naive build re-imports the `Init` library on
-every run (~45s inside WASM). This project runs a **custom Lean fork** that keeps
-the environment resident:
+every run (~45 s inside WASM). This project runs a **custom Lean fork**
+([`cauli/lean4` @ `wasm-resident-imports`](https://github.com/cauli/lean4/tree/wasm-resident-imports)):
 
-- [`cauli/lean4` @ `wasm-fast-exported`](https://github.com/cauli/lean4/tree/wasm-fast-exported)
-  adds a `wasmCompile` entry point whose `getOrCreateWasmEnv` imports `Init` **once**
-  and reuses it for every compile. First compile pays the import; every one after is
-  **milliseconds**.
-- The app boots a persistent worker and **warms that import during page load**
-  (progress bar), so even the first Run you press is instant.
-- It's a pthread build with shared memory, so the page must be
-  **cross-origin isolated** (COOP/COEP → `SharedArrayBuffer`).
+- A `wasmCompile` entry point keeps a **resident environment per import set**:
+  the first compile for a given set of `import`s pays the import, every one after
+  is **milliseconds**. The app warms the `Init` env during page load, so the first
+  Run is instant.
+- The build ships each module's **`.ir` file** (compiled bodies) next to its
+  `.olean`, so `#eval` of library functions actually executes — exported-level
+  oleans alone carry no code.
+- It's a pthread build with shared memory, so the page is **cross-origin
+  isolated** (COOP/COEP → `SharedArrayBuffer`).
 
-The editor has lightweight Lean syntax highlighting (a tokenizer + a `<pre>` overlay
-behind the textarea — no CodeMirror/Monaco) and renders Lean's JSON diagnostics
-inline.
+## What you can do
 
-## What compiles here
+- Core tactics and terms: `induction`, `rw`, `simp`, `omega`, `decide`,
+  `#check` / `#eval` / `#print`, recursive `def`s.
+- **`import Std`, `import Lean` (metaprogramming), `import Batteries`** — enable
+  them in the *Libraries* dropdown (preference persists) or just write the
+  `import`; the first use downloads that layer and imports it once. Batteries is
+  compiled for wasm by a **native 32-bit toolchain** from the same commit
+  (32-bit oleans are pointer-width compatible with wasm32).
+- No Mathlib yet (its exact-version build is the next milestone).
+- iPhones/iPads get a notice instead of a playground: Safari can't fit the 137 MB
+  module in a tab. A lighter memory-growth build is in progress.
 
-The resident environment is **`Init`-only** (Lean core), imported at the `exported`
-olean level. In practice:
+## Editor
 
-- ✅ Core tactics: `induction`, `rw`, `simp`, `omega`, `decide`, term mode, recursive
-  `def`s, `#check` / `#eval` / `#print`.
-- ❌ **No Mathlib / Std** — e.g. `Nat.Prime` is unknown.
-- ❌ **`import` in your code hangs the worker** — everything runs in the pre-imported
-  `Init` env; don't add `import` lines.
-- ⚠️ **`#eval` of tail-recursive `List` ops** (`reverse`, `map`, `filter`, `++`) fails
-  with `Unknown constant '..._redArg'` — those compiler-generated helpers aren't in the
-  exported-level env. The same operations work fine **inside proofs**; only runtime
-  `#eval` trips. `foldl`, `List.range`, `String` and arithmetic `#eval` all work.
+Monaco (VS Code's editor core) with a Lean grammar, **unicode abbreviations**
+(`\alpha` → `α`, `\to` → `→`; space/Enter commit, Tab commits bare), multi-file
+tabs (double-click renames), and diagnostics as squiggles at their exact span.
+The workspace persists in `localStorage`; **Share** produces a link — small
+workspaces travel inside the URL (`#s=`), larger ones are stored content-addressed
+in R2 (`#r2=<sha256>`, immutable) via `/api/share`; **Download** saves your file,
+or a zip for several.
 
 ## Architecture
 
-Deployed on Cloudflare as a static app plus one Function:
+Cloudflare, static-first:
 
-| Piece | Served as | Why |
-|-------|-----------|-----|
-| App shell (React/Vite) | Cloudflare **Pages** (static) | tiny, CDN-cached |
-| `Init` closure — 506 `.olean` (~65 MB); full base is 2098/~240 MB | static Pages assets | free, cached; the app fetches the `Init` subset it needs |
-| `lean.js` (~85 MB), `lean.wasm` (~131 MB) | **R2** via a Pages Function | exceed Pages' 25 MB/file limit |
+| Piece | Served as |
+|-------|-----------|
+| App shell (React/Vite) | **Pages** (static) |
+| `.olean` + `.ir` trees (core + Batteries) | static Pages assets, fetched per layer, cached in the browser's Cache API **keyed by build githash** |
+| `lean.js` (~85 MB), `lean.wasm` (~131 MB) | **R2** via `functions/lean-wasm/`, under a **per-build githash prefix** matching the `?v=` the app requests — builds coexist, deploys never break open sessions |
+| Shared snippets | R2 `snippets/<sha256>` via `functions/api/share/` |
 
-The two big files come from R2 **same-origin** through `functions/lean-wasm/`,
-because the pthread runtime spawns workers from `lean.js` and cross-origin worker
-scripts are blocked. That Function also sets `Cross-Origin-Embedder-Policy` on its
-own responses — `_headers` doesn't apply to Function responses, and without COEP on
-`lean.js` the pthread pool never becomes cross-origin-isolated and the runtime hangs.
+The two big files come through the Function **same-origin** (pthread workers can't
+load cross-origin scripts) and it sets COEP on its own responses — `_headers`
+doesn't apply to Function responses.
 
 ## Local development
 
-You need a WASM build of the Lean fork under `public/lean-wasm/`:
-
-- `lean.js`, `lean.wasm` (the wasm must be **memory-patched to 2 GB** — the stock
-  4.28 artifact hard-caps at 16 MB and OOMs; see `scripts/patch-wasm-memory.py`),
-- `lean-lib/` — the `.olean` library,
-- `lean-lib-files.json` + `public/lean-manifest.json` (regenerate with
-  `npm run gen-lib-files` / `npm run gen-manifest`).
-
-Build the fork via its CI (the `Web Assembly` job) and drop the artifact in, then:
+You need a WASM build of the fork under `public/lean-wasm/`: `lean.js`, a
+`lean.wasm` **memory-patched to 2 GB** (`scripts/patch-wasm-memory.py` — the stock
+artifact caps at 16 MB), and `lean-lib/` — a directory of symlinks into the
+artifact's olean tree (plus merged extra libraries like Batteries). Regenerate
+`lean-lib-files.json` / `lean-manifest.json` with `npm run gen-lib-files` /
+`gen-manifest`. Build artifacts come from the fork's CI (`Web Assembly` and
+`Linux 32bit` jobs; `build-batteries.yml` for Batteries).
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173
+npm run dev        # http://localhost:5173 (COOP/COEP set by Vite)
 ```
-
-Vite sets COOP/COEP in dev/preview so `SharedArrayBuffer` is available.
 
 ## Tests
 
-`tests/` boots the **real Lean WASM binary headless in Node** (no browser — the
-Emscripten glue speaks Node via `worker_threads` + `SharedArrayBuffer`) and checks
-that a suite of Lean snippets compiles correctly: NNG-style induction proofs, `omega`,
-`#eval` output checks, and error cases the checker must reject.
+`tests/` boots the real Lean WASM binary headless in Node and checks a suite of
+snippets: induction proofs, `omega`, `#eval` output (including library `#eval`
+via `.ir`), and error cases the checker must reject.
 
 ```bash
 npm run test:fetch   # download the deployed artifacts into tests/.artifacts/
-npm test             # node --test tests/*.test.mjs
+npm test
 ```
-
-CI (`.github/workflows/playground-tests.yml`) runs this against the deployed
-`lean.cau.li` artifacts on push, daily, and on demand. See `tests/README.md`.
 
 ## Deployment
 
 ```bash
 export CLOUDFLARE_ACCOUNT_ID=<account>
-bash deploy/build-pages.sh          # build shell + assemble dist/ (oleans, not the big files)
-bash deploy/upload-r2.sh            # push lean.js / lean.wasm to R2
-npx wrangler pages deploy           # deploy dist/ to the Pages project
+bash deploy/build-pages.sh   # bakes the Lean githash into asset URLs, assembles dist/
+bash deploy/upload-r2.sh     # lean.js / lean.wasm → R2 under <githash>/
+npx wrangler pages deploy dist --project-name lean-playground --branch main
 ```
 
-`lean.cau.li` is a custom domain on the Pages project; `cau.li` (the homepage) is a
-separate Worker. Notes in `deploy/DEPLOY.md`.
+Deploys are self-healing: versioned asset URLs + the githash-keyed olean cache
+mean no cache purges, ever. Use `--branch staging-ir` for a staging preview.
 
 ## Repo layout
 
 ```
-src/               React app: App.tsx, lean-loader.ts, leanHighlight.ts, config.ts
-functions/         Pages Function serving lean.js/lean.wasm from R2 (same-origin, COEP)
-public/lean-wasm/  the WASM artifact (gitignored; symlinks/patched wasm live here)
-scripts/           manifest + lib-file generation, the wasm memory patch
+src/               React app; src/editor/ = Monaco setup, Lean grammar, unicode input
+functions/         lean-wasm/ (R2 big files, COEP) · api/share/ (snippet storage)
+public/lean-wasm/  the WASM artifact (gitignored; symlink dir + patched wasm)
+scripts/           manifest/lib-file generation, the wasm memory patch
 deploy/            build-pages.sh, upload-r2.sh, DEPLOY.md
-tests/             headless Node integration tests + fetch-artifacts
+tests/             headless Node integration tests
 ```
 
 Built on a fork of [leanprover/lean4](https://github.com/leanprover/lean4).
