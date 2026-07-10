@@ -811,14 +811,24 @@ def hello := "Hello, WASM!"
     }
   }, [output, error])
 
+  // iOS Safari can't fit the runtime in a tab: WebKit's compilation of the
+  // 137MB wasm module alone costs hundreds of MB of transient memory on top
+  // of the heap commit, and the tab gets jetsam-killed at "Starting persistent
+  // Lean instance" no matter how small a heap we probe for. Gate instead of
+  // crash-looping; a lighter (memory-growth) build is the real fix.
+  const isIOS = useMemo(() =>
+    /iPhone|iPad|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1), [])
+  const [iosOverride, setIosOverride] = useState(false)
+
   // Preload the library + WASM as soon as the page opens, so the first Run is
   // fast. Guard against React strict-mode's double-invoke in dev.
   const startedLoadRef = useRef(false)
   useEffect(() => {
-    if (startedLoadRef.current) return
+    if (startedLoadRef.current || (isIOS && !iosOverride)) return
     startedLoadRef.current = true
     loadLean()
-  }, [loadLean])
+  }, [loadLean, isIOS, iosOverride])
 
   return (
     <div className="app">
@@ -834,7 +844,19 @@ def hello := "Hello, WASM!"
 
       <main className="main">
         <div className="controls">
-          {(status === 'idle' || status === 'loading') && (
+          {isIOS && !iosOverride && status === 'idle' ? (
+            <div className="preload">
+              <span className="preload-label">
+                iPhones and iPads can&apos;t fit the full Lean runtime in a browser
+                tab yet (Safari runs out of memory compiling the 137&nbsp;MB WebAssembly
+                module) — a lighter build is in the works. Please use a desktop
+                browser for now.{' '}
+                <button className="btn" onClick={() => setIosOverride(true)}>
+                  Try anyway
+                </button>
+              </span>
+            </div>
+          ) : (status === 'idle' || status === 'loading') && (
             <div className="preload">
               <div className="progress-bar">
                 <div className="progress-fill" style={{ width: `${loadPercent}%` }} />
