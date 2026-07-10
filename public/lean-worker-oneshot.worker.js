@@ -41,6 +41,24 @@ function reportImportProgress(text) {
   return false;
 }
 
+// Pick the largest shared wasm memory this device will actually grant.
+// Desktop gets the full 2GB; iOS Safari kills the tab on a 2GB up-front
+// commit (jetsam), so probe downward and boot with what fits. The build has
+// ALLOW_MEMORY_GROWTH=0, so whatever we pick here is the heap for the whole
+// session — maximum stays 32768 pages (2GB, virtual reservation only) to
+// match the patched module's declared import.
+function pickWasmMemory() {
+  const PAGE = 65536;
+  for (const mb of [2048, 1536, 1024, 768]) {
+    try {
+      const memory = new WebAssembly.Memory({ initial: (mb * 1024 * 1024) / PAGE, maximum: 32768, shared: true });
+      if (mb < 2048) console.warn('[MEM] reduced wasm memory: ' + mb + 'MB (device limit)');
+      return { memory, bytes: mb * 1024 * 1024 };
+    } catch (e) { /* try smaller */ }
+  }
+  return null; // let Emscripten try its own default and fail loudly
+}
+
 function mkdirp(FS, path) {
   let current = '';
   for (const part of path.split('/').filter((p) => p)) {
@@ -80,9 +98,9 @@ self.onmessage = (event) => {
   const codePath = msg.path || '/workspace/input.lean';
 
   self.Module = {
-    // 4.28 ships a 16MB memory cap (patched to 2GB MAX in lean.wasm); create the
-    // 2GB shared memory up front (shared memory does not grow in this build).
-    INITIAL_MEMORY: 2048 * 1024 * 1024,
+    // 4.28 ships a 16MB memory cap (patched to 2GB MAX in lean.wasm); the
+    // probed memory below is as much as the device grants (2GB on desktop).
+    ...(function () { const p = pickWasmMemory(); return p ? { wasmMemory: p.memory, INITIAL_MEMORY: p.bytes } : {}; })(),
     locateFile: (path) => assetBase + '/' + path + assetQ,
     // pthread sub-workers this Worker spawns load lean.js (not this file).
     mainScriptUrlOrBlob: assetBase + '/lean.js' + assetQ,

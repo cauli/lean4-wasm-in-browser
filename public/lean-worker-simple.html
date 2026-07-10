@@ -93,11 +93,25 @@
             var code = pendingConfig.code;
             var codePath = pendingConfig.path;
 
+            // Largest shared memory the device grants: desktop gets 2GB; iOS
+            // kills the tab on a 2GB up-front commit, so probe downward. The
+            // maximum stays 32768 pages (2GB, virtual only) to match the
+            // patched module's declared import; ALLOW_MEMORY_GROWTH=0 means
+            // the pick is the heap for the whole run.
+            function pickWasmMemory() {
+                for (const mb of [2048, 1536, 1024, 768]) {
+                    try {
+                        const memory = new WebAssembly.Memory({ initial: (mb * 1024 * 1024) / 65536, maximum: 32768, shared: true });
+                        if (mb < 2048) console.warn("[MEM] reduced wasm memory: " + mb + "MB (device limit)");
+                        return { memory, bytes: mb * 1024 * 1024 };
+                    } catch (e) { /* try smaller */ }
+                }
+                return null;
+            }
             window.Module = {
                 // The 4.28 build ships with a 16MB memory cap (patched to a 2GB
-                // MAX in lean.wasm); the glue must be told to create the 2GB
-                // shared memory up front. Drop this for a growth-enabled build.
-                INITIAL_MEMORY: 2048 * 1024 * 1024,
+                // MAX in lean.wasm); hand the glue the probed memory up front.
+                ...(function () { const p = pickWasmMemory(); return p ? { wasmMemory: p.memory, INITIAL_MEMORY: p.bytes } : {}; })(),
                 locateFile: (path) => assetBase + "/" + path + assetQ,
                 print: (text) => {
                     console.log("stdout:", text);
