@@ -647,3 +647,58 @@ body {
   font-size: 0.75rem;
   line-height: 1.6;
 }
+/* ── Monaco editor + file tabs ── */
+.file-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 4px 6px 0;
+  background: #0f0f0f;
+  border-bottom: 1px solid #262626;
+  overflow-x: auto;
+}
+.file-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-family: 'IBM Plex Mono', monospace;
+  color: #8a8a8a;
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.file-tab:hover { color: #d4d4d4; }
+.file-tab-active {
+  color: #f5f5f5;
+  background: #0a0a0a;
+  border-color: #262626;
+}
+.file-tab-close {
+  border: none;
+  background: none;
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+}
+.file-tab-close:hover { color: #f14c4c; }
+.file-tab-add {
+  border: none;
+  background: none;
+  color: #8a8a8a;
+  font-size: 1rem;
+  padding: 0 8px;
+  cursor: pointer;
+}
+.file-tab-add:hover { color: #f5f5f5; }
+.monaco-host {
+  position: absolute;
+  inset: 0;
+}

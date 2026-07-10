@@ -15,7 +15,9 @@
     "test:fetch": "node tests/fetch-artifacts.mjs"
   },
   "dependencies": {
+    "@leanprover/unicode-input": "^0.1.11",
     "fflate": "^0.8.2",
+    "monaco-editor": "^0.55.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

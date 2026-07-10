@@ -7,9 +7,48 @@ import {
   closureDownloadSize,
 } from './lean-loader'
 import { LEAN_WASM_BASE, workerAssetQuery } from './config'
-import { highlightLean } from './leanHighlight'
 import { examples } from './examples'
+import { LeanEditor, dropModel, renameModel, type LeanMarker } from './editor/LeanEditor'
 import './App.css'
+
+// A file in the in-browser workspace (persisted to localStorage).
+interface WorkFile { name: string; content: string }
+
+const DEFAULT_CODE = `#check 2 + 2
+#check Nat.add
+def hello := "Hello, WASM!"
+#check hello`
+
+// Normalize a user-entered file name: strip path bits, ensure .lean.
+function normalizeFileName(raw: string): string | null {
+  const base = raw.trim().replace(/[/\\]/g, '')
+  if (!base) return null
+  return base.endsWith('.lean') ? base : `${base}.lean`
+}
+
+// Share links: gzip + base64url of the whole workspace in the URL hash.
+async function encodeShare(files: WorkFile[], active: string): Promise<string> {
+  const raw = new TextEncoder().encode(JSON.stringify({ files, active }))
+  const gz = new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('gzip')))
+  const bytes = new Uint8Array(await gz.arrayBuffer())
+  let bin = ''
+  bytes.forEach((b) => { bin += String.fromCharCode(b) })
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+async function decodeShare(hash: string): Promise<{ files: WorkFile[]; active: string } | null> {
+  try {
+    const b64 = hash.replace(/-/g, '+').replace(/_/g, '/')
+    const bin = atob(b64)
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0))
+    const raw = new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip')))
+    const parsed = JSON.parse(await raw.text())
+    if (parsed?.files?.length && parsed.files.every((f: WorkFile) => f.name && typeof f.content === 'string')) {
+      return parsed
+    }
+  } catch { /* malformed link */ }
+  return null
+}
 
 // Libraries that can be preloaded into the resident worker. Each maps to a
 // top-level olean namespace that ships in the build; enabling it fetches that
@@ -105,10 +144,30 @@ function App() {
   const [status, setStatus] = useState<Status>('idle')
   const [output, setOutput] = useState<string>('')
   const [error, setError] = useState<string>('')
-  const [leanCode, setLeanCode] = useState<string>(`#check 2 + 2
-#check Nat.add
-def hello := "Hello, WASM!"
-#check hello`)
+  // Multi-file workspace: Monaco keeps one model per file; the app owns the
+  // names + contents and persists them to localStorage. Compilation is still
+  // per-file (the active one) — cross-file imports need saved user oleans,
+  // which is the next phase of the Lean side.
+  const [files, setFiles] = useState<WorkFile[]>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('leanWorkspace') || 'null')
+      if (saved?.files?.length && saved.files.every((f: WorkFile) => f.name && typeof f.content === 'string')) {
+        return saved.files
+      }
+    } catch { /* fresh start */ }
+    return [{ name: 'Main.lean', content: DEFAULT_CODE }]
+  })
+  const [activeFile, setActiveFile] = useState<string>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('leanWorkspace') || 'null')
+      if (saved?.active && saved?.files?.some((f: WorkFile) => f.name === saved.active)) return saved.active
+    } catch { /* default */ }
+    return 'Main.lean'
+  })
+  const leanCode = files.find((f) => f.name === activeFile)?.content ?? ''
+  const setLeanCode = useCallback((content: string) => {
+    setFiles((fs) => fs.map((f) => (f.name === activeFile ? { ...f, content } : f)))
+  }, [activeFile])
   const [leanFlags, setLeanFlags] = useState<string>('--json')  // Additional flags for Lean
   const [loadingProgress, setLoadingProgress] = useState<string>('')
   const [loadPercent, setLoadPercent] = useState<number>(0)  // 0-100 for the preload bar
@@ -123,8 +182,6 @@ def hello := "Hello, WASM!"
   const [libLoading, setLibLoading] = useState<string | null>(null)  // lib currently being fetched
   const moduleRef = useRef<LeanModule | null>(null)
   const outputRef = useRef<HTMLDivElement>(null)
-  const highlightRef = useRef<HTMLPreElement>(null)
-  const tabEscapeRef = useRef(false)  // Esc arms the next Tab to move focus out
   const scriptRef = useRef<HTMLScriptElement | null>(null)
   const loadedOleansRef = useRef<Map<string, Uint8Array>>(new Map())  // Cache of loaded .olean files
   // Persistent worker: one live wasm instance serving repeated compiles via
@@ -804,6 +861,86 @@ def hello := "Hello, WASM!"
     return parseLeanOutput(output)
   }, [output])
 
+  // Diagnostics as Monaco markers (squiggles) on the active file. Lean's
+  // JSON positions are 1-based lines / 0-based columns.
+  const editorMarkers = useMemo<LeanMarker[]>(() =>
+    parsedOutput.diagnostics.map((d) => ({
+      severity: d.severity,
+      message: d.data,
+      startLine: d.pos.line,
+      startColumn: d.pos.column,
+      endLine: d.endPos?.line ?? d.pos.line,
+      endColumn: d.endPos?.column ?? d.pos.column + 1,
+    })), [parsedOutput])
+
+  // Persist the workspace (debounced — this fires per keystroke).
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try { localStorage.setItem('leanWorkspace', JSON.stringify({ files, active: activeFile })) }
+      catch { /* quota */ }
+    }, 400)
+    return () => clearTimeout(t)
+  }, [files, activeFile])
+
+  // Load a share link (#s=…) once on mount; it replaces the workspace.
+  useEffect(() => {
+    const m = location.hash.match(/^#s=(.+)$/)
+    if (!m) return
+    decodeShare(m[1]).then((shared) => {
+      if (shared) {
+        setFiles(shared.files)
+        setActiveFile(shared.active)
+      }
+      history.replaceState(null, '', location.pathname + location.search)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const addFile = useCallback(() => {
+    const raw = prompt('New file name:', 'Scratch.lean')
+    if (raw === null) return
+    const name = normalizeFileName(raw)
+    if (!name) return
+    setFiles((fs) => fs.some((f) => f.name === name) ? fs : [...fs, { name, content: '' }])
+    setActiveFile(name)
+  }, [])
+
+  const closeFile = useCallback((name: string) => {
+    const f = files.find((x) => x.name === name)
+    if (f && f.content.trim() && !confirm(`Delete ${name}? Its contents will be lost.`)) return
+    setFiles((fs) => {
+      const next = fs.filter((x) => x.name !== name)
+      return next.length ? next : [{ name: 'Main.lean', content: '' }]
+    })
+    dropModel(name)
+    if (activeFile === name) {
+      const rest = files.filter((x) => x.name !== name)
+      setActiveFile(rest[0]?.name ?? 'Main.lean')
+    }
+  }, [files, activeFile])
+
+  const renameFile = useCallback((name: string) => {
+    const raw = prompt('Rename file:', name)
+    if (raw === null) return
+    const next = normalizeFileName(raw)
+    if (!next || next === name || files.some((f) => f.name === next)) return
+    setFiles((fs) => fs.map((f) => (f.name === name ? { ...f, name: next } : f)))
+    renameModel(name, next)
+    if (activeFile === name) setActiveFile(next)
+  }, [files, activeFile])
+
+  const shareWorkspace = useCallback(async () => {
+    const hash = await encodeShare(files, activeFile)
+    const url = `${location.origin}${location.pathname}#s=${hash}`
+    history.replaceState(null, '', `#s=${hash}`)
+    try {
+      await navigator.clipboard.writeText(url)
+      appendOutput('Share link copied to clipboard.\n')
+    } catch {
+      appendOutput(`Share link: ${url}\n`)
+    }
+  }, [files, activeFile, appendOutput])
+
   // Auto-scroll output
   useEffect(() => {
     if (outputRef.current) {
@@ -957,6 +1094,13 @@ def hello := "Hello, WASM!"
             <div className="panel-header">
               <span>Code</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                <button
+                  className="btn btn-small"
+                  onClick={shareWorkspace}
+                  title="Copy a link that opens this workspace"
+                >
+                  Share
+                </button>
                 <label htmlFor="lean-flags" style={{ opacity: 0.7 }}>Flags:</label>
                 <input
                   id="lean-flags"
@@ -977,52 +1121,37 @@ def hello := "Hello, WASM!"
                 />
               </div>
             </div>
+            <div className="file-tabs" role="tablist">
+              {files.map((f) => (
+                <div
+                  key={f.name}
+                  role="tab"
+                  aria-selected={f.name === activeFile}
+                  className={`file-tab${f.name === activeFile ? ' file-tab-active' : ''}`}
+                  onClick={() => setActiveFile(f.name)}
+                  onDoubleClick={() => renameFile(f.name)}
+                  title={`${f.name} — double-click to rename`}
+                >
+                  <span>{f.name}</span>
+                  {files.length > 1 && (
+                    <button
+                      className="file-tab-close"
+                      aria-label={`Close ${f.name}`}
+                      onClick={(e) => { e.stopPropagation(); closeFile(f.name) }}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button className="file-tab-add" onClick={addFile} title="New file">+</button>
+            </div>
             <div className="code-editor-wrap">
-              <pre className="code-highlight" aria-hidden="true" ref={highlightRef}>
-                <code dangerouslySetInnerHTML={{ __html: highlightLean(leanCode) + '\n' }} />
-              </pre>
-              <textarea
-                className="code-editor"
-                value={leanCode}
-                onChange={(e) => setLeanCode(e.target.value)}
-                onKeyDown={(e) => {
-                  // Esc arms the next Tab to move focus out of the editor (the
-                  // accessible way to escape a Tab-inserting textarea).
-                  if (e.key === 'Escape') {
-                    tabEscapeRef.current = true
-                    return
-                  }
-                  if (e.key === 'Tab') {
-                    if (tabEscapeRef.current) {
-                      tabEscapeRef.current = false
-                      return // let Tab move focus normally
-                    }
-                    // Otherwise insert two spaces (matches tab-size) at the caret
-                    // instead of leaving the field, keeping focus (and Cmd+A) here.
-                    e.preventDefault()
-                    const el = e.currentTarget
-                    const { selectionStart: s, selectionEnd: en, value } = el
-                    const indent = '  '
-                    setLeanCode(value.slice(0, s) + indent + value.slice(en))
-                    requestAnimationFrame(() => {
-                      el.selectionStart = el.selectionEnd = s + indent.length
-                    })
-                    return
-                  }
-                  tabEscapeRef.current = false // any other key disarms
-                }}
-                onScroll={(e) => {
-                  const el = highlightRef.current
-                  if (el) {
-                    el.scrollTop = e.currentTarget.scrollTop
-                    el.scrollLeft = e.currentTarget.scrollLeft
-                  }
-                }}
-                placeholder="Enter Lean 4 code here..."
-                spellCheck={false}
-                autoCapitalize="off"
-                autoCorrect="off"
-                wrap="off"
+              <LeanEditor
+                file={activeFile}
+                content={leanCode}
+                markers={editorMarkers}
+                onChange={setLeanCode}
               />
             </div>
           </div>
