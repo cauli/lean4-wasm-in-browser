@@ -9,6 +9,7 @@ import {
 import { LEAN_WASM_BASE, workerAssetQuery } from './config'
 import { examples } from './examples'
 import { LeanEditor, dropModel, renameModel, type LeanMarker } from './editor/LeanEditor'
+import { makeZip } from './zip'
 import './App.css'
 
 // A file in the in-browser workspace (persisted to localStorage).
@@ -26,28 +27,40 @@ function normalizeFileName(raw: string): string | null {
   return base.endsWith('.lean') ? base : `${base}.lean`
 }
 
-// Share links: gzip + base64url of the whole workspace in the URL hash.
-async function encodeShare(files: WorkFile[], active: string): Promise<string> {
+// Share links. Small workspaces travel entirely in the URL (#s= gzip +
+// base64url — eternal, no storage involved); past a size where links start
+// getting mangled by chat apps and email, the gzipped payload is stored
+// content-addressed in R2 via /api/share and the URL carries only #r2=<id>.
+const SHARE_URL_LIMIT = 2000 // encoded chars; beyond this, store in R2
+
+async function gzipWorkspace(files: WorkFile[], active: string): Promise<Uint8Array> {
   const raw = new TextEncoder().encode(JSON.stringify({ files, active }))
   const gz = new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('gzip')))
-  const bytes = new Uint8Array(await gz.arrayBuffer())
+  return new Uint8Array(await gz.arrayBuffer())
+}
+
+async function gunzipWorkspace(bytes: Uint8Array): Promise<{ files: WorkFile[]; active: string } | null> {
+  try {
+    const raw = new Response(new Blob([bytes as BlobPart]).stream().pipeThrough(new DecompressionStream('gzip')))
+    const parsed = JSON.parse(await raw.text())
+    if (parsed?.files?.length && parsed.files.every((f: WorkFile) => f.name && typeof f.content === 'string')) {
+      return parsed
+    }
+  } catch { /* malformed payload */ }
+  return null
+}
+
+function toBase64Url(bytes: Uint8Array): string {
   let bin = ''
   bytes.forEach((b) => { bin += String.fromCharCode(b) })
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
-async function decodeShare(hash: string): Promise<{ files: WorkFile[]; active: string } | null> {
+function fromBase64Url(b64url: string): Uint8Array | null {
   try {
-    const b64 = hash.replace(/-/g, '+').replace(/_/g, '/')
-    const bin = atob(b64)
-    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0))
-    const raw = new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip')))
-    const parsed = JSON.parse(await raw.text())
-    if (parsed?.files?.length && parsed.files.every((f: WorkFile) => f.name && typeof f.content === 'string')) {
-      return parsed
-    }
-  } catch { /* malformed link */ }
-  return null
+    const bin = atob(b64url.replace(/-/g, '+').replace(/_/g, '/'))
+    return Uint8Array.from(bin, (c) => c.charCodeAt(0))
+  } catch { return null }
 }
 
 // Libraries that can be preloaded into the resident worker. Each maps to a
@@ -882,17 +895,31 @@ function App() {
     return () => clearTimeout(t)
   }, [files, activeFile])
 
-  // Load a share link (#s=…) once on mount; it replaces the workspace.
+  // Load a share link once on mount; it replaces the workspace. Two forms:
+  // #s= carries the payload itself, #r2= is an id into /api/share storage.
   useEffect(() => {
-    const m = location.hash.match(/^#s=(.+)$/)
-    if (!m) return
-    decodeShare(m[1]).then((shared) => {
+    const apply = (shared: { files: WorkFile[]; active: string } | null) => {
       if (shared) {
         setFiles(shared.files)
         setActiveFile(shared.active)
       }
       history.replaceState(null, '', location.pathname + location.search)
-    })
+    }
+    const inline = location.hash.match(/^#s=(.+)$/)
+    if (inline) {
+      const bytes = fromBase64Url(inline[1])
+      if (bytes) gunzipWorkspace(bytes).then(apply)
+      else apply(null)
+      return
+    }
+    const stored = location.hash.match(/^#r2=([0-9a-f]{64})$/)
+    if (stored) {
+      fetch(`/api/share/${stored[1]}`)
+        .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
+        .then((buf) => gunzipWorkspace(new Uint8Array(buf)))
+        .then(apply)
+        .catch(() => apply(null))
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -930,16 +957,46 @@ function App() {
   }, [files, activeFile])
 
   const shareWorkspace = useCallback(async () => {
-    const hash = await encodeShare(files, activeFile)
-    const url = `${location.origin}${location.pathname}#s=${hash}`
-    history.replaceState(null, '', `#s=${hash}`)
+    const bytes = await gzipWorkspace(files, activeFile)
+    const encoded = toBase64Url(bytes)
+    let fragment: string
+    if (encoded.length <= SHARE_URL_LIMIT) {
+      fragment = `#s=${encoded}`
+    } else {
+      // Too long to survive chat apps/email — store in R2, share the id.
+      const resp = await fetch('/api/share', { method: 'POST', body: bytes as BodyInit })
+      if (!resp.ok) {
+        appendOutput(`Share failed: ${resp.status} ${await resp.text()}`, true)
+        return
+      }
+      const { id } = await resp.json()
+      fragment = `#r2=${id}`
+    }
+    const url = `${location.origin}${location.pathname}${fragment}`
+    history.replaceState(null, '', fragment)
     try {
       await navigator.clipboard.writeText(url)
-      appendOutput('Share link copied to clipboard.\n')
+      appendOutput('Share link copied to clipboard.')
     } catch {
-      appendOutput(`Share link: ${url}\n`)
+      appendOutput(`Share link: ${url}`)
     }
   }, [files, activeFile, appendOutput])
+
+  // Download the workspace: a single file directly, several as a zip.
+  const downloadWorkspace = useCallback(() => {
+    const save = (blob: Blob, name: string) => {
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = name
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(a.href), 10_000)
+    }
+    if (files.length === 1) {
+      save(new Blob([files[0].content], { type: 'text/plain' }), files[0].name)
+    } else {
+      save(makeZip(files), 'lean-workspace.zip')
+    }
+  }, [files])
 
   // Auto-scroll output
   useEffect(() => {
@@ -1100,6 +1157,13 @@ function App() {
                   title="Copy a link that opens this workspace"
                 >
                   Share
+                </button>
+                <button
+                  className="btn btn-small"
+                  onClick={downloadWorkspace}
+                  title="Download your files (.lean, or a .zip for several)"
+                >
+                  Download
                 </button>
                 <label htmlFor="lean-flags" style={{ opacity: 0.7 }}>Flags:</label>
                 <input
