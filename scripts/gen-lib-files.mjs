@@ -18,10 +18,14 @@ function findAllFiles(dir, basePath = '') {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const relativePath = basePath ? `${basePath}/${entry.name}` : entry.name;
     const fullPath = path.join(dir, entry.name);
-    
-    if (entry.isDirectory()) {
+
+    // stat (not the dirent) so symlinked entries are followed — lean-lib is a
+    // directory of per-tree symlinks (core artifact + separately built libs
+    // like Batteries) rather than a single real tree.
+    const st = fs.statSync(fullPath);
+    if (st.isDirectory()) {
       files.push(...findAllFiles(fullPath, relativePath));
-    } else if (entry.isFile()) {
+    } else if (st.isFile()) {
       // Only base .olean files: the WASM build imports at the `exported` olean
       // level, so .olean.server/.olean.private (and .ir/.ir.sig) are never read
       // and shipping them just inflates the download.

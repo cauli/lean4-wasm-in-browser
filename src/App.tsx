@@ -18,6 +18,10 @@ import './App.css'
 const AVAILABLE_LIBS: Array<{ name: string; label: string; size: string }> = [
   { name: 'Std', label: 'Std', size: '~70 MB' },
   { name: 'Lean', label: 'Lean (metaprogramming)', size: '~230 MB' },
+  // Built separately (native i386 toolchain, same Lean commit) and merged into
+  // the served lean-lib tree; its tactics meta-import Lean, so its layer pulls
+  // Std + Lean too (see loadOleansFor).
+  { name: 'Batteries', label: 'Batteries (community stdlib)', size: '~320 MB' },
 ]
 
 // Parsed Lean diagnostic message
@@ -396,9 +400,11 @@ def hello := "Hello, WASM!"
       // Std import at ~135MB instead of transferring the whole ~240MB library.
       const tops = new Set(imports.map(i => i.split('.')[0]))
       const load = new Set(['Init'])
-      if (tops.has('Std') || tops.has('Lean') || tops.has('Lake')) load.add('Std')
-      if (tops.has('Lean') || tops.has('Lake')) load.add('Lean')
+      if (tops.has('Std') || tops.has('Lean') || tops.has('Lake') || tops.has('Batteries')) load.add('Std')
+      // Batteries' tactics meta-import Lean, so it sits above the Lean layer.
+      if (tops.has('Lean') || tops.has('Lake') || tops.has('Batteries')) load.add('Lean')
       if (tops.has('Lake')) load.add('Lake')
+      if (tops.has('Batteries')) load.add('Batteries')
       paths = paths.filter(p => load.has(p.split('/')[0].replace(/\.olean$/, '')))
     } catch (e) {
       console.warn('Complete file list unavailable, falling back to manifest closure:', e)

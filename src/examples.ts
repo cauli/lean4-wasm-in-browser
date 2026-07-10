@@ -190,4 +190,25 @@ open Lean
 #check @Lean.mkApp           -- smart constructor
 #check @Lean.Expr.isApp`,
   },
+
+  // ── Requires the Batteries library (enable in "Libraries") ──
+  {
+    name: 'Batteries.RBMap — ordered map',
+    requires: 'Batteries',
+    code: `import Batteries.Data.RBMap.Basic
+open Batteries
+-- An ordered (red-black tree) map, iterated in key order.
+def scores : RBMap String Nat compare :=
+  RBMap.ofList [("carol", 9), ("alice", 7), ("bob", 5)] compare
+#eval scores.toList          -- sorted by key
+#eval scores.find? "bob"`,
+  },
+  {
+    name: 'Batteries — List extras',
+    requires: 'Batteries',
+    code: `import Batteries.Data.List.Basic
+-- Batteries extends core List with many utilities.
+#eval [1, 2, 3].sublists
+#eval (List.range 6).splitOn 3`,
+  },
 ]
