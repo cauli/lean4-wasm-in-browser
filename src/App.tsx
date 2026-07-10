@@ -535,12 +535,16 @@ def hello := "Hello, WASM!"
     const result = await new Promise<{ success: boolean; error?: string }>((resolve) => {
       persistentPendingRef.current = { resolve }
       worker.postMessage({ type: 'compile', code, path: '/workspace/input.lean' })
+      // Generous: a first compile legitimately runs for minutes — the env
+      // import of a big library layer (Lean/Batteries ≈ 2300+ modules), plus
+      // on a cold first visit the pthread pool may still be streaming lean.js
+      // from the CDN underneath it (observed >240s on staging).
       setTimeout(() => {
         if (persistentPendingRef.current) {
           persistentPendingRef.current = null
-          resolve({ success: false, error: 'Compile timeout (240s)' })
+          resolve({ success: false, error: 'Compile timeout (600s)' })
         }
-      }, 240000)
+      }, 600000)
     })
 
     if (!result.success) {
