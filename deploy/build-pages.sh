@@ -29,6 +29,8 @@ STASH="$(mktemp -d)"
 restore() { [ -e "$STASH/lean-wasm" ] && mv "$STASH/lean-wasm" public/lean-wasm || true; rmdir "$STASH" 2>/dev/null || true; }
 trap restore EXIT
 mv public/lean-wasm "$STASH/lean-wasm"
+# test artifacts (e.g. public/lean-wasm-433 harness trees) must never ship
+for d in public/lean-wasm-*; do [ -e "$d" ] && rm -rf "$d"; done
 
 npm run build
 
