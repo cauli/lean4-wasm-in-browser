@@ -70,10 +70,11 @@ function fromBase64Url(b64url: string): Uint8Array | null {
 const AVAILABLE_LIBS: Array<{ name: string; label: string; size: string }> = [
   { name: 'Std', label: 'Std', size: '~70 MB' },
   { name: 'Lean', label: 'Lean (metaprogramming)', size: '~230 MB' },
-  // Built separately (native i386 toolchain, same Lean commit) and merged into
-  // the served lean-lib tree; its tactics meta-import Lean, so its layer pulls
-  // Std + Lean too (see loadOleansFor).
-  { name: 'Batteries', label: 'Batteries (community stdlib)', size: '~320 MB' },
+  // Batteries is built separately against the exact Lean commit (native i386
+  // toolchain) and merged into the served lean-lib tree. No build exists yet
+  // for the current 4.33 toolchain, so the entry is off; loadOleansFor and the
+  // gated examples pick it back up when one lands.
+  // { name: 'Batteries', label: 'Batteries (community stdlib)', size: '~320 MB' },
 ]
 
 // Parsed Lean diagnostic message
@@ -771,7 +772,7 @@ function App() {
     setOutput('')
     setError('')
     appendOutput('Running: lean --version\n')
-    appendOutput('(olean files are version 4.28.0-pre - should match!)\n\n')
+    appendOutput('(olean files are version 4.33.0-pre - should match!)\n\n')
     setLoadingProgress('Creating fresh WASM instance...')
 
     try {
@@ -1293,9 +1294,9 @@ function App() {
           </button>
         </div>
         <p className="footer-meta">
-          Lean 4.28.0-pre ·{' '}
+          Lean 4.33.0-pre ·{' '}
           <a
-            href="https://github.com/cauli/lean4/tree/wasm-fast-exported"
+            href="https://github.com/cauli/lean4/tree/reinstate-wasm"
             target="_blank"
             rel="noopener noreferrer"
           >
