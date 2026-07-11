@@ -37,15 +37,17 @@ npm run build
 restore
 trap - EXIT
 
-# Static subset Pages should host: base .olean files plus their .ir siblings
+# Static subset Pages should host: base .olean files plus their .ir and
+# .ir.sig siblings (the reader only loads an .ir when its .ir.sig exists)
 # (compiled bodies the interpreter needs for #eval of library code; ~17% extra).
 # Skip .olean.server / .olean.private / .c / .ilean and the js/wasm.
 mkdir -p dist/lean-wasm/lean-lib
 cp -L public/lean-wasm/lean-lib-files.json dist/lean-wasm/lean-lib-files.json
-rsync -aL --prune-empty-dirs --include='*/' --include='*.olean' --include='*.ir' --exclude='*' \
+rsync -aL --prune-empty-dirs --include='*/' --include='*.olean' --include='*.ir' --include='*.ir.sig' --exclude='*' \
   public/lean-wasm/lean-lib/ dist/lean-wasm/lean-lib/
 
 echo "Pages output ready in dist/ ($(du -shL dist | cut -f1)):"
 echo "  static .olean files: $(find dist/lean-wasm/lean-lib -name '*.olean' | wc -l | tr -d ' ')"
 echo "  static .ir files:    $(find dist/lean-wasm/lean-lib -name '*.ir' | wc -l | tr -d ' ')"
+echo "  static .ir.sig files: $(find dist/lean-wasm/lean-lib -name '*.ir.sig' | wc -l | tr -d ' ')"
 echo "  R2 (upload via deploy/upload-r2.sh): lean.js, lean.wasm"
