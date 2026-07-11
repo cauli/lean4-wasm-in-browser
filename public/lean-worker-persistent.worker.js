@@ -133,22 +133,58 @@ self.onmessage = (event) => {
   } else if (msg.type === 'compile') {
     self.postMessage({ type: 'compile_result', ...compileCode(msg.code, msg.path) });
   } else if (msg.type === 'load_snapshot') {
-    self.postMessage({ type: 'snapshot_loaded', ...loadSnapshot(msg.name, msg.data) });
+    loadSnapshot(msg.name, msg.url)
+      .then((r) => self.postMessage({ type: 'snapshot_loaded', ...r }))
+      .catch((e) => self.postMessage({ type: 'snapshot_loaded', success: false, error: (e && e.message) || String(e) }));
   }
 };
 
 // Seed Lean's environment cache from a baked `--incr-header-save` snapshot,
 // replacing the multi-minute Init import. The snapshot is githash-paired with
 // lean.wasm (its closure relocation is only valid for that binary), which the
-// app guarantees by fetching it under the same ?v= as the binary itself.
-function loadSnapshot(name, data) {
+// app guarantees by requesting it under the same ?v= as the binary itself.
+//
+// The worker fetches and streams the file into MEMFS itself: the ~240MB never
+// exists as one JS buffer, let alone two (download + structured-clone copy on
+// the main thread). Memory-starved tabs — iOS Safari — live or die on that
+// peak, and everyone else parses the page while the download proceeds here.
+async function loadSnapshot(name, url) {
   if (!moduleReady) return { success: false, error: 'Module not ready' };
   const t0 = performance.now();
+  const FS = Module.FS;
+  const p = '/snapshots/' + (name || 'init.snap');
   try {
-    const FS = Module.FS;
+    const response = await fetch(url);
+    if (!response.ok || !response.body) return { success: false, error: `snapshot fetch: ${response.status}` };
+    const total = Number(response.headers.get('content-length')) || 0;
     try { FS.mkdir('/snapshots'); } catch (e) { /* exists */ }
-    const p = '/snapshots/' + (name || 'init.snap');
-    FS.writeFile(p, new Uint8Array(data));
+    const reader = response.body.getReader();
+    const stream = FS.open(p, 'w');
+    let received = 0;
+    let lastReport = 0;
+    let first = true;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      // Guard against an SPA fallback page served with 200: snapshots are
+      // compacted-region files and start with the olean magic.
+      if (first) {
+        first = false;
+        if (value.length < 5 || value[0] !== 0x6f || value[1] !== 0x6c || value[2] !== 0x65 || value[3] !== 0x61 || value[4] !== 0x6e) {
+          FS.close(stream);
+          try { FS.unlink(p); } catch (e) { /* ignore */ }
+          return { success: false, error: 'snapshot fetch returned non-olean content' };
+        }
+      }
+      FS.write(stream, value, 0, value.length, received);
+      received += value.length;
+      if (received - lastReport > 8 * 1024 * 1024) {
+        lastReport = received;
+        self.postMessage({ type: 'snapshot_progress', received, total });
+      }
+    }
+    FS.close(stream);
+    self.postMessage({ type: 'snapshot_progress', received, total: total || received });
     // The loader reads a `<file>.deps` sidecar; self-contained snapshots use `[]`.
     FS.writeFile(p + '.deps', new Uint8Array([0x5b, 0x5d]));
     const resObj = Module._lean_wasm_load_snapshot(mkLeanString(p));
@@ -164,6 +200,7 @@ function loadSnapshot(name, data) {
     console.log(`[SNAPSHOT] load ${success ? 'ok' : 'FAILED'} in ${elapsed.toFixed(0)}ms (tag ${tag}, ret ${ret})`);
     return { success, elapsed };
   } catch (e) {
+    try { FS.unlink(p); } catch (e2) { /* ignore */ }
     console.error('[SNAPSHOT] threw:', e);
     return { success: false, error: (e && e.message) || String(e) };
   }

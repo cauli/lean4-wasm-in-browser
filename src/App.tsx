@@ -566,6 +566,14 @@ function App() {
         } else if (type === 'snapshot_loaded') {
           snapshotPendingRef.current?.resolve(event.data)
           snapshotPendingRef.current = null
+        } else if (type === 'snapshot_progress') {
+          const { received, total } = event.data
+          if (total > 0) {
+            setLoadPercent(10 + Math.round(65 * received / total))
+            setLoadingProgress(`Downloading Lean core snapshot: ${(received / 1048576).toFixed(0)} / ${(total / 1048576).toFixed(0)} MB`)
+          } else {
+            setLoadingProgress(`Downloading Lean core snapshot: ${(received / 1048576).toFixed(0)} MB`)
+          }
         } else if (type === 'error') {
           clearTimeout(timeout)
           persistentReadyRef.current = false
@@ -647,45 +655,22 @@ function App() {
   // Seed the resident worker's environment cache from the baked Init snapshot
   // (`--incr-header-save`, produced by scripts/bake-snapshots.sh with the same
   // wasm binary). One download replaces both the Init olean set and the
-  // multi-minute in-WASM import. Returns false when no snapshot is available
-  // (dev tree without a bake, or an old deployment) so the caller can fall
-  // back to the olean + import path.
+  // multi-minute in-WASM import. The worker fetches and streams the file into
+  // its own filesystem — the ~240MB never sits in main-thread memory, which is
+  // what memory-starved (iOS) tabs need. A HEAD probe here keeps the fallback
+  // decision cheap when no snapshot is deployed (dev tree without a bake).
   const tryLoadInitSnapshot = useCallback(async (): Promise<boolean> => {
     const worker = persistentWorkerRef.current
     if (!worker) return false
     const url = `${LEAN_WASM_BASE}/snapshots/init.snap${LEAN_ASSET_VERSION ? `?v=${encodeURIComponent(LEAN_ASSET_VERSION)}` : ''}`
-    const response = await fetch(url)
-    if (!response.ok || !response.body) return false
-    const total = Number(response.headers.get('content-length')) || 0
-    const reader = response.body.getReader()
-    const chunks: Uint8Array[] = []
-    let received = 0
-    for (;;) {
-      const { done, value } = await reader.read()
-      if (done) break
-      chunks.push(value)
-      received += value.byteLength
-      if (total > 0) {
-        setLoadPercent(10 + Math.round(60 * received / total))
-        setLoadingProgress(`Downloading Lean core snapshot: ${(received / 1048576).toFixed(0)} / ${(total / 1048576).toFixed(0)} MB`)
-      } else {
-        setLoadingProgress(`Downloading Lean core snapshot: ${(received / 1048576).toFixed(0)} MB`)
-      }
-    }
-    const data = new Uint8Array(received)
-    let off = 0
-    for (const c of chunks) { data.set(c, off); off += c.byteLength }
-    // Guard against an SPA fallback page served with 200: snapshots are
-    // compacted-region files and start with the olean magic.
-    if (received < 8 || data[0] !== 0x6f || data[1] !== 0x6c || data[2] !== 0x65 || data[3] !== 0x61 || data[4] !== 0x6e) {
-      console.warn('snapshot fetch returned non-olean content; ignoring')
-      return false
-    }
-    setLoadPercent(75)
-    setLoadingProgress('Loading Lean core snapshot…')
+    try {
+      const probe = await fetch(url, { method: 'HEAD' })
+      if (!probe.ok) return false
+    } catch { return false }
+    setLoadingProgress('Downloading Lean core snapshot…')
     const result = await new Promise<{ success: boolean; error?: string }>((resolve) => {
       snapshotPendingRef.current = { resolve }
-      worker.postMessage({ type: 'load_snapshot', name: 'init.snap', data: data.buffer }, [data.buffer])
+      worker.postMessage({ type: 'load_snapshot', name: 'init.snap', url: new URL(url, location.origin).href })
     })
     if (!result.success) console.warn('snapshot load failed:', result.error)
     return result.success
