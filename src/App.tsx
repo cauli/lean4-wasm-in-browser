@@ -1074,22 +1074,15 @@ function App() {
   // of the heap commit, and the tab gets jetsam-killed at "Starting persistent
   // Lean instance" no matter how small a heap we probe for. Gate instead of
   // crash-looping; a lighter (memory-growth) build is the real fix.
-  // iPads (iPadOS reports as MacIntel with touch) get several GB of tab
-  // memory and go straight in; iPhones sit near WebKit's ~1.5GB tab budget,
-  // where compiling the 123MB module can still be fatal, so they get a
-  // heads-up first. The snapshot preload removed the old import churn — the
-  // remaining risk is the fixed module-compile overhead.
-  const isIPhone = useMemo(() => /iPhone|iPod/.test(navigator.userAgent), [])
-  const [iosOverride, setIosOverride] = useState(false)
 
   // Preload the library + WASM as soon as the page opens, so the first Run is
   // fast. Guard against React strict-mode's double-invoke in dev.
   const startedLoadRef = useRef(false)
   useEffect(() => {
-    if (startedLoadRef.current || (isIPhone && !iosOverride)) return
+    if (startedLoadRef.current) return
     startedLoadRef.current = true
     loadLean()
-  }, [loadLean, isIPhone, iosOverride])
+  }, [loadLean])
 
   return (
     <div className="app">
@@ -1102,18 +1095,7 @@ function App() {
 
       <main className="main">
         <div className="controls">
-          {isIPhone && !iosOverride && status === 'idle' ? (
-            <div className="preload">
-              <span className="preload-label">
-                iPhone support is experimental: Lean needs roughly 1&nbsp;GB of
-                tab memory plus a ~240&nbsp;MB download, right at Safari&apos;s
-                limit on phones. iPads and desktops load automatically.{' '}
-                <button className="btn btn-primary" onClick={() => setIosOverride(true)}>
-                  Load Lean
-                </button>
-              </span>
-            </div>
-          ) : (status === 'idle' || status === 'loading') && (
+          {(status === 'idle' || status === 'loading') && (
             <div className="preload">
               <div className="progress-bar">
                 <div className="progress-fill" style={{ width: `${loadPercent}%` }} />
