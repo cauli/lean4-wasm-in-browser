@@ -67,20 +67,24 @@ function fromBase64Url(b64url: string): Uint8Array | null {
 // top-level olean namespace that ships in the build; enabling it fetches that
 // namespace's closure so `import <name>…` needs no download on first use.
 // (Init is always loaded; Lean's closure includes Std.)
-const AVAILABLE_LIBS: Array<{ name: string; label: string; size: string }> = [
-  { name: 'Std', label: 'Std', size: '~70 MB' },
-  { name: 'Lean', label: 'Lean (metaprogramming)', size: '~230 MB' },
-  // Built separately (native i386 toolchain, same Lean commit) and merged into
-  // the served lean-lib tree; its tactics meta-import Lean, so its layer pulls
-  // Std + Lean too (see loadOleansFor).
-  // External packages ship no native code, so their initializers run through
-  // the interpreter — a recursion the slim (iOS) binary can't host within the
-  // browser's fixed worker JS stack (the full binary's boxed exports keep it
-  // shallow). Slim therefore doesn't offer them.
-  ...(LEAN_VARIANT === 'full'
-    ? [{ name: 'Batteries', label: 'Batteries (community stdlib)', size: '~320 MB' }]
-    : []),
-]
+// The slim (iOS) variant offers none of these: every distinct import set
+// builds another resident environment whose compacted regions are leaked by
+// design (leakEnv), and a second environment pushes an iOS tab past the
+// jetsam limit — the first library import crashed the phone right after the
+// Init-only flow finally worked. Batteries is additionally impossible there
+// (external packages ship no native code, and interpreting their
+// initializers overflows the worker's fixed JS stack; the full binary's
+// boxed exports keep that recursion shallow). Recycling the worker per
+// import set would lift the Std/Lean restriction — future work.
+const AVAILABLE_LIBS: Array<{ name: string; label: string; size: string }> =
+  LEAN_VARIANT === 'slim' ? [] : [
+    { name: 'Std', label: 'Std', size: '~70 MB' },
+    { name: 'Lean', label: 'Lean (metaprogramming)', size: '~230 MB' },
+    // Built separately (native i386 toolchain, same Lean commit) and merged
+    // into the served lean-lib tree; its tactics meta-import Lean, so its
+    // layer pulls Std + Lean too (see loadOleansFor).
+    { name: 'Batteries', label: 'Batteries (community stdlib)', size: '~320 MB' },
+  ]
 
 // Parsed Lean diagnostic message
 interface LeanDiagnostic {
@@ -891,12 +895,11 @@ function App() {
     const explicitImports = parseUserImports(leanCode)
     const extraImports = explicitImports.filter(i => i !== 'Init')
 
-    // The slim (iOS) binary can't run external-package initializers — see the
-    // AVAILABLE_LIBS note. Attempting the import would overflow the worker's
-    // JS stack and leave the resident runtime unusable, so refuse up front.
-    if (LEAN_VARIANT === 'slim' &&
-        extraImports.some(i => i === 'Batteries' || i.startsWith('Batteries.'))) {
-      setError('Batteries is not available on this device (it needs the full desktop build). Init, Std and Lean imports work.')
+    // The slim (iOS) device can't hold a second resident environment — see
+    // the AVAILABLE_LIBS note — so refuse imports up front rather than
+    // crashing the tab mid-import.
+    if (LEAN_VARIANT === 'slim' && extraImports.length > 0) {
+      setError(`Library imports (${extraImports.join(', ')}) need the full desktop build. Core Lean is fully available on this device: all tactics, proofs and #eval.`)
       setStatus('ready')
       return
     }
