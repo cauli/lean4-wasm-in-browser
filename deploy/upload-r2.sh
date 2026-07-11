@@ -45,5 +45,12 @@ put() { # <key> <file> <content-type>
 put "$VER/lean.js"   public/lean-wasm/lean.js   text/javascript
 put "$VER/lean.wasm" public/lean-wasm/lean.wasm application/wasm
 
+# Baked environment snapshots (scripts/bake-snapshots.sh) — also above the
+# Pages file limit, and githash-paired with the binaries by construction.
+for snap in public/lean-wasm/snapshots/*.snap; do
+  [ -e "$snap" ] || { echo "note: no baked snapshots to upload (run scripts/bake-snapshots.sh)"; break; }
+  put "$VER/snapshots/$(basename "$snap")" "$snap" application/octet-stream
+done
+
 echo
 echo "Done. Verify: wrangler r2 object get $BUCKET/$VER/lean.wasm --file /tmp/x.wasm --remote && ls -la /tmp/x.wasm"

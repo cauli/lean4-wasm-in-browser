@@ -132,8 +132,42 @@ self.onmessage = (event) => {
     startLeanModule();
   } else if (msg.type === 'compile') {
     self.postMessage({ type: 'compile_result', ...compileCode(msg.code, msg.path) });
+  } else if (msg.type === 'load_snapshot') {
+    self.postMessage({ type: 'snapshot_loaded', ...loadSnapshot(msg.name, msg.data) });
   }
 };
+
+// Seed Lean's environment cache from a baked `--incr-header-save` snapshot,
+// replacing the multi-minute Init import. The snapshot is githash-paired with
+// lean.wasm (its closure relocation is only valid for that binary), which the
+// app guarantees by fetching it under the same ?v= as the binary itself.
+function loadSnapshot(name, data) {
+  if (!moduleReady) return { success: false, error: 'Module not ready' };
+  const t0 = performance.now();
+  try {
+    const FS = Module.FS;
+    try { FS.mkdir('/snapshots'); } catch (e) { /* exists */ }
+    const p = '/snapshots/' + (name || 'init.snap');
+    FS.writeFile(p, new Uint8Array(data));
+    // The loader reads a `<file>.deps` sidecar; self-contained snapshots use `[]`.
+    FS.writeFile(p + '.deps', new Uint8Array([0x5b, 0x5d]));
+    const resObj = Module._lean_wasm_load_snapshot(mkLeanString(p));
+    const tag = Module.getValue(resObj + 7, 'i8') & 0xff;
+    // The ok value is a UInt32, which wasm32 heap-boxes: field 0 points to a
+    // scalar-box object with the payload at +8. 0 = loaded, 1 = load failed.
+    const boxPtr = Module.getValue(resObj + 8, 'i32');
+    const ret = Module.getValue(boxPtr + 8, 'i32');
+    const success = tag === 0 && ret === 0;
+    // The MEMFS copy served its purpose; the env holds the loaded region.
+    try { FS.unlink(p); FS.unlink(p + '.deps'); } catch (e) { /* ignore */ }
+    const elapsed = performance.now() - t0;
+    console.log(`[SNAPSHOT] load ${success ? 'ok' : 'FAILED'} in ${elapsed.toFixed(0)}ms (tag ${tag}, ret ${ret})`);
+    return { success, elapsed };
+  } catch (e) {
+    console.error('[SNAPSHOT] threw:', e);
+    return { success: false, error: (e && e.message) || String(e) };
+  }
+}
 
 function startLeanModule() {
   self.Module = {

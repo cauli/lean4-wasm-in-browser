@@ -6,7 +6,7 @@ import {
   parseUserImports,
   closureDownloadSize,
 } from './lean-loader'
-import { LEAN_WASM_BASE, workerAssetQuery } from './config'
+import { LEAN_WASM_BASE, LEAN_ASSET_VERSION, workerAssetQuery } from './config'
 import { examples } from './examples'
 import { LeanEditor, dropModel, renameModel, type LeanMarker } from './editor/LeanEditor'
 import { makeZip } from './zip'
@@ -70,11 +70,10 @@ function fromBase64Url(b64url: string): Uint8Array | null {
 const AVAILABLE_LIBS: Array<{ name: string; label: string; size: string }> = [
   { name: 'Std', label: 'Std', size: '~70 MB' },
   { name: 'Lean', label: 'Lean (metaprogramming)', size: '~230 MB' },
-  // Batteries is built separately against the exact Lean commit (native i386
-  // toolchain) and merged into the served lean-lib tree. No build exists yet
-  // for the current 4.33 toolchain, so the entry is off; loadOleansFor and the
-  // gated examples pick it back up when one lands.
-  // { name: 'Batteries', label: 'Batteries (community stdlib)', size: '~320 MB' },
+  // Built separately (native i386 toolchain, same Lean commit) and merged into
+  // the served lean-lib tree; its tactics meta-import Lean, so its layer pulls
+  // Std + Lean too (see loadOleansFor).
+  { name: 'Batteries', label: 'Batteries (community stdlib)', size: '~320 MB' },
 ]
 
 // Parsed Lean diagnostic message
@@ -211,6 +210,7 @@ function App() {
   // oleans into its FS on demand (Init's closure is written at boot).
   const residentOleansRef = useRef<Set<string>>(new Set())
   const residentAddPendingRef = useRef<{ resolve: () => void } | null>(null)
+  const snapshotPendingRef = useRef<{ resolve: (r: { success: boolean; error?: string }) => void } | null>(null)
 
   const appendOutput = useCallback((text: string, isError = false) => {
     if (isError) {
@@ -481,12 +481,13 @@ function App() {
       console.warn('Complete file list unavailable, falling back to manifest closure:', e)
       paths = await getRequiredOleanPaths(imports)
     }
-    // Also load each module's sibling `.ir` part: it carries the compiled
-    // bodies the interpreter needs to `#eval` library code (the exported
-    // `.olean` alone has none). They're olean-format (same magic/validation)
-    // and small (~17% of the closure). A few modules ship no `.ir`; those
-    // 404s are tolerated by fetchOleanFiles.
-    const irPaths = paths.map(p => p.replace(/\.olean$/, '.ir'))
+    // Also load each module's sibling `.ir` + `.ir.sig` parts: the `.olean`'s
+    // decl map holds `.extern` stubs, the compiled bodies the interpreter
+    // needs live in `.ir` (small, ~17% of the closure; `.ir.sig` is a
+    // placeholder-sized companion the reader requires before it picks up an
+    // `.ir`). They're olean-format (same magic/validation). Modules missing
+    // them 404, which fetchOleanFiles tolerates.
+    const irPaths = paths.flatMap(p => [p.replace(/\.olean$/, '.ir'), p.replace(/\.olean$/, '.ir.sig')])
     const allPaths = [...paths, ...irPaths]
     const missing = allPaths.filter(p => !loadedOleansRef.current.has(p))
     if (missing.length > 0) {
@@ -516,8 +517,6 @@ function App() {
   const ensurePersistentWorker = useCallback(async (): Promise<void> => {
     if (persistentWorkerRef.current && persistentReadyRef.current) return
 
-    const files = await loadOleansFor(['Init'])
-
     setLoadingProgress('Starting persistent Lean instance…')
     await new Promise<void>((resolve, reject) => {
       // A Web Worker (not a same-origin iframe): the ~1-minute synchronous Init
@@ -536,18 +535,10 @@ function App() {
       worker.onmessage = (event: MessageEvent) => {
         const { type, data, error } = event.data || {}
         if (type === 'worker_boot') {
-          // Hand the olean buffers to the worker as transferables — no copy on
-          // the main thread (those copies were part of the ~1s load stalls).
-          const filesArray: Array<{ name: string, data: ArrayBuffer }> = []
-          const transfer: ArrayBuffer[] = []
-          files.forEach((d, name) => {
-            const copy = new ArrayBuffer(d.byteLength)
-            new Uint8Array(copy).set(d)
-            filesArray.push({ name, data: copy })
-            transfer.push(copy)
-            residentOleansRef.current.add(name)
-          })
-          worker.postMessage({ type: 'load_library', files: filesArray }, transfer)
+          // Boot with an empty library: the preload seeds the environment from
+          // a baked snapshot when one is available, and `ensureResidentOleans`
+          // writes olean files on demand for everything else.
+          worker.postMessage({ type: 'load_library', files: [] })
         } else if (type === 'library_received') {
           worker.postMessage({ type: 'start_worker' })
         } else if (type === 'files_added') {
@@ -572,6 +563,9 @@ function App() {
         } else if (type === 'compile_result') {
           persistentPendingRef.current?.resolve(event.data)
           persistentPendingRef.current = null
+        } else if (type === 'snapshot_loaded') {
+          snapshotPendingRef.current?.resolve(event.data)
+          snapshotPendingRef.current = null
         } else if (type === 'error') {
           clearTimeout(timeout)
           persistentReadyRef.current = false
@@ -591,7 +585,7 @@ function App() {
         reject(new Error(`Worker failed: ${e.message || 'could not start'}`))
       }
     })
-  }, [appendOutput, loadOleansFor])
+  }, [appendOutput])
 
   // Compile Init-only code in the resident instance (fast path).
   const runPersistent = useCallback(async (code: string): Promise<void> => {
@@ -650,6 +644,53 @@ function App() {
     })
   }, [loadOleansFor])
 
+  // Seed the resident worker's environment cache from the baked Init snapshot
+  // (`--incr-header-save`, produced by scripts/bake-snapshots.sh with the same
+  // wasm binary). One download replaces both the Init olean set and the
+  // multi-minute in-WASM import. Returns false when no snapshot is available
+  // (dev tree without a bake, or an old deployment) so the caller can fall
+  // back to the olean + import path.
+  const tryLoadInitSnapshot = useCallback(async (): Promise<boolean> => {
+    const worker = persistentWorkerRef.current
+    if (!worker) return false
+    const url = `${LEAN_WASM_BASE}/snapshots/init.snap${LEAN_ASSET_VERSION ? `?v=${encodeURIComponent(LEAN_ASSET_VERSION)}` : ''}`
+    const response = await fetch(url)
+    if (!response.ok || !response.body) return false
+    const total = Number(response.headers.get('content-length')) || 0
+    const reader = response.body.getReader()
+    const chunks: Uint8Array[] = []
+    let received = 0
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      chunks.push(value)
+      received += value.byteLength
+      if (total > 0) {
+        setLoadPercent(10 + Math.round(60 * received / total))
+        setLoadingProgress(`Downloading Lean core snapshot: ${(received / 1048576).toFixed(0)} / ${(total / 1048576).toFixed(0)} MB`)
+      } else {
+        setLoadingProgress(`Downloading Lean core snapshot: ${(received / 1048576).toFixed(0)} MB`)
+      }
+    }
+    const data = new Uint8Array(received)
+    let off = 0
+    for (const c of chunks) { data.set(c, off); off += c.byteLength }
+    // Guard against an SPA fallback page served with 200: snapshots are
+    // compacted-region files and start with the olean magic.
+    if (received < 8 || data[0] !== 0x6f || data[1] !== 0x6c || data[2] !== 0x65 || data[3] !== 0x61 || data[4] !== 0x6e) {
+      console.warn('snapshot fetch returned non-olean content; ignoring')
+      return false
+    }
+    setLoadPercent(75)
+    setLoadingProgress('Loading Lean core snapshot…')
+    const result = await new Promise<{ success: boolean; error?: string }>((resolve) => {
+      snapshotPendingRef.current = { resolve }
+      worker.postMessage({ type: 'load_snapshot', name: 'init.snap', data: data.buffer }, [data.buffer])
+    })
+    if (!result.success) console.warn('snapshot load failed:', result.error)
+    return result.success
+  }, [])
+
   // Toggle a library preference. Enabling it downloads its oleans into the
   // resident worker now (if the worker is up) and persists the choice; on later
   // visits the preload step loads it automatically. Import stays lazy — this
@@ -696,36 +737,46 @@ function App() {
         await loadFileList()
       }
 
-      // Download just Init's closure (the `Init` namespace) — all the resident
-      // worker needs. Cached in the Cache API on later visits. Code with
-      // explicit non-Init imports takes the one-shot path, which fetches the
-      // rest of the library on demand.
-      const oleanPaths = (await fetchCompleteFileList())
-        .filter(p => p === 'Init.olean' || p.startsWith('Init/'))
-      // Prefetch the sibling `.ir` parts too (needed so `#eval` runs library
-      // code); loadOleansFor loads the same set into the worker.
-      const allPaths = [...oleanPaths, ...oleanPaths.map(p => p.replace(/\.olean$/, '.ir'))]
-      const cached = loadedOleansRef.current
-      const missing = allPaths.filter(p => !cached.has(p))
-      if (missing.length > 0) {
-        setLoadingProgress(`Downloading Lean library (${missing.length} files)…`)
-        const fetched = await fetchOleanFiles(missing, (loaded, total) => {
-          // Reserve the last 40% of the bar for booting + importing Init.
-          setLoadPercent(Math.round(60 * loaded / total))
-          setLoadingProgress(`Downloading Lean library: ${loaded} / ${total} files`)
-        })
-        fetched.forEach((d, p) => cached.set(p, d))
-      }
-      setLoadPercent(60)
-
-      // Boot the resident Lean instance (loads the .oleans into the in-WASM
-      // filesystem and initializes the runtime), then warm it with an empty
-      // compile that imports Init inside Lean. Both are one-time costs; doing
-      // them here means the first real Run is as fast as every subsequent one.
+      // Boot the resident Lean instance first (empty filesystem — cheap), then
+      // seed its environment: preferably from the baked Init snapshot (one
+      // download, seconds to load), falling back to the Init olean closure +
+      // the multi-minute in-WASM import when no snapshot is available.
       setLoadingProgress('Starting Lean instance…')
       await ensurePersistentWorker()
-      setLoadPercent(70)
-      setLoadingProgress('Importing Lean core (one-time, about a minute)…')
+      setLoadPercent(10)
+
+      let warmed = false
+      try {
+        warmed = await tryLoadInitSnapshot()
+      } catch (e) {
+        console.warn('snapshot preload failed, falling back to import:', e)
+      }
+
+      if (!warmed) {
+        // Download Init's closure (the `Init` namespace) plus the sibling
+        // `.ir` parts (`#eval` on library code), write them into the worker,
+        // and let the warm compile below run the real import.
+        const oleanPaths = (await fetchCompleteFileList())
+          .filter(p => p === 'Init.olean' || p.startsWith('Init/'))
+        const allPaths = [...oleanPaths, ...oleanPaths.flatMap(p => [p.replace(/\.olean$/, '.ir'), p.replace(/\.olean$/, '.ir.sig')])]
+        const cached = loadedOleansRef.current
+        const missing = allPaths.filter(p => !cached.has(p))
+        if (missing.length > 0) {
+          setLoadingProgress(`Downloading Lean library (${missing.length} files)…`)
+          const fetched = await fetchOleanFiles(missing, (loaded, total) => {
+            // Reserve the last 40% of the bar for importing Init.
+            setLoadPercent(10 + Math.round(50 * loaded / total))
+            setLoadingProgress(`Downloading Lean library: ${loaded} / ${total} files`)
+          })
+          fetched.forEach((d, p) => cached.set(p, d))
+        }
+        await ensureResidentOleans(['Init'])
+        setLoadPercent(70)
+        setLoadingProgress('Importing Lean core (one-time, several minutes)…')
+      }
+
+      // Warm compile: with a snapshot this is a cache hit (milliseconds) and
+      // doubles as verification; on the fallback path it runs the Init import.
       await runPersistent('')
       setOutput('')
       setError('')
@@ -759,7 +810,7 @@ function App() {
       setStatus('error')
       loadStartedRef.current = false  // allow Retry
     }
-  }, [manifestLoaded, loadFileList, ensurePersistentWorker, runPersistent, ensureResidentOleans])
+  }, [manifestLoaded, loadFileList, ensurePersistentWorker, tryLoadInitSnapshot, runPersistent, ensureResidentOleans])
 
   // Test with --version (simplest test)
   const testVersion = useCallback(async () => {
@@ -983,6 +1034,33 @@ function App() {
     }
   }, [files, activeFile, appendOutput])
 
+  // Load .lean files from disk into the workspace (one tab per file). An
+  // existing tab with the same name is only overwritten after confirmation.
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const loadFromDisk = useCallback((picked: FileList | null) => {
+    if (!picked || picked.length === 0) return
+    void (async () => {
+      let firstLoaded: string | null = null
+      for (const file of Array.from(picked)) {
+        const name = normalizeFileName(file.name)
+        if (!name) continue
+        const content = await file.text()
+        let skip = false
+        setFiles((fs) => {
+          const existing = fs.find((f) => f.name === name)
+          if (existing && existing.content.trim() && existing.content !== content) {
+            if (!confirm(`Replace the contents of ${name}?`)) { skip = true; return fs }
+          }
+          return existing
+            ? fs.map((f) => (f.name === name ? { ...f, content } : f))
+            : [...fs, { name, content }]
+        })
+        if (!skip && firstLoaded === null) firstLoaded = name
+      }
+      if (firstLoaded) setActiveFile(firstLoaded)
+    })()
+  }, [])
+
   // Download the workspace: a single file directly, several as a zip.
   const downloadWorkspace = useCallback(() => {
     const save = (blob: Blob, name: string) => {
@@ -1030,11 +1108,8 @@ function App() {
       <header className="header">
         <h1>
           <span className="lean-logo">λ</span>
-          Lean 4 WASM Playground
+          Lean 4 on your browser
         </h1>
-        <p className="subtitle">
-          Run Lean 4 directly in your browser via WebAssembly
-        </p>
       </header>
 
       <main className="main">
@@ -1152,6 +1227,21 @@ function App() {
             <div className="panel-header">
               <span>Code</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".lean,text/plain"
+                  multiple
+                  style={{ display: 'none' }}
+                  onChange={(e) => { loadFromDisk(e.target.files); e.target.value = '' }}
+                />
+                <button
+                  className="btn btn-small"
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Load .lean files from disk into the workspace"
+                >
+                  Open
+                </button>
                 <button
                   className="btn btn-small"
                   onClick={shareWorkspace}

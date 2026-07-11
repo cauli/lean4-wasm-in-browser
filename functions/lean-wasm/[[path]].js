@@ -21,7 +21,10 @@ const TYPES = {
 // .olean tree and lean-lib-files.json — is served as a static Pages asset
 // (free, unlimited, CDN-cached, doesn't count against the Functions request
 // quota), so `next()` hands those requests to the static asset layer.
+// Baked environment snapshots (`snapshots/*.snap`, ~240MB each) are R2-only
+// for the same reason as the binaries.
 const FROM_R2 = new Set(['lean.js', 'lean.wasm'])
+const fromR2 = (key) => FROM_R2.has(key) || key.startsWith('snapshots/')
 
 // Handle GET and HEAD (the app does a HEAD reachability check on lean.js).
 export async function onRequest(context) {
@@ -29,7 +32,7 @@ export async function onRequest(context) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return next()
   const key = Array.isArray(params.path) ? params.path.join('/') : params.path
 
-  if (!FROM_R2.has(key)) return next()
+  if (!fromR2(key)) return next()
 
   // Serve raw bytes; Cloudflare compresses on the fly. Pre-gzipping in R2 +
   // content-encoding does NOT survive Cloudflare here: with default compression

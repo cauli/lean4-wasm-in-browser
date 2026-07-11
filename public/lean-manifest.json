@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "generated": "2026-07-11T05:54:30.421Z",
+  "generated": "2026-07-11T11:04:05.453Z",
   "modules": {
     "Init.BinderNameHint": {
       "path": "Init/BinderNameHint.olean",
@@ -9844,7 +9844,7 @@
         "Lean.Linter.PersistentLintLog",
         "Lean.Util.ProfilerServer"
       ],
-      "size": 85736
+      "size": 86760
     },
     "Lean.Elab.GenInjective": {
       "path": "Lean/Elab/GenInjective.olean",
@@ -18340,9 +18340,10 @@
         "Lean.Server.FileWorker",
         "Lean.Compiler.LCNF.EmitC",
         "Init.System.Platform",
-        "Lean.Compiler.Options"
+        "Lean.Compiler.Options",
+        "Lean.Compiler.InitAttr"
       ],
-      "size": 26564
+      "size": 27364
     },
     "Lean.Structure": {
       "path": "Lean/Structure.olean",

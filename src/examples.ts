@@ -192,23 +192,29 @@ open Lean
   },
 
   // ── Requires the Batteries library (enable in "Libraries") ──
+  // Batteries is module-system Lean: `public import` makes its declarations
+  // usable in definitions, and `meta import` additionally lets #eval run them
+  // (the interpreter needs meta access to imported code).
   {
-    name: 'Batteries.RBMap — ordered map',
+    name: 'Batteries.RBSet — ordered set',
     requires: 'Batteries',
-    code: `import Batteries.Data.RBMap.Basic
-open Batteries
--- An ordered (red-black tree) map, iterated in key order.
-def scores : RBMap String Nat compare :=
-  RBMap.ofList [("carol", 9), ("alice", 7), ("bob", 5)] compare
-#eval scores.toList          -- sorted by key
-#eval scores.find? "bob"`,
+    code: `module
+public import Batteries.Recycling.RBTree.Basic
+meta import Batteries.Recycling.RBTree.Basic
+open RBTree
+-- An ordered set (red-black tree), iterated in sorted order.
+def s : RBSet Nat compare := RBSet.empty |>.insert 5 |>.insert 1 |>.insert 3
+#eval s.toList          -- sorted
+#eval s.min?`,
   },
   {
     name: 'Batteries — List extras',
     requires: 'Batteries',
-    code: `import Batteries.Data.List.Basic
+    code: `module
+public meta import Batteries.Data.List.Basic
 -- Batteries extends core List with many utilities.
-#eval [1, 2, 3].sublists
-#eval (List.range 6).splitOn 3`,
+#eval [3, 1, 4, 1, 5].max!
+#eval (List.range 4).inits
+#eval [1, 2, 3].takeD 5 0`,
   },
 ]
