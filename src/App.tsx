@@ -739,10 +739,17 @@ function App() {
       setLoadPercent(10)
 
       let warmed = false
-      try {
-        warmed = await tryLoadInitSnapshot()
-      } catch (e) {
-        console.warn('snapshot preload failed, falling back to import:', e)
+      // The snapshot predates the native module-init exports, which cut the
+      // in-WASM Init import from ~5 minutes to ~4 seconds — the olean route
+      // below (76MB) now beats the 240MB snapshot download outright on slim.
+      // On iOS specifically, holding the snapshot in MEMFS while a ~1GB wasm
+      // memory is reserved is what pushed the tab over the jetsam limit.
+      if (LEAN_VARIANT !== 'slim') {
+        try {
+          warmed = await tryLoadInitSnapshot()
+        } catch (e) {
+          console.warn('snapshot preload failed, falling back to import:', e)
+        }
       }
 
       if (!warmed) {
