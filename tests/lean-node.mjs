@@ -105,6 +105,9 @@ export async function bootLean({ root, wasmPath, quiet = true } = {}) {
     const tag = Module.getValue(res + 7, 'i8') & 0xff;
     const diagnostics = capture;
     capture = null;
+    // tag != 0 means the IO computation itself threw (import failure etc.),
+    // not "the code had errors" — surface the message instead of losing it.
+    if (tag !== 0) { try { Module._lean_io_result_show_error(res); } catch { /* best effort */ } }
     return { tag, diagnostics };
   }
 

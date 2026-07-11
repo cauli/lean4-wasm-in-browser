@@ -24,7 +24,12 @@ const TYPES = {
 // Baked environment snapshots (`snapshots/*.snap`, ~240MB each) are R2-only
 // for the same reason as the binaries.
 const FROM_R2 = new Set(['lean.js', 'lean.wasm'])
-const fromR2 = (key) => FROM_R2.has(key) || key.startsWith('snapshots/')
+// The slim (iOS) binary variant lives under a slim/ prefix with the same
+// layout, so gate on the path with that prefix stripped.
+const fromR2 = (key) => {
+  const k = key.startsWith('slim/') ? key.slice('slim/'.length) : key
+  return FROM_R2.has(k) || k.startsWith('snapshots/')
+}
 
 // Handle GET and HEAD (the app does a HEAD reachability check on lean.js).
 export async function onRequest(context) {

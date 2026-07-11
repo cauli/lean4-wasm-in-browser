@@ -52,5 +52,19 @@ for snap in public/lean-wasm/snapshots/*.snap; do
   put "$VER/snapshots/$(basename "$snap")" "$snap" application/octet-stream
 done
 
+# The slim (iOS) binary variant + its own snapshot (snapshots are
+# function-table-paired, so each variant carries its own bake). Same filenames
+# under a slim/ prefix — the app selects the variant by asset base path.
+if [ -e public/lean-wasm/slim/lean.wasm ]; then
+  put "$VER/slim/lean.js"   public/lean-wasm/slim/lean.js   text/javascript
+  put "$VER/slim/lean.wasm" public/lean-wasm/slim/lean.wasm application/wasm
+  for snap in public/lean-wasm/slim/snapshots/*.snap; do
+    [ -e "$snap" ] || break
+    put "$VER/slim/snapshots/$(basename "$snap")" "$snap" application/octet-stream
+  done
+else
+  echo "note: no slim variant staged (public/lean-wasm/slim/) — skipping"
+fi
+
 echo
 echo "Done. Verify: wrangler r2 object get $BUCKET/$VER/lean.wasm --file /tmp/x.wasm --remote && ls -la /tmp/x.wasm"

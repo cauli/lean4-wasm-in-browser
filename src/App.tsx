@@ -6,7 +6,7 @@ import {
   parseUserImports,
   closureDownloadSize,
 } from './lean-loader'
-import { LEAN_WASM_BASE, LEAN_ASSET_VERSION, workerAssetQuery } from './config'
+import { LEAN_WASM_BASE, LEAN_BIN_BASE, LEAN_ASSET_VERSION, LEAN_VARIANT, workerAssetQuery } from './config'
 import { examples } from './examples'
 import { LeanEditor, dropModel, renameModel, type LeanMarker } from './editor/LeanEditor'
 import { makeZip } from './zip'
@@ -73,7 +73,13 @@ const AVAILABLE_LIBS: Array<{ name: string; label: string; size: string }> = [
   // Built separately (native i386 toolchain, same Lean commit) and merged into
   // the served lean-lib tree; its tactics meta-import Lean, so its layer pulls
   // Std + Lean too (see loadOleansFor).
-  { name: 'Batteries', label: 'Batteries (community stdlib)', size: '~320 MB' },
+  // External packages ship no native code, so their initializers run through
+  // the interpreter — a recursion the slim (iOS) binary can't host within the
+  // browser's fixed worker JS stack (the full binary's boxed exports keep it
+  // shallow). Slim therefore doesn't offer them.
+  ...(LEAN_VARIANT === 'full'
+    ? [{ name: 'Batteries', label: 'Batteries (community stdlib)', size: '~320 MB' }]
+    : []),
 ]
 
 // Parsed Lean diagnostic message
@@ -662,7 +668,9 @@ function App() {
   const tryLoadInitSnapshot = useCallback(async (): Promise<boolean> => {
     const worker = persistentWorkerRef.current
     if (!worker) return false
-    const url = `${LEAN_WASM_BASE}/snapshots/init.snap${LEAN_ASSET_VERSION ? `?v=${encodeURIComponent(LEAN_ASSET_VERSION)}` : ''}`
+    // Snapshots are function-table-paired with their binary, so each variant
+    // has its own bake under its own base.
+    const url = `${LEAN_BIN_BASE}/snapshots/init.snap${LEAN_ASSET_VERSION ? `?v=${encodeURIComponent(LEAN_ASSET_VERSION)}` : ''}`
     try {
       const probe = await fetch(url, { method: 'HEAD' })
       if (!probe.ok) return false
@@ -875,6 +883,16 @@ function App() {
 
     const explicitImports = parseUserImports(leanCode)
     const extraImports = explicitImports.filter(i => i !== 'Init')
+
+    // The slim (iOS) binary can't run external-package initializers — see the
+    // AVAILABLE_LIBS note. Attempting the import would overflow the worker's
+    // JS stack and leave the resident runtime unusable, so refuse up front.
+    if (LEAN_VARIANT === 'slim' &&
+        extraImports.some(i => i === 'Batteries' || i.startsWith('Batteries.'))) {
+      setError('Batteries is not available on this device (it needs the full desktop build). Init, Std and Lean imports work.')
+      setStatus('ready')
+      return
+    }
 
     try {
       await ensurePersistentWorker()
