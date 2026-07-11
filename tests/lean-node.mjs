@@ -57,7 +57,9 @@ export async function bootLean({ root, wasmPath, quiet = true } = {}) {
         const FS = Module.FS;
         const mkdirp = (p) => { let cur = ''; for (const seg of p.split('/').filter(Boolean)) { cur += '/' + seg; try { FS.mkdir(cur); } catch {} } };
         mkdirp(root);
-        FS.mount(Module.NODEFS, { root }, root);
+        // FS.filesystems works on any glue; Module.NODEFS only existed as an
+        // EXPORT_ALL side effect and is gone from the explicit-exports build.
+        FS.mount(FS.filesystems.NODEFS, { root }, root);
         Module.ENV['LEAN_PATH'] = path.join(root, 'lib/lean');
         try { FS.mkdir('/workspace'); } catch {}
         try { FS.chdir('/workspace'); } catch {}
