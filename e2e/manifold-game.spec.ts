@@ -61,6 +61,14 @@ test('catalog lists the original course separately with local-only progress', as
   await expect(card.getByLabel('Work in progress')).toContainText('WIP')
   await expect(card.getByLabel('Work in progress')).toContainText('Work in progress')
   await expect(card).toContainText('By this project')
+
+  const worldsBox = await card.locator('.game-card-meta > span').first().boundingBox()
+  const badgeBox = await card.getByLabel('Work in progress').boundingBox()
+  expect(worldsBox).not.toBeNull()
+  expect(badgeBox).not.toBeNull()
+  expect(Math.abs(
+    (worldsBox!.y + worldsBox!.height / 2) - (badgeBox!.y + badgeBox!.height / 2),
+  )).toBeLessThan(1)
 })
 
 test('explores the sphere, torus, and Möbius strip in the local 3D lab', async ({ page }) => {

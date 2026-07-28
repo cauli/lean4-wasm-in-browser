@@ -1964,6 +1964,14 @@ button {
   margin-left: auto;
 }
 
+.game-card-meta {
+  align-items: center;
+}
+
+.game-card-meta > span:not(.game-development-badge) {
+  line-height: 1;
+}
+
 .game-card h2 {
   margin: 1.05rem 0 0;
   color: #112d4f;
