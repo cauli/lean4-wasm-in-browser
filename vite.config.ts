@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { fileURLToPath } from 'node:url'
 
 // https://vite.dev/config/
 //
@@ -13,6 +14,18 @@ const coopCoep = {
 }
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    // Monaco 0.56 exports these entries, but Vite's dev import analysis does
+    // not resolve its wildcard exports reliably (especially with `?worker`).
+    alias: {
+      'monaco-editor/editor/editor.api.js': fileURLToPath(
+        new URL('./node_modules/monaco-editor/esm/vs/editor/editor.api.js', import.meta.url),
+      ),
+      'monaco-editor/editor/editor.worker.js': fileURLToPath(
+        new URL('./node_modules/monaco-editor/esm/vs/editor/editor.worker.js', import.meta.url),
+      ),
+    },
+  },
   server: { headers: coopCoep },
   preview: { headers: coopCoep },
   optimizeDeps: {

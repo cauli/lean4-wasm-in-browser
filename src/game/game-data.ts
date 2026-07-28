@@ -65,6 +65,7 @@ export interface LeanGame extends Omit<RawGame, 'worlds'> {
   id: string
   shortTitle: string
   symbol: string
+  developmentStatus?: 'work-in-progress'
   basePath: string
   progressKey: string
   assetBase?: string
@@ -163,6 +164,7 @@ export const manifoldGame = enrichGame(
     id: 'manifold-adventure',
     shortTitle: 'Manifold Adventure',
     symbol: '𝓜',
+    developmentStatus: 'work-in-progress',
     basePath: '/games/manifold-adventure',
     progressKey: 'manifoldAdventureLocalProgress',
     assetBase: '/game-assets/manifolds',

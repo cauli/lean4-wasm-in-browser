@@ -131,6 +131,16 @@ function StatusTag({ support }: { support: VerificationSupport }) {
   return <span className={`game-status game-status-${support}`}>{supportLabel(support)}</span>
 }
 
+function DevelopmentBadge({ game }: { game: LeanGame }) {
+  if (game.developmentStatus !== 'work-in-progress') return null
+  return (
+    <span className="game-development-badge" aria-label="Work in progress">
+      <span>WIP</span>
+      <span className="game-development-badge-label">Work in progress</span>
+    </span>
+  )
+}
+
 function WorldMap({
   game,
   progress,
@@ -857,6 +867,7 @@ function GameCatalog({
                 <div className="game-card-meta">
                   <span>{game.worlds.length} worlds</span>
                   <span>{levels.length} levels</span>
+                  <DevelopmentBadge game={game} />
                 </div>
                 <h2><AppLink href={game.basePath} navigate={navigate}>{game.title}</AppLink></h2>
                 <p>{catalogCaption(game)}</p>
@@ -1023,9 +1034,12 @@ export default function GameApp() {
             >
               ← <span>◎</span>
             </AppLink>
-            <AppLink href={game.basePath} navigate={navigate} className="game-map-brand">
-              {game.title}
-            </AppLink>
+            <div className="game-map-title">
+              <AppLink href={game.basePath} navigate={navigate} className="game-map-brand">
+                {game.title}
+              </AppLink>
+              <DevelopmentBadge game={game} />
+            </div>
             <details className="game-map-menu">
               <summary aria-label="Open game menu">☰</summary>
               <nav>
@@ -1041,6 +1055,7 @@ export default function GameApp() {
             <AppLink href={game.basePath} navigate={navigate} className="game-brand">
               <span>{game.symbol}</span>
               <span>{game.shortTitle}</span>
+              <DevelopmentBadge game={game} />
             </AppLink>
             {selectedLevel && (
               <div className="game-header-level">

@@ -100,6 +100,37 @@ button {
   font-size: 1.1rem;
 }
 
+.game-development-badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.38rem;
+  padding: 0.28rem 0.5rem;
+  border: 1px solid #d49316;
+  border-radius: 999px;
+  background: #fff4ce;
+  color: #754b00;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.game-development-badge-label {
+  padding-left: 0.38rem;
+  border-left: 1px solid rgba(117, 75, 0, 0.28);
+  font-weight: 700;
+  letter-spacing: 0.015em;
+  text-transform: none;
+}
+
+.game-header .game-development-badge {
+  border-color: rgba(255, 238, 178, 0.82);
+  box-shadow: 0 1px 3px rgba(52, 34, 0, 0.16);
+}
+
 .game-header nav {
   display: flex;
   align-items: center;
@@ -1765,10 +1796,17 @@ button {
 }
 
 .game-map-brand {
-  justify-self: center;
   color: white;
   font-size: 1.15rem;
   font-weight: 500;
+}
+
+.game-map-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-self: center;
+  gap: 0.7rem;
 }
 
 .game-map-menu {
@@ -1920,6 +1958,10 @@ button {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.game-card-meta .game-development-badge {
+  margin-left: auto;
 }
 
 .game-card h2 {
@@ -2614,6 +2656,14 @@ button {
 
   .game-map-brand {
     font-size: 0.92rem;
+  }
+
+  .game-map-title {
+    gap: 0.45rem;
+  }
+
+  .game-development-badge-label {
+    display: none;
   }
 
   .game-tree-panel {

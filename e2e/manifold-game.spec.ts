@@ -13,6 +13,7 @@ test('opens the full Manifold Adventure and verifies its first beginner proof lo
   await expect(page.locator('.course-world-card')).toHaveCount(10)
   await expect(page.locator('.course-level-dots a')).toHaveCount(50)
   await expect(page.getByText('10 worlds · 50 levels')).toBeVisible()
+  await expect(page.locator('.game-header').getByLabel('Work in progress')).toBeVisible()
   await expect(page.getByText(/Loring Tu/).first()).toBeVisible()
   await expect(page.locator('.course-world-card').first()).toHaveClass(/unlocked/)
   await expect(page.locator('.course-world-card').nth(1)).toHaveClass(/locked/)
@@ -57,6 +58,8 @@ test('catalog lists the original course separately with local-only progress', as
   await expect(card).toContainText('10 worlds')
   await expect(card).toContainText('50 levels')
   await expect(card).toContainText('50 browser-kernel levels')
+  await expect(card.getByLabel('Work in progress')).toContainText('WIP')
+  await expect(card.getByLabel('Work in progress')).toContainText('Work in progress')
   await expect(card).toContainText('By this project')
 })
 
