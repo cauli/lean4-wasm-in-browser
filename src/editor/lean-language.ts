@@ -2,7 +2,7 @@
 // approximation of the real TextMate grammar — Monaco can't run TextMate
 // grammars without shipping an Oniguruma wasm), bracket/comment config, and
 // a theme matching the app's dark palette.
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
+import * as monaco from 'monaco-editor/editor/editor.api.js'
 
 export const LEAN_LANGUAGE_ID = 'lean4'
 
@@ -120,6 +120,31 @@ export function registerLeanLanguage(): void {
       'editorLineNumber.foreground': '#3a3a3a',
       'editorLineNumber.activeForeground': '#8a8a8a',
       'editorIndentGuide.background1': '#1c1c1c',
+    },
+  })
+
+  monaco.editor.defineTheme('lean-light', {
+    base: 'vs',
+    inherit: true,
+    rules: [
+      { token: 'keyword', foreground: '7b1fa2' },
+      { token: 'keyword.command', foreground: '1565c0', fontStyle: 'bold' },
+      { token: 'comment', foreground: '2e7d32' },
+      { token: 'string', foreground: 'a31515' },
+      { token: 'number', foreground: '0b6b6b' },
+      { token: 'type', foreground: '00695c' },
+      { token: 'operator', foreground: '263238' },
+      { token: 'annotation', foreground: '8a5a00' },
+      { token: 'invalid', foreground: 'c62828', fontStyle: 'bold' },
+    ],
+    colors: {
+      'editor.background': '#fafafa',
+      'editor.foreground': '#17324f',
+      'editor.lineHighlightBackground': '#edf4fb',
+      'editorLineNumber.foreground': '#9aa5b1',
+      'editorLineNumber.activeForeground': '#1976d2',
+      'editorIndentGuide.background1': '#dde3e9',
+      'editor.selectionBackground': '#b9d8f5',
     },
   })
 }

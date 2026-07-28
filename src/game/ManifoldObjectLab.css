@@ -1,0 +1,161 @@
+.manifold-object-lab {
+  margin: 1.5rem 0;
+  overflow: hidden;
+  border: 1px solid rgba(25, 118, 210, 0.24);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 78% 10%, rgba(144, 202, 249, 0.28), transparent 32rem),
+    linear-gradient(145deg, #f9fcff, #eef6fc);
+  box-shadow: 0 18px 46px rgba(24, 71, 112, 0.12);
+}
+
+.manifold-object-lab-copy {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.8fr) minmax(15rem, 1.2fr);
+  gap: 1.5rem;
+  align-items: end;
+  padding: 1.25rem 1.35rem 1rem;
+}
+
+.manifold-object-lab-copy p {
+  margin: 0;
+  color: #48647b;
+  line-height: 1.55;
+}
+
+.manifold-object-lab-copy > div > p {
+  margin-bottom: 0.25rem;
+  color: #1976d2;
+  font-size: 0.74rem;
+  font-weight: 760;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.manifold-object-lab-copy h2 {
+  margin: 0;
+  color: #17324d;
+  font-size: clamp(1.45rem, 2.5vw, 2rem);
+}
+
+.manifold-object-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0 1.35rem 0.9rem;
+}
+
+.manifold-object-tabs button {
+  min-height: 2.4rem;
+  border: 1px solid #b8ccdc;
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  background: rgba(255, 255, 255, 0.84);
+  color: #294861;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 680;
+  cursor: pointer;
+}
+
+.manifold-object-tabs button:hover,
+.manifold-object-tabs button:focus-visible {
+  border-color: #1976d2;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.16);
+}
+
+.manifold-object-tabs button[aria-selected='true'] {
+  border-color: #1976d2;
+  background: #1976d2;
+  color: white;
+}
+
+.manifold-object-tabs .manifold-motion-toggle {
+  margin-left: auto;
+  border-color: #9eb4c5;
+  background: transparent;
+}
+
+.manifold-object-canvas {
+  position: relative;
+  height: 360px;
+  border-block: 1px solid rgba(25, 118, 210, 0.13);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.1)),
+    radial-gradient(circle at 50% 45%, #fff 0, #e7f2fa 70%);
+  touch-action: none;
+}
+
+.manifold-object-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+
+.manifold-object-canvas canvas:active {
+  cursor: grabbing;
+}
+
+.manifold-object-canvas canvas:focus-visible {
+  outline: 3px solid #1976d2;
+  outline-offset: -4px;
+}
+
+.manifold-object-canvas > p {
+  display: grid;
+  min-height: 100%;
+  place-items: center;
+  margin: 0;
+  padding: 2rem;
+  color: #48647b;
+  text-align: center;
+}
+
+.manifold-object-help {
+  margin: 0;
+  padding: 0.7rem 1.35rem 0.8rem;
+  color: #607d91;
+  font-size: 0.76rem;
+  text-align: center;
+}
+
+.manifold-object-lab-compact {
+  margin: 1rem 0 1.25rem;
+}
+
+.manifold-object-lab-compact .manifold-object-lab-copy {
+  grid-template-columns: 1fr;
+  gap: 0.4rem;
+  padding: 1rem 1rem 0.75rem;
+}
+
+.manifold-object-lab-compact .manifold-object-tabs {
+  padding-inline: 1rem;
+}
+
+.manifold-object-lab-compact .manifold-object-canvas {
+  height: 260px;
+}
+
+@media (max-width: 700px) {
+  .manifold-object-lab-copy {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .manifold-object-tabs .manifold-motion-toggle {
+    margin-left: 0;
+  }
+
+  .manifold-object-canvas {
+    height: 300px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .manifold-object-lab {
+    scroll-behavior: auto;
+  }
+}

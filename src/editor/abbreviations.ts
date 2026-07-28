@@ -5,7 +5,7 @@
 // full AbbreviationRewriter, whose multi-cursor text-source protocol is
 // built around the VS Code API. Space or Enter commits and keeps the typed
 // whitespace; Tab commits without inserting one.
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
+import * as monaco from 'monaco-editor/editor/editor.api.js'
 import { AbbreviationProvider } from '@leanprover/unicode-input'
 
 const provider = new AbbreviationProvider({

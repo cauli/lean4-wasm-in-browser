@@ -6,6 +6,9 @@
 #     same-origin by functions/lean-wasm/. Uploaded separately (deploy/upload-r2.sh).
 #   - the base .olean tree + lean-lib-files.json -> STATIC Pages assets (free,
 #     unlimited, CDN-cached, and they don't count against the Functions quota).
+#   - the compressed Real Analysis Mathlib/course packs -> STATIC Pages assets.
+#     Each pack is below Pages' per-file limit and is fetched only when that game
+#     first verifies a proof.
 #
 # The app fetches everything under the relative `/lean-wasm` base at runtime, so
 # the assets don't need to exist during `vite build`. We move the (symlinked,
@@ -46,8 +49,37 @@ cp -L public/lean-wasm/lean-lib-files.json dist/lean-wasm/lean-lib-files.json
 rsync -aL --prune-empty-dirs --include='*/' --include='*.olean' --include='*.ir' --include='*.ir.sig' --exclude='*' \
   public/lean-wasm/lean-lib/ dist/lean-wasm/lean-lib/
 
+# Real Analysis is part of the published catalog, so never silently deploy the
+# UI without its matching compiled Mathlib/course layer.
+REAL_ANALYSIS_MANIFEST=public/lean-wasm/real-analysis-layer.json
+REAL_ANALYSIS_PACKS=public/lean-wasm/real-analysis-lib
+if [ ! -f "$REAL_ANALYSIS_MANIFEST" ] || [ ! -d "$REAL_ANALYSIS_PACKS" ]; then
+  echo "error: Real Analysis browser layer is missing." >&2
+  echo "run npm run package:real-analysis before building Pages." >&2
+  exit 1
+fi
+node -e '
+const fs = require("fs");
+const manifest = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+if (!Array.isArray(manifest.packs) || manifest.packs.length === 0) {
+  throw new Error("Real Analysis manifest contains no packs");
+}
+for (const pack of manifest.packs) {
+  const file = `${process.argv[2]}/${pack.file}`;
+  const stat = fs.statSync(file);
+  if (stat.size !== pack.compressedBytes) {
+    throw new Error(`${pack.file} has ${stat.size} bytes; expected ${pack.compressedBytes}`);
+  }
+}
+' "$REAL_ANALYSIS_MANIFEST" "$REAL_ANALYSIS_PACKS"
+mkdir -p dist/lean-wasm/real-analysis-lib
+cp -L "$REAL_ANALYSIS_MANIFEST" dist/lean-wasm/real-analysis-layer.json
+rsync -aL --delete --include='artifacts-*.pack' --exclude='*' \
+  "$REAL_ANALYSIS_PACKS/" dist/lean-wasm/real-analysis-lib/
+
 echo "Pages output ready in dist/ ($(du -shL dist | cut -f1)):"
 echo "  static .olean files: $(find dist/lean-wasm/lean-lib -name '*.olean' | wc -l | tr -d ' ')"
 echo "  static .ir files:    $(find dist/lean-wasm/lean-lib -name '*.ir' | wc -l | tr -d ' ')"
 echo "  static .ir.sig files: $(find dist/lean-wasm/lean-lib -name '*.ir.sig' | wc -l | tr -d ' ')"
-echo "  R2 (upload via deploy/upload-r2.sh): lean.js, lean.wasm"
+echo "  Real Analysis packs: $(find dist/lean-wasm/real-analysis-lib -name 'artifacts-*.pack' | wc -l | tr -d ' ')"
+echo "  R2 (upload via deploy/upload-r2.sh): lean.js, lean.wasm, snapshots"

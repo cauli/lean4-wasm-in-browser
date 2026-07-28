@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">The Manifold Adventure</title>
+  <desc id="desc">An ant walks from a flat chart toward a sphere, Möbius strip, and torus.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d47a1"/>
+      <stop offset=".58" stop-color="#1976d2"/>
+      <stop offset="1" stop-color="#42a5f5"/>
+    </linearGradient>
+    <radialGradient id="globe" cx=".34" cy=".28" r=".8">
+      <stop offset="0" stop-color="#f4fbff"/>
+      <stop offset=".7" stop-color="#b9dcf6"/>
+      <stop offset="1" stop-color="#6ba8d6"/>
+    </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#06336d" flood-opacity=".3"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="760" rx="32" fill="url(#sky)"/>
+  <path d="M0 590C220 515 372 525 548 578c198 60 384 55 652-55v237H0Z" fill="#eaf3df"/>
+  <path d="M0 630c264-76 433-49 599 11 181 65 372 48 601-57" fill="none" stroke="#c2d6aa" stroke-width="5"/>
+  <g filter="url(#shadow)">
+    <circle cx="809" cy="304" r="157" fill="url(#globe)" stroke="#eaf7ff" stroke-width="7"/>
+    <ellipse cx="809" cy="304" rx="62" ry="157" fill="none" stroke="#fff" stroke-opacity=".65" stroke-width="4"/>
+    <ellipse cx="809" cy="304" rx="157" ry="62" fill="none" stroke="#fff" stroke-opacity=".65" stroke-width="4"/>
+    <path d="M653 304h312M809 147v314" stroke="#fff" stroke-opacity=".45" stroke-width="3"/>
+  </g>
+  <g transform="translate(982 462)" fill="none" stroke="#ffd166" stroke-width="24">
+    <ellipse rx="118" ry="70"/>
+    <ellipse rx="46" ry="25"/>
+  </g>
+  <path d="M455 488c47-79 105-75 158 4 54 79 112 83 164-1" fill="none" stroke="#ffca6a" stroke-width="35" stroke-linecap="round"/>
+  <path d="M455 488c52 76 109 74 158-3 51-79 109-81 164 6" fill="none" stroke="#fff1c8" stroke-width="17" stroke-linecap="round"/>
+  <g transform="translate(260 574)" fill="#17324d" stroke="#17324d" stroke-linecap="round">
+    <ellipse cx="0" cy="0" rx="22" ry="15"/>
+    <circle cx="28" cy="-2" r="12"/>
+    <ellipse cx="-32" cy="2" rx="17" ry="12"/>
+    <path d="M-10 8-28 31M6 10 4 37M20 7l21 26M24-10l17-19M30-10l30-10" fill="none" stroke-width="6"/>
+    <circle cx="33" cy="-5" r="2.5" fill="#fff" stroke="none"/>
+  </g>
+  <path d="M300 576c62-32 116-47 168-59" fill="none" stroke="#17324d" stroke-width="4" stroke-dasharray="8 12"/>
+  <text x="72" y="112" fill="#fff" font-family="ui-sans-serif,system-ui,sans-serif" font-size="42" font-weight="650" letter-spacing="2">THE MANIFOLD</text>
+  <text x="72" y="178" fill="#fff" font-family="ui-sans-serif,system-ui,sans-serif" font-size="72" font-weight="780">ADVENTURE</text>
+  <text x="76" y="225" fill="#d9edff" font-family="ui-sans-serif,system-ui,sans-serif" font-size="24">Learn local and global geometry with Lean</text>
+</svg>

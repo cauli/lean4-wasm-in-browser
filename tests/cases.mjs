@@ -9,7 +9,73 @@
 //   'error'       the code reports >= 1 error (proves the checker actually checks)
 //   { has: 's' }  some diagnostic contains substring s (checks #eval output)
 
+import fs from 'node:fs';
+
+const verificationSource = fs.readFileSync(
+  new URL('../src/game/verification-source.ts', import.meta.url),
+  'utf8',
+);
+const gamePrelude = /const BASE_PRELUDE = String\.raw`([\s\S]*?)`\.trim\(\)/.exec(verificationSource)?.[1];
+if (!gamePrelude) throw new Error('Could not extract the Natural Number Game browser prelude');
+
+const nng4Data = JSON.parse(fs.readFileSync(
+  new URL('../src/game/nng4.generated.json', import.meta.url),
+  'utf8',
+));
+const nng4Signatures = nng4Data.worlds
+  .flatMap((world) => world.levels)
+  .map((level, index) => {
+    const signature = level.theoremName
+      ? level.statement.slice(level.theoremName.length).trim()
+      : level.statement;
+    return `axiom imported_level_${index + 1} ${signature}`;
+  })
+  .join('\n');
+
+const tutorialRflChallenge = `${gamePrelude}
+
+theorem browser_challenge (x q : ℕ) : 37 * x + q = 37 * x + q := by
+  rfl
+
+end MyNat`;
+
+const additionZeroChallenge = `${gamePrelude}
+
+theorem zero_add (n : ℕ) : 0 + n = n := by
+  induction n with
+  | zero =>
+    rw [add_zero]
+    exact browser_zero_eq_zero
+  | succ d hd =>
+    rw [add_succ]
+    rw [hd]
+
+end MyNat`;
+
+const additionZeroWrongChallenge = `${gamePrelude}
+
+theorem zero_add (n : ℕ) : 0 + n = n := by
+  rfl
+
+end MyNat`;
+
 export const cases = [
+  { name: 'NNG4 tutorial rfl in the browser game prelude', expect: 'ok', code: tutorialRflChallenge },
+  { name: 'NNG4 addition induction proof after syntax adaptation', expect: 'ok', code: additionZeroChallenge },
+  { name: 'NNG4 opaque addition rejects an overpowered rfl', expect: 'error', code: additionZeroWrongChallenge },
+  { name: 'all 79 imported NNG4 level statements elaborate', expect: 'ok', code:
+`${gamePrelude}
+${nng4Signatures}
+end MyNat` },
+
+  { name: 'live goal instrumentation reports every open goal', expect: { has: 'case left' }, code:
+`example : True ∧ True := by
+  constructor
+  all_goals
+    trace "__LEAN4GAME_LIVE_GOAL_7D4B2A__"
+    trace_state
+  all_goals trivial` },
+
   // Natural Number Game territory: Nat lemmas proved from core, by induction.
   { name: 'add_comm by induction', expect: 'ok', code:
 `example (a b : Nat) : a + b = b + a := by

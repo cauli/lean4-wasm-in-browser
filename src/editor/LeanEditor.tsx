@@ -3,8 +3,8 @@
 // preserves both. Diagnostics arrive as `markers` and are applied to the
 // active file's model.
 import { useEffect, useRef } from 'react'
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
-import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
+import * as monaco from 'monaco-editor/editor/editor.api.js'
+import EditorWorker from 'monaco-editor/editor/editor.worker.js?worker'
 import { registerLeanLanguage, LEAN_LANGUAGE_ID } from './lean-language'
 import { attachAbbreviations } from './abbreviations'
 
@@ -39,12 +39,14 @@ function modelFor(file: string, content: string): monaco.editor.ITextModel {
   return m
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function dropModel(file: string): void {
   models.get(file)?.dispose()
   models.delete(file)
   viewStates.delete(file)
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function renameModel(from: string, to: string): void {
   const m = models.get(from)
   if (!m) return
@@ -60,20 +62,24 @@ interface Props {
   content: string
   markers: LeanMarker[]
   onChange: (value: string) => void
+  theme?: 'lean-dark' | 'lean-light'
 }
 
-export function LeanEditor({ file, content, markers, onChange }: Props) {
+export function LeanEditor({ file, content, markers, onChange, theme = 'lean-dark' }: Props) {
   const hostRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null)
   const onChangeRef = useRef(onChange)
-  onChangeRef.current = onChange
   const fileRef = useRef(file)
+
+  useEffect(() => {
+    onChangeRef.current = onChange
+  }, [onChange])
 
   useEffect(() => {
     if (!hostRef.current) return
     const editor = monaco.editor.create(hostRef.current, {
       model: modelFor(file, content),
-      theme: 'lean-dark',
+      theme,
       automaticLayout: true,
       fontFamily: "'IBM Plex Mono', monospace",
       fontSize: 14,

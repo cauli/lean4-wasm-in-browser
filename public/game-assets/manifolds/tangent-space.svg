@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 440" role="img" aria-labelledby="title desc">
+  <title id="title">A tangent plane and velocity vector</title>
+  <desc id="desc">At a point on a sphere, a translucent plane contains a tangent velocity arrow.</desc>
+  <defs>
+    <radialGradient id="sphere" cx=".35" cy=".25" r=".8"><stop stop-color="#eff9ff"/><stop offset="1" stop-color="#7eb5df"/></radialGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="m0 0 10 5-10 5Z" fill="#c47d00"/></marker>
+  </defs>
+  <rect width="1000" height="440" rx="24" fill="#f7fbff"/>
+  <circle cx="400" cy="240" r="150" fill="url(#sphere)" stroke="#1976d2" stroke-width="6"/>
+  <path d="M194 194 659 112l147 143-480 90Z" fill="#ffe1a3" fill-opacity=".7" stroke="#ef9f22" stroke-width="5"/>
+  <circle cx="484" cy="226" r="11" fill="#17324d"/>
+  <path d="M484 226c76-20 135-18 213 0" fill="none" stroke="#c47d00" stroke-width="9" marker-end="url(#arrow)"/>
+  <path d="M321 289c42-69 90-85 163-63" fill="none" stroke="#17324d" stroke-width="5" stroke-dasharray="8 9"/>
+  <g font-family="ui-sans-serif,system-ui" font-size="24" fill="#24445f">
+    <text x="680" y="102">tangent plane</text>
+    <text x="701" y="249">velocity</text>
+    <text x="110" y="389">curved manifold</text>
+  </g>
+</svg>

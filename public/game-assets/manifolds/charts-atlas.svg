@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 440" role="img" aria-labelledby="title desc">
+  <title id="title">Overlapping charts on a sphere</title>
+  <desc id="desc">Two colored patches on a sphere map to overlapping coordinate rectangles.</desc>
+  <rect width="1000" height="440" rx="24" fill="#f7fbff"/>
+  <circle cx="250" cy="220" r="155" fill="#d7ecfb" stroke="#1976d2" stroke-width="6"/>
+  <path d="M105 173c52-87 117-108 190-64 32 19 51 54 46 94-7 61-56 98-126 101-63 3-109-36-110-131Z" fill="#ffcc80" fill-opacity=".88"/>
+  <path d="M196 125c76-37 151-6 191 61 38 63 6 132-66 166-68 33-134 2-154-62-19-62-13-145 29-165Z" fill="#80cbc4" fill-opacity=".82"/>
+  <path d="M390 159C482 105 493 94 548 94" fill="none" stroke="#6b7c8f" stroke-width="4" marker-end="url(#arrow)"/>
+  <path d="M386 281c108 56 120 66 162 66" fill="none" stroke="#6b7c8f" stroke-width="4" marker-end="url(#arrow)"/>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="m0 0 10 5-10 5Z" fill="#6b7c8f"/></marker>
+  </defs>
+  <rect x="565" y="45" width="360" height="155" rx="16" fill="#fff4df" stroke="#ef9f22" stroke-width="5"/>
+  <path d="M625 161c55-94 123-86 235-22M612 108h260M690 62v122M806 62v122" fill="none" stroke="#ef9f22" stroke-width="3" stroke-opacity=".65"/>
+  <rect x="565" y="241" width="360" height="155" rx="16" fill="#e0f4f0" stroke="#26a69a" stroke-width="5"/>
+  <path d="M625 351c55-83 132-75 235-18M612 304h260M690 256v125M806 256v125" fill="none" stroke="#26a69a" stroke-width="3" stroke-opacity=".65"/>
+  <text x="208" y="414" fill="#24445f" font-family="ui-sans-serif,system-ui" font-size="22">manifold</text>
+  <text x="716" y="224" fill="#24445f" font-family="ui-sans-serif,system-ui" font-size="22">overlap → transition map</text>
+</svg>

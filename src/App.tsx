@@ -32,6 +32,7 @@ function normalizeFileName(raw: string): string | null {
 // getting mangled by chat apps and email, the gzipped payload is stored
 // content-addressed in R2 via /api/share and the URL carries only #r2=<id>.
 const SHARE_URL_LIMIT = 2000 // encoded chars; beyond this, store in R2
+const MAX_SHARED_WORKSPACE_BYTES = 2 * 1024 * 1024
 
 async function gzipWorkspace(files: WorkFile[], active: string): Promise<Uint8Array> {
   const raw = new TextEncoder().encode(JSON.stringify({ files, active }))
@@ -41,9 +42,49 @@ async function gzipWorkspace(files: WorkFile[], active: string): Promise<Uint8Ar
 
 async function gunzipWorkspace(bytes: Uint8Array): Promise<{ files: WorkFile[]; active: string } | null> {
   try {
-    const raw = new Response(new Blob([bytes as BlobPart]).stream().pipeThrough(new DecompressionStream('gzip')))
-    const parsed = JSON.parse(await raw.text())
-    if (parsed?.files?.length && parsed.files.every((f: WorkFile) => f.name && typeof f.content === 'string')) {
+    const reader = new Blob([bytes as BlobPart])
+      .stream()
+      .pipeThrough(new DecompressionStream('gzip'))
+      .getReader()
+    const chunks: Uint8Array[] = []
+    let total = 0
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      total += value.byteLength
+      if (total > MAX_SHARED_WORKSPACE_BYTES) {
+        await reader.cancel()
+        return null
+      }
+      chunks.push(value)
+    }
+    const raw = new Uint8Array(total)
+    let offset = 0
+    for (const chunk of chunks) {
+      raw.set(chunk, offset)
+      offset += chunk.byteLength
+    }
+    const parsed = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(raw))
+    const names = new Set<string>()
+    if (
+      parsed?.files?.length
+      && parsed.files.length <= 64
+      && parsed.files.every((f: WorkFile) => {
+        if (
+          typeof f?.name !== 'string'
+          || typeof f.content !== 'string'
+          || !f.name.endsWith('.lean')
+          || f.name.trim() !== f.name
+          || /[/\\\0\r\n]/.test(f.name)
+          || new TextEncoder().encode(f.name).byteLength > 240
+          || names.has(f.name)
+        ) return false
+        names.add(f.name)
+        return true
+      })
+      && typeof parsed.active === 'string'
+      && names.has(parsed.active)
+    ) {
       return parsed
     }
   } catch { /* malformed payload */ }
@@ -985,7 +1026,6 @@ function App() {
         .then(apply)
         .catch(() => apply(null))
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const addFile = useCallback(() => {
@@ -1117,8 +1157,12 @@ function App() {
       <header className="header">
         <h1>
           <span className="lean-logo">λ</span>
-          Lean 4 on your browser
+          Lean4 WASM
         </h1>
+        <a className="games-link" href="/games">
+          Open Lean games
+          <span aria-hidden="true">→</span>
+        </a>
       </header>
 
       <main className="main">

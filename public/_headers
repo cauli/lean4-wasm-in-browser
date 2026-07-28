@@ -19,3 +19,11 @@
   Cache-Control: public, max-age=300
 /lean-worker-simple.html
   Cache-Control: public, max-age=300
+
+# The Real Analysis manifest and numbered packs move together in an atomic
+# Pages deployment. Keep them revalidating so a browser never pins numbered
+# pack URLs across a later Mathlib/course rebuild.
+/lean-wasm/real-analysis-layer.json
+  Cache-Control: public, max-age=300, must-revalidate
+/lean-wasm/real-analysis-lib/*
+  Cache-Control: public, max-age=300, must-revalidate

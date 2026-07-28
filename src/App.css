@@ -69,7 +69,10 @@ body {
 
 /* Header — a single slim line; the editor is the star of the page. */
 .header {
-  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   padding: 0.25rem 0 0.5rem;
   margin-bottom: 0.75rem;
 }
@@ -88,6 +91,25 @@ body {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.9rem;
   font-weight: 600;
+  color: var(--text-primary);
+}
+
+.games-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-bottom: 1px solid var(--border-hover);
+  color: var(--text-secondary);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  text-decoration: none;
+  transition: border-color 140ms ease, color 140ms ease;
+}
+
+.games-link:hover,
+.games-link:focus-visible {
+  border-color: var(--text-primary);
   color: var(--text-primary);
 }
 

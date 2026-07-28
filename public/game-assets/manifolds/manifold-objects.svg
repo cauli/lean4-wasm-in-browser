@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 430" role="img" aria-labelledby="title desc">
+  <title id="title">Circle, sphere, torus, and Möbius strip</title>
+  <desc id="desc">Four recurring examples of manifolds arranged as a cabinet of geometric objects.</desc>
+  <rect width="1100" height="430" rx="24" fill="#f7fbff"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="145" cy="186" r="91" stroke="#1976d2" stroke-width="16"/>
+    <circle cx="397" cy="186" r="105" fill="#d4ebfb" stroke="#1976d2" stroke-width="6"/>
+    <ellipse cx="397" cy="186" rx="42" ry="105" stroke="#fff" stroke-width="4" stroke-opacity=".8"/>
+    <ellipse cx="397" cy="186" rx="105" ry="42" stroke="#fff" stroke-width="4" stroke-opacity=".8"/>
+    <g transform="translate(672 188)" stroke="#ef9f22">
+      <ellipse rx="128" ry="89" stroke-width="34"/>
+      <ellipse rx="47" ry="27" stroke="#fff7e8" stroke-width="7"/>
+    </g>
+    <g transform="translate(948 189)">
+      <path d="M-105 42c39-111 97-122 158-38 44 60 77 59 100 22" stroke="#80cbc4" stroke-width="48"/>
+      <path d="M-105 42c43 59 99 55 148-23 35-56 73-59 110 7" stroke="#c9f0e9" stroke-width="22"/>
+      <path d="M-105 42c39-111 97-122 158-38 44 60 77 59 100 22" stroke="#168d84" stroke-width="4"/>
+    </g>
+  </g>
+  <g fill="#24445f" font-family="ui-sans-serif,system-ui" font-size="24" text-anchor="middle">
+    <text x="145" y="352">circle · 1D</text>
+    <text x="397" y="352">sphere surface · 2D</text>
+    <text x="672" y="352">torus · 2D</text>
+    <text x="948" y="352">Möbius strip · 2D + boundary</text>
+  </g>
+</svg>

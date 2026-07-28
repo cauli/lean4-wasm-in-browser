@@ -14,6 +14,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cases } from './cases.mjs';
 import { bootLean } from './lean-node.mjs';
+import {
+  nngInventoryCases,
+  nngPolicyProbes,
+  nngReferenceCases,
+} from './nng-conformance.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pub = path.join(repoRoot, 'public/lean-wasm');
@@ -45,5 +50,68 @@ for (const c of cases) {
     } else {
       throw new Error(`case "${c.name}" has an unknown expectation`);
     }
+  });
+}
+
+test('NNG4 policy rejects direct access to browser-only compatibility axioms', () => {
+  assert.equal(nngPolicyProbes.browserAxiom.ok, false);
+  assert.match(nngPolicyProbes.browserAxiom.messages.join('\n'), /browser_xyzzy/);
+});
+
+for (const policyCase of nngInventoryCases) {
+  test(`NNG4 ${policyCase.name}`, () => {
+    const { tag, diagnostics } = lean.compile(
+      policyCase.challenge.code,
+      `nng4/policy/${policyCase.levelId}.lean`,
+    );
+    const errors = diagnostics.filter((diagnostic) => diagnostic.severity === 'error');
+    const detail = diagnostics
+      .map((diagnostic) => diagnostic.data || diagnostic.caption)
+      .filter(Boolean)
+      .join('\n');
+
+    if (policyCase.expectation.pass) {
+      assert.equal(tag, 0, detail);
+      assert.equal(errors.length, 0, detail);
+      return;
+    }
+
+    const policyDiagnostic = errors.find((diagnostic) => (
+      String(diagnostic.data || '').includes('__LEAN4GAME_INVENTORY_POLICY_2F6C1D__')
+    ));
+    assert.ok(policyDiagnostic, `expected an inventory-policy diagnostic:\n${detail}`);
+    assert.match(String(policyDiagnostic.data), policyCase.expectation.policy);
+  });
+}
+
+for (const level of nngReferenceCases) {
+  const expectedPass = level.expected === 'kernel';
+  test(`NNG4 matrix ${expectedPass ? 'PASS' : 'FAIL'} ${level.id}: ${level.title}`, () => {
+    const { tag, diagnostics } = level.policy.ok
+      ? lean.compile(level.challenge.code, `nng4/${level.id}.lean`)
+      : { tag: 0, diagnostics: [] };
+    const errors = diagnostics.filter((diagnostic) => diagnostic.severity === 'error');
+    const incomplete = diagnostics.filter((diagnostic) => (
+      /declaration uses 'sorry'|declaration has metavariables/i.test(diagnostic.data || '')
+    ));
+    const detail = diagnostics
+      .map((diagnostic) => diagnostic.data || diagnostic.caption)
+      .filter(Boolean)
+      .join('\n');
+    const actualPass = level.policy.ok
+      && tag === 0
+      && errors.length === 0
+      && incomplete.length === 0;
+    const policyDetail = level.policy.messages.length
+      ? `Policy:\n${level.policy.messages.join('\n')}\n`
+      : '';
+
+    assert.equal(
+      actualPass,
+      expectedPass,
+      expectedPass
+        ? `${policyDetail}reference solution was rejected:\n${detail}`
+        : `known compatibility gap no longer reproduces; update nng4.conformance.json`,
+    );
   });
 }

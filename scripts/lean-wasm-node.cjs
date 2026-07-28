@@ -29,15 +29,40 @@ if (!artifactDir || !workDir) {
 const leanJs = path.resolve(artifactDir, 'bin/lean.js');
 const libLean = path.resolve(artifactDir, 'lib/lean');
 const realWork = path.resolve(workDir);
+const memoryMb = process.env.LEAN_WASM_NODE_MEMORY_MB
+  ? Number(process.env.LEAN_WASM_NODE_MEMORY_MB)
+  : null;
+const wasmPageBytes = 65536;
+if (memoryMb !== null && (!Number.isInteger(memoryMb) || memoryMb < 64 || memoryMb > 2048)) {
+  throw new Error(`LEAN_WASM_NODE_MEMORY_MB must be an integer from 64 through 2048, got ${memoryMb}`);
+}
+const memoryConfig = memoryMb === null ? {} : {
+  wasmMemory: new WebAssembly.Memory({
+    initial: memoryMb * 1024 * 1024 / wasmPageBytes,
+    maximum: 32768,
+    shared: true,
+  }),
+  INITIAL_MEMORY: memoryMb * 1024 * 1024,
+};
 
 // The glue chdirs the virtual FS to process.cwd() during startup, and only
 // '/' is guaranteed to exist there — launched from anywhere else it dies with
 // a bare ErrnoError. All host paths are resolved above, so the real cwd is
 // free to change.
 process.chdir('/');
+// Emscripten forwards process.argv[1] as argv[0]. Present the same virtual
+// install layout used in browser workers so Lean derives `/lib/lean` instead
+// of trying to stat the host-side staging directory inside MEMFS.
+process.argv[1] = '/bin/lean';
 
 globalThis.Module = {
   arguments: leanArgs,
+  ...memoryConfig,
+  // Keep the executable's virtual app path at /bin so Lean derives /lib/lean
+  // as its sysroot.  The JS glue and pthreads still load from the real host
+  // artifact through these explicit hooks.
+  locateFile: (file) => path.join(path.dirname(leanJs), file),
+  mainScriptUrlOrBlob: leanJs,
   preRun: [function () {
     const FS = Module.FS;
     const NODEFS = FS.filesystems.NODEFS;
@@ -49,10 +74,10 @@ globalThis.Module = {
       }
     };
     for (const d of ['/lib/lean', '/work', '/bin', '/workspace']) mkdirTree(d);
-    // lean derives its install layout by stat'ing dirname(argv[0]); under node
-    // argv[0] is lean.js's real path, so that directory must exist in the
-    // virtual FS (the browser workers mkdir /bin for the same reason).
-    mkdirTree(path.dirname(leanJs));
+    if (process.env.LEAN_WASM_NODE_DEBUG_FS === '1') {
+      console.error('library root:', libLean);
+      console.error('workspace root:', realWork);
+    }
     FS.mount(NODEFS, { root: libLean }, '/lib/lean');
     FS.mount(NODEFS, { root: realWork }, '/work');
     Module.ENV.LEAN_PATH = '/lib/lean';
@@ -64,7 +89,7 @@ globalThis.Module = {
 
 // Script-scope shims for the CJS facilities the glue expects.
 globalThis.require = require;
-globalThis.__filename = leanJs;
-globalThis.__dirname = path.dirname(leanJs);
+globalThis.__filename = '/bin/lean.js';
+globalThis.__dirname = '/bin';
 
 vm.runInThisContext(fs.readFileSync(leanJs, 'utf8'), { filename: leanJs });

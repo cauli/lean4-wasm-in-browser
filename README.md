@@ -70,7 +70,111 @@ Init-only (all core tactics, proofs and `#eval`).
   `import`; the first use downloads that layer and imports it once. Batteries is
   compiled for wasm by a **native 32-bit toolchain** from the same commit
   (32-bit oleans are pointer-width compatible with wasm32).
-- No Mathlib yet (its exact-version build is the next milestone).
+- Mathlib is shipped as a separate, on-demand browser layer for the Real
+  Analysis Game instead of making every playground visit download it.
+
+## Local Lean4Game library
+
+`/games` is a local game catalog, while the original `/game` Natural Number
+Game URL remains unchanged and the Real Analysis Game lives at
+`/games/real-analysis-game`. The general Lean playground stays at `/`.
+
+The Natural Number Game renders all 9 active NNG4 worlds and 79 levels
+from a pinned upstream snapshot, including introductions, statements, hints,
+conclusions, and inventory unlocks. Lesson copy uses a sanitized Markdown
+pipeline with GFM tables and nested lists, embedded images, and KaTeX for inline
+or display mathematics.
+
+Supported answers are wrapped in a small browser-compatible `MyNat` environment,
+then elaborated and kernel-checked by the same persistent Lean WASM worker as
+the playground. Proof edits are also inspected locally after a short debounce,
+so the current hypotheses and every open tactic goal update without a server.
+The route includes a verification audit describing the remaining Lean4Game
+gaps: contextual `Hint`/`Branch` evaluation, version parity, and the full
+GameServer package. Inventory policy is enforced inside Lean over the parsed
+tactic syntax, with theorem declarations resolved against a generated registry
+for the exact bundled Init environment.
+
+The [Real Analysis Game](https://github.com/alexkontorovich/realanalysisgame)
+port renders its full pinned course: 44 active worlds, 139 levels, dependency
+edges, course images, statements, hints, and reference solutions. It has its
+own progress store and a scalable full-course tree. The upstream course targets
+Lean 4.26; its mathematical modules and custom tactics are reproducibly adapted
+to the exact Lean commit used by this browser build and compiled with the
+matching Mathlib snapshot. The first Real Analysis proof lazily loads that local
+package into the persistent WASM worker. Proof elaboration, kernel checking, and
+live tactic goals then run entirely in the browser.
+
+The on-demand layer is the exact 4,303-module dependency closure of the adapted
+course (52 compressed packs, about 316 MB). A full Mathlib environment snapshot
+was tested but deliberately not shipped: compaction exceeded the practical WASM
+heap and would have made local startup larger, not better. Playing a game never
+contacts a proof server or runs a container.
+
+The browser verifier mirrors the pinned GameServer inventory walk over parsed
+Lean syntax. Tactics are checked against unlocked/disabled inventory, theorem
+identifiers are resolved in the active namespace and checked semantically, and
+self-reference and unsafe placeholders are rejected. The four-worker browser
+matrix currently kernel-verifies 125 of 139 Real Analysis references. The exact
+14 failures are recorded in `src/game/real-analysis.conformance.json`: 10
+unfinished upstream proofs contain `sorry`, and four large proofs hit the
+browser call-stack limit even in isolated workers. Branch-sensitive `Hint` /
+`Branch` evaluation remains a separate unported GameServer feature.
+
+The original **Manifold Adventure** at `/games/manifold-adventure` is a
+from-scratch conceptual bridge: 10 worlds and 50 short kernel-checked exercises
+move from Ada the ant and Flatland through topology, charts and atlases,
+spheres, tori, the Möbius strip, Riemann, smooth maps, tangent spaces,
+differential forms, metrics, curvature, and global topology. A lazy-loaded
+Three.js lab lets learners orbit and zoom a sphere, torus, or Möbius strip.
+Every page explicitly distinguishes the small proposition Lean checks from the
+geometric lesson around it. Its reading path credits the
+[Quanta explainer](https://www.quantamagazine.org/what-is-a-manifold-20251103/),
+[Loring Tu](https://link.springer.com/book/10.1007/978-1-4419-7400-6),
+[John Milnor](https://math.uchicago.edu/~may/REU2017/MilnorDiff.pdf), and the
+other textbooks and courses linked in the game.
+
+### Credits and scope
+
+This route is a convenience port for running the game locally; it is not an
+original replacement for the upstream projects.
+
+- The [Lean4Game](https://github.com/leanprover-community/lean4game) framework
+  and interface were primarily developed by Alexander Bentkamp and Jon Eugster.
+- The [Natural Number Game](https://github.com/leanprover-community/NNG4) is by
+  Kevin Buzzard and Mohammad Pedramfar, with Patrick Massot's NNG4 prototype and
+  contributions from the Lean community. Kevin Buzzard maintains the current
+  NNG4 game.
+- [Real Analysis, The Game](https://github.com/alexkontorovich/realanalysisgame)
+  was designed and implemented by Alex Kontorovich for Rutgers University Math
+  311H, with thanks in the upstream game to Jon Eugster, Heather Macbeth,
+  Michael Stoll, and the students of 311H.
+- The lesson text, statements, hints, solutions, inventory, and world structure
+  in this port come from their respective upstream games. The local catalog,
+  WASM integration, and compatibility layer are the additions made here.
+
+Please report lesson-content issues upstream to NNG4 and framework/interface
+issues upstream to Lean4Game when they reproduce in the original projects.
+
+### License
+
+The browser integration and original Manifold Adventure content are released
+under the [Apache License 2.0](LICENSE). The imported Natural Number Game and
+Real Analysis course materials retain their upstream copyright and attribution
+notices and are redistributed under their respective Apache-2.0 licenses.
+Pinned sources and credits are recorded in `third_party/`.
+
+To refresh the generated course data:
+
+```bash
+git clone --depth 1 https://github.com/leanprover-community/NNG4.git /tmp/nng4
+npm run import:nng4 -- /tmp/nng4
+
+git clone --depth 1 https://github.com/alexkontorovich/realanalysisgame.git /tmp/realanalysisgame
+npm run import:real-analysis -- /tmp/realanalysisgame
+```
+
+NNG4 attribution and licensing notes live in `third_party/NNG4/`.
 
 ## Editor
 
@@ -90,6 +194,7 @@ Cloudflare, static-first:
 |-------|-----------|
 | App shell (React/Vite) | **Pages** (static) |
 | `.olean` + `.ir` trees (core + Batteries) | static Pages assets, fetched per layer, cached in the browser's Cache API **keyed by build githash** |
+| Real Analysis Mathlib/course layer | 52 compressed static Pages packs, fetched only on first Real Analysis verification |
 | `lean.js` / `lean.wasm` (both variants) + baked env snapshots | **R2** via `functions/lean-wasm/`, under a **per-build githash prefix** (`<githash>/…`, slim at `<githash>/slim/…`) matching the `?v=` the app requests — builds coexist, deploys never break open sessions |
 | Shared snippets | R2 `snippets/<sha256>` via `functions/api/share/` |
 
@@ -131,7 +236,22 @@ fetched into `tests/.artifacts/` and falls back to `public/lean-wasm/`
 ```bash
 npm run test:fetch   # download the deployed artifacts into tests/.artifacts/
 npm test
+npm run test:nng     # all 79 upstream reference solutions, exact pass/fail matrix
+npm run test:real-analysis # all 139 references in four isolated browser workers
+npm run test:e2e     # Playwright: live goals, lessons, solutions, locks, progress
 ```
+
+The NNG conformance matrix uses the same source generator and regular inventory
+policy as the browser UI, then checks every upstream reference solution with the
+real WASM kernel. Its pinned capability manifest currently records 21 direct
+passes and 58 compatibility gaps; an unexpected regression or newly passing
+level fails the suite until the manifest is reviewed.
+
+The Real Analysis matrix uses the same packed Mathlib/course layer, generated
+source context, inventory policy, and WASM kernel as the lesson UI. It runs in
+35-level worker batches to prevent accumulated WASM state from creating false
+late-course failures, writes the exact diagnostics report, and asserts the
+reviewed 125-pass / 14-fail capability set.
 
 ## Deployment
 

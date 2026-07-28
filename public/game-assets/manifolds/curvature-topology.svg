@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 440" role="img" aria-labelledby="title desc">
+  <title id="title">Flat, spherical, and toroidal geometry</title>
+  <desc id="desc">A flat grid, a sphere with a geodesic triangle, and a torus with two loops.</desc>
+  <rect width="1100" height="440" rx="24" fill="#f7fbff"/>
+  <g transform="translate(45 75)" stroke="#90a4ae" stroke-width="3">
+    <rect width="270" height="250" rx="10" fill="#eef3f5" stroke="#607d8b" stroke-width="5"/>
+    <path d="M54 0v250M108 0v250M162 0v250M216 0v250M0 50h270M0 100h270M0 150h270M0 200h270"/>
+    <path d="m53 196 64-114 97 114Z" fill="#fff" fill-opacity=".72" stroke="#1976d2" stroke-width="8"/>
+  </g>
+  <g transform="translate(530 203)">
+    <circle r="139" fill="#d6ecfb" stroke="#1976d2" stroke-width="6"/>
+    <ellipse rx="139" ry="48" fill="none" stroke="#fff" stroke-width="4"/>
+    <path d="M-85 58C-59-73 28-118 94 54Z" fill="#fff" fill-opacity=".34" stroke="#ef9f22" stroke-width="9"/>
+  </g>
+  <g transform="translate(902 205)" fill="none">
+    <ellipse rx="150" ry="101" stroke="#ef9f22" stroke-width="39"/>
+    <ellipse rx="57" ry="32" stroke="#fff7e8" stroke-width="8"/>
+    <path d="M-116-45c60-53 169-48 231 4" stroke="#1976d2" stroke-width="9"/>
+    <path d="M11-91c58 30 62 122 5 174" stroke="#26a69a" stroke-width="9"/>
+  </g>
+  <g fill="#24445f" font-family="ui-sans-serif,system-ui" font-size="24" text-anchor="middle">
+    <text x="180" y="385">flat geometry</text>
+    <text x="530" y="385">positive curvature</text>
+    <text x="902" y="385">global loops</text>
+  </g>
+</svg>

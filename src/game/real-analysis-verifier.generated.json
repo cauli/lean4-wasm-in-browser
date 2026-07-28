@@ -1,0 +1,1402 @@
+{
+  "source": {
+    "repository": "https://github.com/alexkontorovich/realanalysisgame",
+    "commit": "930c38333b2edcc3ad27c5f68b9f09210cfaaf62",
+    "license": "Apache-2.0",
+    "toolchain": "leanprover/lean4:v4.26.0",
+    "importedAt": "2026-07-28T03:09:03.099Z"
+  },
+  "generatedAt": "2026-07-28T03:09:03.208Z",
+  "outputRoot": "/tmp/real-analysis-game-lean-port",
+  "baseModule": "RealAnalysisGame.BrowserBase",
+  "levels": {
+    "lecture10-1": {
+      "sourcePath": "Game/Levels/L10Levels/L06_Prod.lean",
+      "fullModule": "Game.Levels.L10Levels.L06_Prod",
+      "contextModule": "RealAnalysisGame.Context.Lecture10.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "ProdLimNeNe (a b c : ℕ → ℝ) (L M : ℝ) (hL : L ≠ 0) (hM : M ≠ 0) (ha : SeqLim a L) (hb : SeqLim b M) (hc : ∀ n, c n = a n * b n): SeqLim c (L * M)",
+      "referenceTheorem": "ProdLimNeNe"
+    },
+    "lecture10-2": {
+      "sourcePath": "Game/Levels/L10Levels/L07_Order.lean",
+      "fullModule": "Game.Levels.L10Levels.L07_Order",
+      "contextModule": "RealAnalysisGame.Context.Lecture10.L2",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "OrderLimLe (a : ℕ → ℝ) (L : ℝ) (ha : SeqLim a L) (K : ℝ) (hK : SeqBddBy a K) : L ≤ K",
+      "referenceTheorem": "OrderLimLe"
+    },
+    "lecture10-3": {
+      "sourcePath": "Game/Levels/L10Levels/L08_Mono.lean",
+      "fullModule": "Game.Levels.L10Levels.L08_Mono",
+      "contextModule": "RealAnalysisGame.Context.Lecture10.L3",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "SubseqConv (a : ℕ → ℝ) (L : ℝ) (ha : SeqLim a L) (σ : ℕ → ℕ) (hσ : Subseq σ) : SeqLim (a ∘ σ) L",
+      "referenceTheorem": "SubseqConv"
+    },
+    "lecture10-4": {
+      "sourcePath": "Game/Levels/L10Levels/L09_Subseq.lean",
+      "fullModule": "Game.Levels.L10Levels.L09_Subseq",
+      "contextModule": "RealAnalysisGame.Context.Lecture10.L4",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(a : ℕ → ℝ) (ha : ∀ n, a n = (-1) ^ n) : ∃ σ L, Subseq σ ∧ SeqLim (a ∘ σ) L",
+      "referenceTheorem": "RealAnalysisLevel_Lecture10_4"
+    },
+    "l10pset-1": {
+      "sourcePath": "Game/Levels/L10Pset/L10Pset2.lean",
+      "fullModule": "Game.Levels.L10Pset.L10Pset2",
+      "contextModule": "RealAnalysisGame.Context.L10Pset.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "LimZeroTimesBdd (a b c : ℕ → ℝ) (ha : SeqLim a 0) (hb : SeqBdd b) (hc : ∀ n, c n = a n * b n) : SeqLim c 0",
+      "referenceTheorem": "LimZeroTimesBdd"
+    },
+    "l10pset-2": {
+      "sourcePath": "Game/Levels/L10Pset/L10Pset3.lean",
+      "fullModule": "Game.Levels.L10Pset.L10Pset3",
+      "contextModule": "RealAnalysisGame.Context.L10Pset.L2",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "ProdLim (a b c : ℕ → ℝ) (L M : ℝ) (ha : SeqLim a L) (hb : SeqLim b M) (hc : ∀ n, c n = a n * b n): SeqLim c (L * M)",
+      "referenceTheorem": "ProdLim"
+    },
+    "l10pset-3": {
+      "sourcePath": "Game/Levels/L10Pset/L10Pset4.lean",
+      "fullModule": "Game.Levels.L10Pset.L10Pset4",
+      "contextModule": "RealAnalysisGame.Context.L10Pset.L3",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "OrderLimGt (a : ℕ → ℝ) (L : ℝ) (ha : SeqLim a L) (K : ℝ) (hK : ∀ n, K < a n) : K ≤ L",
+      "referenceTheorem": "OrderLimGt"
+    },
+    "l10pset-4": {
+      "sourcePath": "Game/Levels/L10Pset/L10Pset5.lean",
+      "fullModule": "Game.Levels.L10Pset.L10Pset5",
+      "contextModule": "RealAnalysisGame.Context.L10Pset.L4",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": ": ∃ a, SeqLim a 0 ∧ ∀ n, 0 < a n",
+      "referenceTheorem": "RealAnalysisLevel_L10Pset_4"
+    },
+    "l10pset-5": {
+      "sourcePath": "Game/Levels/L10Pset/L10Pset6.lean",
+      "fullModule": "Game.Levels.L10Pset.L10Pset6",
+      "contextModule": "RealAnalysisGame.Context.L10Pset.L5",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(a : ℕ → ℝ) (ha : ∀ n, a n = n) : ¬ SeqBdd a",
+      "referenceTheorem": "RealAnalysisLevel_L10Pset_5"
+    },
+    "l10pset-6": {
+      "sourcePath": "Game/Levels/L10Pset/L10Pset7.lean",
+      "fullModule": "Game.Levels.L10Pset.L10Pset7",
+      "contextModule": "RealAnalysisGame.Context.L10Pset.L6",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "Diverge_of_DiffSubseqLim (a : ℕ → ℝ) (σ τ : ℕ → ℕ) (σsub : Subseq σ) (τsub : Subseq τ) (L M : ℝ) (hσ : SeqLim (a ∘ σ) L) (hτ : SeqLim (a ∘ τ) M) (hLM : L ≠ M) : ¬ SeqConv a",
+      "referenceTheorem": "Diverge_of_DiffSubseqLim"
+    },
+    "lecture11-1": {
+      "sourcePath": "Game/Levels/L11Levels/L01_IsCauchyOfLim.lean",
+      "fullModule": "Game.Levels.L11Levels.L01_IsCauchyOfLim",
+      "contextModule": "RealAnalysisGame.Context.Lecture11.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "IsCauchy_of_SeqConv {a : ℕ → ℝ} (ha : SeqConv a) : IsCauchy a",
+      "referenceTheorem": "IsCauchy_of_SeqConv"
+    },
+    "lecture11-2": {
+      "sourcePath": "Game/Levels/L11Levels/L02_IsCauchyOfSum.lean",
+      "fullModule": "Game.Levels.L11Levels.L02_IsCauchyOfSum",
+      "contextModule": "RealAnalysisGame.Context.Lecture11.L2",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "IsCauchy_of_Sum {X : Type*} [NormedField X] [LinearOrder X] [IsStrictOrderedRing X] (a b : ℕ → X) (ha : IsCauchy a) (hb : IsCauchy b) : IsCauchy (a + b)",
+      "referenceTheorem": "IsCauchy_of_Sum"
+    },
+    "lecture11-3": {
+      "sourcePath": "Game/Levels/L11Levels/L03_IsBddOfCauchy.lean",
+      "fullModule": "Game.Levels.L11Levels.L03_IsBddOfCauchy",
+      "contextModule": "RealAnalysisGame.Context.Lecture11.L3",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "IsBdd_of_Cauchy {X : Type*} [NormedField X] [LinearOrder X] [IsStrictOrderedRing X] (a : ℕ → X) (ha : IsCauchy a) : SeqBdd a",
+      "referenceTheorem": "IsBdd_of_Cauchy"
+    },
+    "l11pset-1": {
+      "sourcePath": "Game/Levels/L11Pset/L11Pset1.lean",
+      "fullModule": "Game.Levels.L11Pset.L11Pset1",
+      "contextModule": "RealAnalysisGame.Context.L11Pset.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(a : ℕ → ℝ) (ha : ∀ n, a n = n) : ¬ ∃ σ, Subseq σ ∧ SeqConv (a ∘ σ)",
+      "referenceTheorem": "RealAnalysisLevel_L11Pset_1"
+    },
+    "lecture12-1": {
+      "sourcePath": "Game/Levels/L12Levels/L00_SubseqIterate.lean",
+      "fullModule": "Game.Levels.L12Levels.L00_SubseqIterate",
+      "contextModule": "RealAnalysisGame.Context.Lecture12.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "Subseq_of_Iterate (σ : ℕ → ℕ) (hσ : ∀ n, n < σ n) (n₀ : ℕ) : Subseq (fun n ↦ σ^[n] n₀)",
+      "referenceTheorem": "Subseq_of_Iterate"
+    },
+    "lecture12-2": {
+      "sourcePath": "Game/Levels/L12Levels/L01_Choose.lean",
+      "fullModule": "Game.Levels.L12Levels.L01_Choose",
+      "contextModule": "RealAnalysisGame.Context.Lecture12.L2",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(p : ℕ → Prop) (h : ∀ N, ∃ n > N, p n) : ∃ σ, Subseq σ ∧ ∀ n, p (σ n)",
+      "referenceTheorem": "RealAnalysisLevel_Lecture12_2"
+    },
+    "lecture12-3": {
+      "sourcePath": "Game/Levels/L12Levels/L01_MonotoneBdd.lean",
+      "fullModule": "Game.Levels.L12Levels.L01_MonotoneBdd",
+      "contextModule": "RealAnalysisGame.Context.Lecture12.L3",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "IsCauchy_of_MonotoneBdd {X : Type*} [NormedField X] [LinearOrder X] [IsStrictOrderedRing X] [FloorSemiring X] {a : ℕ → X} {M : X} (ha : Monotone a) (hM : ∀ n, a n ≤ M) : IsCauchy a",
+      "referenceTheorem": "IsCauchy_of_MonotoneBdd"
+    },
+    "lecture12-4": {
+      "sourcePath": "Game/Levels/L12Levels/L02_IterateGap.lean",
+      "fullModule": "Game.Levels.L12Levels.L02_IterateGap",
+      "contextModule": "RealAnalysisGame.Context.Lecture12.L4",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "{X : Type*} [NormedField X] [LinearOrder X] [IsStrictOrderedRing X] (a : ℕ → X) (ha : Monotone a) (ε : X) (εpos : ε > 0) (τ : ℕ → ℕ) (hτ : ∀ n, τ n ≥ n) (σ : ℕ → ℕ) (hσ : ∀ n, σ n ≥ τ n) (hgap : ∀ n, ε ≤ |a (σ n) - a (τ n)|) : ∀ (k : ℕ), k * ε ≤ a (σ^[k] 0) - a 0",
+      "referenceTheorem": "RealAnalysisLevel_Lecture12_4"
+    },
+    "l12pset-1": {
+      "sourcePath": "Game/Levels/L12Pset/L12Pset1.lean",
+      "fullModule": "Game.Levels.L12Pset.L12Pset1",
+      "contextModule": "RealAnalysisGame.Context.L12Pset.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "{X : Type*} [NormedField X] [LinearOrder X] [IsStrictOrderedRing X] [FloorSemiring X] {a : ℕ → X} {M : X} (ha : Antitone a) (hM : ∀ n, M ≤ a n) : IsCauchy a",
+      "referenceTheorem": "RealAnalysisLevel_L12Pset_1"
+    },
+    "l12pset-2": {
+      "sourcePath": "Game/Levels/L12Pset/L12Pset2.lean",
+      "fullModule": "Game.Levels.L12Pset.L12Pset2",
+      "contextModule": "RealAnalysisGame.Context.L12Pset.L2",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(a : ℕ → ℝ) (ha : ∀ n, a n = 1 / n) : IsCauchy a ∧ ¬ Monotone a ∧ ¬ Antitone a",
+      "referenceTheorem": "RealAnalysisLevel_L12Pset_2"
+    },
+    "lecture13-1": {
+      "sourcePath": "Game/Levels/L13Levels/L03_MonotoneSubseq.lean",
+      "fullModule": "Game.Levels.L13Levels.L03_MonotoneSubseq",
+      "contextModule": "RealAnalysisGame.Context.Lecture13.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "MonotoneSubseq_of_BddPeaks {X : Type*} [NormedField X] [LinearOrder X] [IsStrictOrderedRing X] [FloorSemiring X] (a : ℕ → X) (ha : ¬ UnBddPeaks a) : ∃ σ, Subseq σ ∧ Monotone (a ∘ σ)",
+      "referenceTheorem": "MonotoneSubseq_of_BddPeaks"
+    },
+    "l13pset-1": {
+      "sourcePath": "Game/Levels/L13Pset/L13Pset1.lean",
+      "fullModule": "Game.Levels.L13Pset.L13Pset1",
+      "contextModule": "RealAnalysisGame.Context.L13Pset.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "{X : Type*} [NormedField X] [LinearOrder X] [IsStrictOrderedRing X] [FloorSemiring X] (a : ℕ → X) (ha : UnBddPeaks a) : ∃ σ, Subseq σ ∧ Antitone (a ∘ σ)",
+      "referenceTheorem": "RealAnalysisLevel_L13Pset_1"
+    },
+    "lecture14-1": {
+      "sourcePath": "Game/Levels/L14Levels/L01_BolzanoWeierstrass.lean",
+      "fullModule": "Game.Levels.L14Levels.L01_BolzanoWeierstrass",
+      "contextModule": "RealAnalysisGame.Context.Lecture14.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "IsCauchy_of_AntitoneBdd {X : Type*} [NormedField X] [LinearOrder X] [IsStrictOrderedRing X] [FloorSemiring X] {a : ℕ → X} {M : X} (ha : Antitone a) (hM : ∀ n, M ≤ a n) : IsCauchy a",
+      "referenceTheorem": "IsCauchy_of_AntitoneBdd"
+    },
+    "lecture15-1": {
+      "sourcePath": "Game/Levels/L15Levels/L01_check.lean",
+      "fullModule": "Game.Levels.L15Levels.L01_check",
+      "contextModule": "RealAnalysisGame.Context.Lecture15.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "Reals_are_Complete (q : ℕ → ℕ → ℚ) (x : ℕ → ℝ) (hq : ∀ n, IsCauchy (q n)) (hx : ∀ n, x n = Real_of_CauSeq (hq n)) (hxCau : IsCauchy x) : ∃ (y : ℕ → ℚ) (hy : IsCauchy y), SeqLim x (Real_of_CauSeq hy)",
+      "referenceTheorem": "Reals_are_Complete"
+    },
+    "l15pset-1": {
+      "sourcePath": "Game/Levels/L15Pset/L15Pset1.lean",
+      "fullModule": "Game.Levels.L15Pset.L15Pset1",
+      "contextModule": "RealAnalysisGame.Context.L15Pset.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(a b : ℕ → ℚ) (ha : ∀ n, a n = 1 - 1 / 2 ^ n) (hb : ∀ n, b n = 1) : ∀ ε > 0, ∃ N, ∀ n ≥ N, |a n - b n| < ε",
+      "referenceTheorem": "RealAnalysisLevel_L15Pset_1"
+    },
+    "lecture16-1": {
+      "sourcePath": "Game/Levels/L16Levels/L01_check.lean",
+      "fullModule": "Game.Levels.L16Levels.L01_check",
+      "contextModule": "RealAnalysisGame.Context.Lecture16.L1",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "LimZero_of_SeriesConv (a : ℕ → ℝ) (ha : SeriesConv a) : SeqLim a 0",
+      "referenceTheorem": "LimZero_of_SeriesConv"
+    },
+    "l16pset-1": {
+      "sourcePath": "Game/Levels/L16Pset/L16Pset1.lean",
+      "fullModule": "Game.Levels.L16Pset.L16Pset1",
+      "contextModule": "RealAnalysisGame.Context.L16Pset.L1",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "FiniteGeomSeries (x : ℝ) (n : ℕ) : (1 - x) * ∑ k ∈ range n, x ^ k = 1 - x ^ n",
+      "referenceTheorem": "FiniteGeomSeries"
+    },
+    "l16pset-2": {
+      "sourcePath": "Game/Levels/L16Pset/L16Pset2.lean",
+      "fullModule": "Game.Levels.L16Pset.L16Pset2",
+      "contextModule": "RealAnalysisGame.Context.L16Pset.L2",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "SeriesConstMul (a b : ℕ → ℝ) (c : ℝ) (hb : ∀ n, b n = c * a n) : ∀ n, Series b n = c * Series a n",
+      "referenceTheorem": "SeriesConstMul"
+    },
+    "l16pset-3": {
+      "sourcePath": "Game/Levels/L16Pset/L16Pset3.lean",
+      "fullModule": "Game.Levels.L16Pset.L16Pset3",
+      "contextModule": "RealAnalysisGame.Context.L16Pset.L3",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "SeriesAdd (a b c : ℕ → ℝ) (h : ∀ n, c n = a n + b n) : ∀ n, Series c n = Series a n + Series b n",
+      "referenceTheorem": "SeriesAdd"
+    },
+    "lecture17-1": {
+      "sourcePath": "Game/Levels/L17Levels/L01.lean",
+      "fullModule": "Game.Levels.L17Levels.L01",
+      "contextModule": "RealAnalysisGame.Context.Lecture17.L1",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "LeibnizSeriesFinite {a : ℕ → ℝ} (ha : ∀ n, a n = 1 / ((n + 1) * (n + 2))) : ∀ n, ∑ k ∈ range n, a k = 1 - 1 / (n + 1)",
+      "referenceTheorem": "LeibnizSeriesFinite"
+    },
+    "lecture17-2": {
+      "sourcePath": "Game/Levels/L17Levels/L02.lean",
+      "fullModule": "Game.Levels.L17Levels.L02",
+      "contextModule": "RealAnalysisGame.Context.Lecture17.L2",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "LeibnizSeries (a : ℕ → ℝ) (ha : ∀ n, a n = 1 / ((n + 1) * (n + 2))) : SeriesConv a",
+      "referenceTheorem": "LeibnizSeries"
+    },
+    "lecture17-3": {
+      "sourcePath": "Game/Levels/L17Levels/L03.lean",
+      "fullModule": "Game.Levels.L17Levels.L03",
+      "contextModule": "RealAnalysisGame.Context.Lecture17.L3",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "SeriesOrderThm {a b : ℕ → ℝ} (hab : ∀ n, a n ≤ b n) : ∀ n, Series a n ≤ Series b n",
+      "referenceTheorem": "SeriesOrderThm"
+    },
+    "lecture17-4": {
+      "sourcePath": "Game/Levels/L17Levels/L04.lean",
+      "fullModule": "Game.Levels.L17Levels.L04",
+      "contextModule": "RealAnalysisGame.Context.Lecture17.L4",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "(a : ℕ → ℝ) (ha : ∀ n, a n = 1 / ((n + 2) ^ 2)) : SeriesConv a",
+      "referenceTheorem": "RealAnalysisLevel_Lecture17_4"
+    },
+    "l17pset-1": {
+      "sourcePath": "Game/Levels/L17Pset/L05.lean",
+      "fullModule": "Game.Levels.L17Pset.L05",
+      "contextModule": "RealAnalysisGame.Context.L17Pset.L1",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "Monotone_of_NonNegSeries {a : ℕ → ℝ} (ha : ∀ n, 0 ≤ a n) : Monotone (Series a)",
+      "referenceTheorem": "Monotone_of_NonNegSeries"
+    },
+    "l17pset-2": {
+      "sourcePath": "Game/Levels/L17Pset/L05'.lean",
+      "fullModule": "Game.Levels.L17Pset.L05'",
+      "contextModule": "RealAnalysisGame.Context.L17Pset.L2",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "MonotoneLimitBound {a : ℕ → ℝ} (amono : Monotone a) {L : ℝ} (ha : SeqLim a L) : ∀ n, a n ≤ L",
+      "referenceTheorem": "MonotoneLimitBound"
+    },
+    "l17pset-3": {
+      "sourcePath": "Game/Levels/L17Pset/L06.lean",
+      "fullModule": "Game.Levels.L17Pset.L06",
+      "contextModule": "RealAnalysisGame.Context.L17Pset.L3",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "ComparisonTest {a b : ℕ → ℝ} (ha : ∀ n, 0 ≤ a n) (hab : ∀ n, a n ≤ b n) (hb : SeriesConv b) : SeriesConv a",
+      "referenceTheorem": "ComparisonTest"
+    },
+    "lecture18-1": {
+      "sourcePath": "Game/Levels/L18Levels/L01.lean",
+      "fullModule": "Game.Levels.L18Levels.L01",
+      "contextModule": "RealAnalysisGame.Context.Lecture18.L1",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "Conv_of_AbsSeriesConv {a : ℕ → ℝ} (ha : AbsSeriesConv a) : SeriesConv a",
+      "referenceTheorem": "Conv_of_AbsSeriesConv"
+    },
+    "lecture18-2": {
+      "sourcePath": "Game/Levels/L18Levels/L02.lean",
+      "fullModule": "Game.Levels.L18Levels.L02",
+      "contextModule": "RealAnalysisGame.Context.Lecture18.L2",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "AlternatingSeriesTest {a : ℕ → ℝ} (ha : Antitone a) (aLim : SeqLim a 0) : SeriesConv (fun n ↦ (-1)^n * a n)",
+      "referenceTheorem": "AlternatingSeriesTest"
+    },
+    "l18pset-1": {
+      "sourcePath": "Game/Levels/L18Pset/L01.lean",
+      "fullModule": "Game.Levels.L18Pset.L01",
+      "contextModule": "RealAnalysisGame.Context.L18Pset.L1",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "(a : ℕ → ℝ) {n m : ℕ} (hmn : n ≤ m) : Series a m - Series a n = ∑ k ∈ Ico n m, a k",
+      "referenceTheorem": "RealAnalysisLevel_L18Pset_1"
+    },
+    "l18pset-2": {
+      "sourcePath": "Game/Levels/L18Pset/L02.lean",
+      "fullModule": "Game.Levels.L18Pset.L02",
+      "contextModule": "RealAnalysisGame.Context.L18Pset.L2",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "(a : ℕ → ℝ) {n m : ℕ} (hmn : n ≤ m) : |∑ k ∈ Ico n m, a k| ≤ ∑ k ∈ Ico n m, |a k|",
+      "referenceTheorem": "RealAnalysisLevel_L18Pset_2"
+    },
+    "l18pset-3": {
+      "sourcePath": "Game/Levels/L18Pset/L03.lean",
+      "fullModule": "Game.Levels.L18Pset.L03",
+      "contextModule": "RealAnalysisGame.Context.L18Pset.L3",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "{a : ℕ → ℝ} (ha : Antitone a) {L : ℝ} (aLim : SeqLim a L) : ∀ n, L ≤ a n",
+      "referenceTheorem": "RealAnalysisLevel_L18Pset_3"
+    },
+    "l18pset-4": {
+      "sourcePath": "Game/Levels/L18Pset/L04.lean",
+      "fullModule": "Game.Levels.L18Pset.L04",
+      "contextModule": "RealAnalysisGame.Context.L18Pset.L4",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "{a b : ℕ → ℝ} {L M : ℝ} (ha : SeqLim a L) (hb : SeqLim b M) (hab : SeqLim (fun n ↦ a n - b n) 0) : L = M",
+      "referenceTheorem": "RealAnalysisLevel_L18Pset_4"
+    },
+    "l18pset-5": {
+      "sourcePath": "Game/Levels/L18Pset/L05.lean",
+      "fullModule": "Game.Levels.L18Pset.L05",
+      "contextModule": "RealAnalysisGame.Context.L18Pset.L5",
+      "namespaces": [],
+      "openCommands": [
+        "open Nat"
+      ],
+      "declaration": "{a : ℕ → ℝ} {L : ℝ} (ha2n : SeqLim (fun n ↦ a (2 * n)) L) (ha2np1 : SeqLim (fun n ↦ a (2 * n + 1)) L) : SeqLim a L",
+      "referenceTheorem": "RealAnalysisLevel_L18Pset_5"
+    },
+    "l18pset-6": {
+      "sourcePath": "Game/Levels/L18Pset/L06.lean",
+      "fullModule": "Game.Levels.L18Pset.L06",
+      "contextModule": "RealAnalysisGame.Context.L18Pset.L6",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "{a : ℕ → ℝ} (ha : Antitone a) (apos : ∀ n, 0 ≤ a n) : Monotone (fun n ↦ ∑ k ∈ range (2 * n), (-1)^k * a k)",
+      "referenceTheorem": "RealAnalysisLevel_L18Pset_6"
+    },
+    "l18pset-7": {
+      "sourcePath": "Game/Levels/L18Pset/L07.lean",
+      "fullModule": "Game.Levels.L18Pset.L07",
+      "contextModule": "RealAnalysisGame.Context.L18Pset.L7",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "{a : ℕ → ℝ} (ha : Antitone a) (apos : ∀ n, 0 ≤ a n) : Antitone (fun n ↦ ∑ k ∈ range (2 * n + 1), (-1)^k * a k)",
+      "referenceTheorem": "RealAnalysisLevel_L18Pset_7"
+    },
+    "l18pset-8": {
+      "sourcePath": "Game/Levels/L18Pset/L08.lean",
+      "fullModule": "Game.Levels.L18Pset.L08",
+      "contextModule": "RealAnalysisGame.Context.L18Pset.L8",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "{a : ℕ → ℝ} (ha : Antitone a) (apos : ∀ n, 0 ≤ a n) (n : ℕ) : ∑ k ∈ range (2 * n), (-1)^k * a k ≤ a 0",
+      "referenceTheorem": "RealAnalysisLevel_L18Pset_8"
+    },
+    "l18pset-9": {
+      "sourcePath": "Game/Levels/L18Pset/L09.lean",
+      "fullModule": "Game.Levels.L18Pset.L09",
+      "contextModule": "RealAnalysisGame.Context.L18Pset.L9",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "{a : ℕ → ℝ} (ha : Antitone a) (ha' : ∀ n, 0 ≤ a n) (n : ℕ) : 0 ≤ ∑ k ∈ range (2 * n + 1), (-1)^k * a k",
+      "referenceTheorem": "RealAnalysisLevel_L18Pset_9"
+    },
+    "l18pset-10": {
+      "sourcePath": "Game/Levels/L18Pset/L10.lean",
+      "fullModule": "Game.Levels.L18Pset.L10",
+      "contextModule": "RealAnalysisGame.Context.L18Pset.L10",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "{a : ℕ → ℝ} (aLim : SeqLim a 0) : SeqLim (fun n ↦ ∑ k ∈ range (2 * n + 1), (-1)^k * a k - ∑ k ∈ range (2 * n), (-1)^k * a k) 0",
+      "referenceTheorem": "RealAnalysisLevel_L18Pset_10"
+    },
+    "lecture19-1": {
+      "sourcePath": "Game/Levels/L19Levels/L01.lean",
+      "fullModule": "Game.Levels.L19Levels.L01",
+      "contextModule": "RealAnalysisGame.Context.Lecture19.L1",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset Function"
+      ],
+      "declaration": "StrongCauchy_of_AbsSeriesConv {a : ℕ → ℝ} (ha : AbsSeriesConv a) {ε : ℝ} (hε : ε > 0) : ∃ N, ∀ (S : Finset ℕ), (∀ k ∈ S, k ≥ N) → ∑ k ∈ S, |a k| < ε",
+      "referenceTheorem": "StrongCauchy_of_AbsSeriesConv"
+    },
+    "lecture19-2": {
+      "sourcePath": "Game/Levels/L19Levels/L02.lean",
+      "fullModule": "Game.Levels.L19Levels.L02",
+      "contextModule": "RealAnalysisGame.Context.Lecture19.L2",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset Function"
+      ],
+      "declaration": "EventuallyCovers_of_Rearrangement {σ : ℕ → ℕ} (hσ : Rearrangement σ) (M : ℕ) : ∃ N, ∀ n ≥ N, (range M) ⊆ image σ (range n)",
+      "referenceTheorem": "EventuallyCovers_of_Rearrangement"
+    },
+    "lecture19-3": {
+      "sourcePath": "Game/Levels/L19Levels/L03.lean",
+      "fullModule": "Game.Levels.L19Levels.L03",
+      "contextModule": "RealAnalysisGame.Context.Lecture19.L3",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset Function"
+      ],
+      "declaration": "RearrangementThm {a : ℕ → ℝ} (ha : AbsSeriesConv a) : ∃ L, ∀ (σ : ℕ → ℕ) (_ : Rearrangement σ), SeriesLim (a ∘ σ) L",
+      "referenceTheorem": "RearrangementThm"
+    },
+    "lecture19-4": {
+      "sourcePath": "Game/Levels/L19Levels/L04.lean",
+      "fullModule": "Game.Levels.L19Levels.L04",
+      "contextModule": "RealAnalysisGame.Context.Lecture19.L4",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "{a : ℕ → ℝ} (ha1 : SeriesConv a) (ha2 : ¬ AbsSeriesConv a) : ∀ L, ∃ (σ : ℕ → ℕ) (hσ : Rearrangement σ), SeriesLim (a ∘ σ) L",
+      "referenceTheorem": "RealAnalysisLevel_Lecture19_4"
+    },
+    "l1pset-1": {
+      "sourcePath": "Game/Levels/L1Pset/L1Pset1.lean",
+      "fullModule": "Game.Levels.L1Pset.L1Pset1",
+      "contextModule": "RealAnalysisGame.Context.L1Pset.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(f : ℝ → ℝ) (h : ∀ u, f (u) = 2 * u + 1) : ∃ a, f (3) = a",
+      "referenceTheorem": "RealAnalysisLevel_L1Pset_1"
+    },
+    "l1pset-2": {
+      "sourcePath": "Game/Levels/L1Pset/L1Pset2.lean",
+      "fullModule": "Game.Levels.L1Pset.L1Pset2",
+      "contextModule": "RealAnalysisGame.Context.L1Pset.L2",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": ": ∃ c, ∀ x y : ℝ, x ^ 2 + y ^ 2 = 2 → x * y = 1 → (x + y) ^ 2 = c",
+      "referenceTheorem": "RealAnalysisLevel_L1Pset_2"
+    },
+    "l1pset-3": {
+      "sourcePath": "Game/Levels/L1Pset/L1Pset3.lean",
+      "fullModule": "Game.Levels.L1Pset.L1Pset3",
+      "contextModule": "RealAnalysisGame.Context.L1Pset.L3",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(g : ℝ → ℝ) (h1 : ∀ x, g (x + 1) = g (x) + 3) (h2 : g (0) = 5) : g (1) = 8",
+      "referenceTheorem": "RealAnalysisLevel_L1Pset_3"
+    },
+    "l1pset-4": {
+      "sourcePath": "Game/Levels/L1Pset/L1Pset4.lean",
+      "fullModule": "Game.Levels.L1Pset.L1Pset4",
+      "contextModule": "RealAnalysisGame.Context.L1Pset.L4",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(g : ℝ → ℝ) (h1 : ∀ x, g (x + 1) = g (x) + 3) (h2 : g (0) = 5) : g (2) = 11",
+      "referenceTheorem": "RealAnalysisLevel_L1Pset_4"
+    },
+    "l1pset-5": {
+      "sourcePath": "Game/Levels/L1Pset/L1Pset5.lean",
+      "fullModule": "Game.Levels.L1Pset.L1Pset5",
+      "contextModule": "RealAnalysisGame.Context.L1Pset.L5",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(p : ℝ → ℝ) (x : ℝ) (h1 : ∀ t, p (t) = t ^ 2 + 2 * t) (h2 : p (x) = 15) : ∃ b, x ^ 2 + 2 * x = b",
+      "referenceTheorem": "RealAnalysisLevel_L1Pset_5"
+    },
+    "realanalysisstory-1": {
+      "sourcePath": "Game/Levels/L1RealAnalysisStory/L00_the_problem.lean",
+      "fullModule": "Game.Levels.L1RealAnalysisStory.L00_the_problem",
+      "contextModule": "RealAnalysisGame.Context.RealAnalysisStory.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(x : ℝ) (h : x = 5) : x = 5",
+      "referenceTheorem": "RealAnalysisLevel_RealAnalysisStory_1"
+    },
+    "realanalysisstory-2": {
+      "sourcePath": "Game/Levels/L1RealAnalysisStory/L02_rfl.lean",
+      "fullModule": "Game.Levels.L1RealAnalysisStory.L02_rfl",
+      "contextModule": "RealAnalysisGame.Context.RealAnalysisStory.L2",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(x y : ℝ) : x ^ 2 + 2 * y = x ^ 2 + 2 * y",
+      "referenceTheorem": "RealAnalysisLevel_RealAnalysisStory_2"
+    },
+    "realanalysisstory-3": {
+      "sourcePath": "Game/Levels/L1RealAnalysisStory/L03_rw.lean",
+      "fullModule": "Game.Levels.L1RealAnalysisStory.L03_rw",
+      "contextModule": "RealAnalysisGame.Context.RealAnalysisStory.L3",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(x y : ℝ) (Bob : x = 2) : x + y = 2 + y",
+      "referenceTheorem": "RealAnalysisLevel_RealAnalysisStory_3"
+    },
+    "realanalysisstory-4": {
+      "sourcePath": "Game/Levels/L1RealAnalysisStory/L04_ring_nf.lean",
+      "fullModule": "Game.Levels.L1RealAnalysisStory.L04_ring_nf",
+      "contextModule": "RealAnalysisGame.Context.RealAnalysisStory.L4",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(x y : ℝ) : (x + y)^3 = x^3 + 3*x^2*y + 3*x*y^2 + y^3",
+      "referenceTheorem": "RealAnalysisLevel_RealAnalysisStory_4"
+    },
+    "realanalysisstory-5": {
+      "sourcePath": "Game/Levels/L1RealAnalysisStory/L05_use.lean",
+      "fullModule": "Game.Levels.L1RealAnalysisStory.L05_use",
+      "contextModule": "RealAnalysisGame.Context.RealAnalysisStory.L5",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(x y : ℝ) : ∃ (c : ℝ), (x + y)^4 = x^4 + 4*x^3*y + c*x^2*y^2 + 4*x*y^3 + y^4",
+      "referenceTheorem": "RealAnalysisLevel_RealAnalysisStory_5"
+    },
+    "realanalysisstory-6": {
+      "sourcePath": "Game/Levels/L1RealAnalysisStory/L06_intro.lean",
+      "fullModule": "Game.Levels.L1RealAnalysisStory.L06_intro",
+      "contextModule": "RealAnalysisGame.Context.RealAnalysisStory.L6",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": ": ∀ ε : ℝ, ε > 0 → (ε + 1)^2 = (ε + 1)^2",
+      "referenceTheorem": "RealAnalysisLevel_RealAnalysisStory_6"
+    },
+    "realanalysisstory-7": {
+      "sourcePath": "Game/Levels/L1RealAnalysisStory/L07_specialize.lean",
+      "fullModule": "Game.Levels.L1RealAnalysisStory.L07_specialize",
+      "contextModule": "RealAnalysisGame.Context.RealAnalysisStory.L7",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(t : ℝ) (t_pos : t > 0) (f : ℝ → ℝ) (hf : ∀ x > 0, f (x) = x^2) : f (t) = t^2",
+      "referenceTheorem": "RealAnalysisLevel_RealAnalysisStory_7"
+    },
+    "realanalysisstory-8": {
+      "sourcePath": "Game/Levels/L1RealAnalysisStory/L08_choose.lean",
+      "fullModule": "Game.Levels.L1RealAnalysisStory.L08_choose",
+      "contextModule": "RealAnalysisGame.Context.RealAnalysisStory.L8",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(f : ℝ → ℝ) (h : ∃ c : ℝ, f c = 2) : ∃ x : ℝ, (f x) ^ 2 = 4",
+      "referenceTheorem": "RealAnalysisLevel_RealAnalysisStory_8"
+    },
+    "realanalysisstory-9": {
+      "sourcePath": "Game/Levels/L1RealAnalysisStory/L09_big_boss.lean",
+      "fullModule": "Game.Levels.L1RealAnalysisStory.L09_big_boss",
+      "contextModule": "RealAnalysisGame.Context.RealAnalysisStory.L9",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(f : ℝ → ℝ) (h_existential : ∃ (a : ℝ), f (a) = 3) (h_universal : ∀ x > 0, f (x + 1) = f (x) + 9) : ∃ (b : ℝ), ∀ y > 0, f (y + 1)^2 = (f (y) + (f b)^2)^2",
+      "referenceTheorem": "RealAnalysisLevel_RealAnalysisStory_9"
+    },
+    "lecture20-1": {
+      "sourcePath": "Game/Levels/L20Levels/L01.lean",
+      "fullModule": "Game.Levels.L20Levels.L01",
+      "contextModule": "RealAnalysisGame.Context.Lecture20.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": ": ∃ L, FunLimAt (fun x ↦ (x^2 - 1)/(x - 1)) L 1",
+      "referenceTheorem": "RealAnalysisLevel_Lecture20_1"
+    },
+    "lecture20-2": {
+      "sourcePath": "Game/Levels/L20Levels/L02.lean",
+      "fullModule": "Game.Levels.L20Levels.L02",
+      "contextModule": "RealAnalysisGame.Context.Lecture20.L2",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": ": FunContAt (fun x ↦ x^2 - 1) 2",
+      "referenceTheorem": "RealAnalysisLevel_Lecture20_2"
+    },
+    "lecture20-3": {
+      "sourcePath": "Game/Levels/L20Levels/L03.lean",
+      "fullModule": "Game.Levels.L20Levels.L03",
+      "contextModule": "RealAnalysisGame.Context.Lecture20.L3",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "FunContAtAdd {f g : ℝ → ℝ} {c : ℝ} (hf : FunContAt f c) (hg : FunContAt g c) : FunContAt (fun x ↦ f x + g x) c",
+      "referenceTheorem": "FunContAtAdd"
+    },
+    "lecture20-4": {
+      "sourcePath": "Game/Levels/L20Levels/L04.lean",
+      "fullModule": "Game.Levels.L20Levels.L04",
+      "contextModule": "RealAnalysisGame.Context.Lecture20.L4",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "SeqLim_of_FunLimAt {f : ℝ → ℝ} {L c : ℝ} (hf : FunLimAt f L c) : ∀ x : ℕ → ℝ, (∀ n, x n ≠ c) → SeqLim x c → SeqLim (fun n ↦ f (x n)) L",
+      "referenceTheorem": "SeqLim_of_FunLimAt"
+    },
+    "l20pset-1": {
+      "sourcePath": "Game/Levels/L20Pset/L01.lean",
+      "fullModule": "Game.Levels.L20Pset.L01",
+      "contextModule": "RealAnalysisGame.Context.L20Pset.L1",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "(f : ℝ → ℝ) (c : ℝ) (hf : FunContAt f c) : FunLimAt f (f c) c",
+      "referenceTheorem": "RealAnalysisLevel_L20Pset_1"
+    },
+    "l20pset-2": {
+      "sourcePath": "Game/Levels/L20Pset/L02.lean",
+      "fullModule": "Game.Levels.L20Pset.L02",
+      "contextModule": "RealAnalysisGame.Context.L20Pset.L2",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "(f : ℝ → ℝ) (c : ℝ) (hf : FunLimAt f (f c) c) : FunContAt f c",
+      "referenceTheorem": "RealAnalysisLevel_L20Pset_2"
+    },
+    "l20pset-3": {
+      "sourcePath": "Game/Levels/L20Pset/L03.lean",
+      "fullModule": "Game.Levels.L20Pset.L03",
+      "contextModule": "RealAnalysisGame.Context.L20Pset.L3",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "ConstTimesLimAt (f : ℝ → ℝ) (c L k : ℝ) (hf : FunLimAt f L c) : FunLimAt (fun x ↦ k * f x) (k * L) c",
+      "referenceTheorem": "ConstTimesLimAt"
+    },
+    "l20pset-4": {
+      "sourcePath": "Game/Levels/L20Pset/L04.lean",
+      "fullModule": "Game.Levels.L20Pset.L04",
+      "contextModule": "RealAnalysisGame.Context.L20Pset.L4",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "Bdd_of_LimAt (f : ℝ → ℝ) (c L : ℝ) (hf : FunLimAt f L c) : ∃ M > 0, ∃ δ > 0, ∀ x ≠ c, |x - c| < δ → |f x| < M",
+      "referenceTheorem": "Bdd_of_LimAt"
+    },
+    "lecture21-1": {
+      "sourcePath": "Game/Levels/L21Levels/L05.lean",
+      "fullModule": "Game.Levels.L21Levels.L05",
+      "contextModule": "RealAnalysisGame.Context.Lecture21.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "FunLim_of_SeqLim {f : ℝ → ℝ} {L c : ℝ} (h : ∀ x : ℕ → ℝ, (∀ n, x n ≠ c) → SeqLim x c → SeqLim (fun n ↦ f (x n)) L) : FunLimAt f L c",
+      "referenceTheorem": "FunLim_of_SeqLim"
+    },
+    "lecture21-2": {
+      "sourcePath": "Game/Levels/L21Levels/L06.lean",
+      "fullModule": "Game.Levels.L21Levels.L06",
+      "contextModule": "RealAnalysisGame.Context.Lecture21.L2",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": ": FunDerivAt (fun x ↦ x^2 - 1) 4 2",
+      "referenceTheorem": "RealAnalysisLevel_Lecture21_2"
+    },
+    "lecture21-3": {
+      "sourcePath": "Game/Levels/L21Levels/L07.lean",
+      "fullModule": "Game.Levels.L21Levels.L07",
+      "contextModule": "RealAnalysisGame.Context.Lecture21.L3",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(f g : ℝ → ℝ) (hf : ∀ x, f x = x ^ 2 - 1) (hg : ∀ x, g x = 2 * x) : FunDeriv f g",
+      "referenceTheorem": "RealAnalysisLevel_Lecture21_3"
+    },
+    "lecture21-4": {
+      "sourcePath": "Game/Levels/L21Levels/L08.lean",
+      "fullModule": "Game.Levels.L21Levels.L08",
+      "contextModule": "RealAnalysisGame.Context.Lecture21.L4",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": ": FunCont (fun x ↦ x^2 - 1)",
+      "referenceTheorem": "RealAnalysisLevel_Lecture21_4"
+    },
+    "lecture22-1": {
+      "sourcePath": "Game/Levels/L22Levels/L01.lean",
+      "fullModule": "Game.Levels.L22Levels.L01",
+      "contextModule": "RealAnalysisGame.Context.Lecture22.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "Cont_Comp (f g : ℝ → ℝ) (hf : FunCont f) (hg : FunCont g) : FunCont (f ∘ g)",
+      "referenceTheorem": "Cont_Comp"
+    },
+    "lecture22-2": {
+      "sourcePath": "Game/Levels/L22Levels/L02.lean",
+      "fullModule": "Game.Levels.L22Levels.L02",
+      "contextModule": "RealAnalysisGame.Context.Lecture22.L2",
+      "namespaces": [],
+      "openCommands": [
+        "open Set"
+      ],
+      "declaration": "Cont_of_UnifConv (f : ℕ → ℝ → ℝ) (hf : ∀ n, FunCont (f n)) (F : ℝ → ℝ) (hfF : UnifConv f F) : FunCont F",
+      "referenceTheorem": "Cont_of_UnifConv"
+    },
+    "lecture22-3": {
+      "sourcePath": "Game/Levels/L22Levels/L03.lean",
+      "fullModule": "Game.Levels.L22Levels.L03",
+      "contextModule": "RealAnalysisGame.Context.Lecture22.L3",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "{a b : ℝ} (hab : a < b) : IntegrableOn (fun x ↦ x) a b",
+      "referenceTheorem": "RealAnalysisLevel_Lecture22_3"
+    },
+    "l22pset-1": {
+      "sourcePath": "Game/Levels/L22Pset/L01.lean",
+      "fullModule": "Game.Levels.L22Pset.L01",
+      "contextModule": "RealAnalysisGame.Context.L22Pset.L1",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "(f : ℕ → ℝ → ℝ) (F : ℝ → ℝ) (hfF : UnifConv f F) : ∀ x, SeqLim (fun n ↦ f n x) (F x)",
+      "referenceTheorem": "RealAnalysisLevel_L22Pset_1"
+    },
+    "l22pset-2": {
+      "sourcePath": "Game/Levels/L22Pset/L02.lean",
+      "fullModule": "Game.Levels.L22Pset.L02",
+      "contextModule": "RealAnalysisGame.Context.L22Pset.L2",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset Set"
+      ],
+      "declaration": ": FunCont (fun x ↦ x ^ 3)",
+      "referenceTheorem": "RealAnalysisLevel_L22Pset_2"
+    },
+    "l22pset-3": {
+      "sourcePath": "Game/Levels/L22Pset/L03.lean",
+      "fullModule": "Game.Levels.L22Pset.L03",
+      "contextModule": "RealAnalysisGame.Context.L22Pset.L3",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset Set"
+      ],
+      "declaration": ": ∃ g : ℝ → ℝ, FunDeriv (fun x ↦ x ^ 3) g",
+      "referenceTheorem": "RealAnalysisLevel_L22Pset_3"
+    },
+    "l22pset-4": {
+      "sourcePath": "Game/Levels/L22Pset/L04.lean",
+      "fullModule": "Game.Levels.L22Pset.L04",
+      "contextModule": "RealAnalysisGame.Context.L22Pset.L4",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset Set"
+      ],
+      "declaration": "sum_of_squares (n : ℕ) : ∑ i ∈ Finset.range n, ((i : ℝ) + 1) ^ 2 = ((n : ℝ) * (n + 1) * (2 * n + 1)) / 6",
+      "referenceTheorem": "sum_of_squares"
+    },
+    "lecture23-1": {
+      "sourcePath": "Game/Levels/L23Levels/L01.lean",
+      "fullModule": "Game.Levels.L23Levels.L01",
+      "contextModule": "RealAnalysisGame.Context.Lecture23.L1",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset Set"
+      ],
+      "declaration": "RiemannSumRefinement (f : ℝ → ℝ) {a b : ℝ} (hab : a < b) {n k : ℕ} (hn : n ≠ 0) (hk : k ≠ 0) {ε δ : ℝ} (hε : ε > 0) (hδ : δ > 0) (hunif : ∀ x ∈ Icc a b, ∀ y ∈ Icc a b, |y - x| < δ → |f y - f x| < ε) (hfine : 2 * (b - a) / n < δ) : |RiemannSum f a b (n * k) - RiemannSum f a b n| < (b - a) * ε",
+      "referenceTheorem": "RiemannSumRefinement"
+    },
+    "lecture23-2": {
+      "sourcePath": "Game/Levels/L23Levels/L02.lean",
+      "fullModule": "Game.Levels.L23Levels.L02",
+      "contextModule": "RealAnalysisGame.Context.Lecture23.L2",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset Set"
+      ],
+      "declaration": "HasIntegral_of_UnifContOn (f : ℝ → ℝ) (a b : ℝ) (hab : a < b) (hf : UnifContOn f (Icc a b)) : IntegrableOn f a b",
+      "referenceTheorem": "HasIntegral_of_UnifContOn"
+    },
+    "lecture23-3": {
+      "sourcePath": "Game/Levels/L23Levels/L03.lean",
+      "fullModule": "Game.Levels.L23Levels.L03",
+      "contextModule": "RealAnalysisGame.Context.Lecture23.L3",
+      "namespaces": [
+        "RealAnalysisGame"
+      ],
+      "openCommands": [
+        "open Finset Set"
+      ],
+      "declaration": "UnifContOn_of_Compact (f : ℝ → ℝ) (hf : FunCont f) (S : Set ℝ) (hS : IsCompact S) : UnifContOn f S",
+      "referenceTheorem": "UnifContOn_of_Compact"
+    },
+    "lecture24-1": {
+      "sourcePath": "Game/Levels/L24Levels/L01.lean",
+      "fullModule": "Game.Levels.L24Levels.L01",
+      "contextModule": "RealAnalysisGame.Context.Lecture24.L1",
+      "namespaces": [
+        "RealAnalysisGame"
+      ],
+      "openCommands": [
+        "open Set"
+      ],
+      "declaration": "Bdd_of_Compact (S : Set ℝ) (hcomp : IsCompact S) : ∃ M, ∀ s ∈ S, |s| < M",
+      "referenceTheorem": "Bdd_of_Compact"
+    },
+    "lecture24-2": {
+      "sourcePath": "Game/Levels/L24Levels/L02.lean",
+      "fullModule": "Game.Levels.L24Levels.L02",
+      "contextModule": "RealAnalysisGame.Context.Lecture24.L2",
+      "namespaces": [
+        "RealAnalysisGame"
+      ],
+      "openCommands": [
+        "open Set"
+      ],
+      "declaration": "IsClosed_of_Compact (S : Set ℝ) (hcomp : IsCompact S) : IsClosed S",
+      "referenceTheorem": "IsClosed_of_Compact"
+    },
+    "lecture24-3": {
+      "sourcePath": "Game/Levels/L24Levels/L03.lean",
+      "fullModule": "Game.Levels.L24Levels.L03",
+      "contextModule": "RealAnalysisGame.Context.Lecture24.L3",
+      "namespaces": [
+        "RealAnalysisGame"
+      ],
+      "openCommands": [
+        "open Set"
+      ],
+      "declaration": "HasLUB_of_BddNonempty {S : Set ℝ} (hS : S.Nonempty) {M : ℝ} (hM : IsUB S M) : ∃ L, IsLUB S L",
+      "referenceTheorem": "HasLUB_of_BddNonempty"
+    },
+    "lecture24-4": {
+      "sourcePath": "Game/Levels/L24Levels/L04.lean",
+      "fullModule": "Game.Levels.L24Levels.L04",
+      "contextModule": "RealAnalysisGame.Context.Lecture24.L4",
+      "namespaces": [
+        "RealAnalysisGame"
+      ],
+      "openCommands": [
+        "open Set"
+      ],
+      "declaration": "IsCompact_of_ClosedInterval {a b : ℝ} (hab : a < b) : IsCompact (Icc a b)",
+      "referenceTheorem": "IsCompact_of_ClosedInterval"
+    },
+    "lecture24-5": {
+      "sourcePath": "Game/Levels/L24Levels/L05.lean",
+      "fullModule": "Game.Levels.L24Levels.L05",
+      "contextModule": "RealAnalysisGame.Context.Lecture24.L5",
+      "namespaces": [
+        "RealAnalysisGame"
+      ],
+      "openCommands": [
+        "open Set",
+        "open Classical"
+      ],
+      "declaration": "IsCompact_of_ClosedSubset {S T : Set ℝ} (hST : S ⊆ T) (hT : IsCompact T) (hS : IsClosed S) : IsCompact S",
+      "referenceTheorem": "IsCompact_of_ClosedSubset"
+    },
+    "l24pset-1": {
+      "sourcePath": "Game/Levels/L24Pset/L01.lean",
+      "fullModule": "Game.Levels.L24Pset.L01",
+      "contextModule": "RealAnalysisGame.Context.L24Pset.L1",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset Set"
+      ],
+      "declaration": "(f : ℝ → ℝ) (K : ℝ) (hK : K > 0) (hf : ∀ x y : ℝ, |f y - f x| ≤ K * |y - x|) (a b : ℝ) : UnifContOn f (Icc a b)",
+      "referenceTheorem": "RealAnalysisLevel_L24Pset_1"
+    },
+    "l24pset-2": {
+      "sourcePath": "Game/Levels/L24Pset/L02.lean",
+      "fullModule": "Game.Levels.L24Pset.L02",
+      "contextModule": "RealAnalysisGame.Context.L24Pset.L2",
+      "namespaces": [
+        "RealAnalysisGame"
+      ],
+      "openCommands": [
+        "open Finset Set"
+      ],
+      "declaration": "IsOpen_of_Ball (x : ℝ) (r : ℝ) : IsOpen (Ball x r)",
+      "referenceTheorem": "IsOpen_of_Ball"
+    },
+    "lecture25-1": {
+      "sourcePath": "Game/Levels/L25Levels/L01.lean",
+      "fullModule": "Game.Levels.L25Levels.L01",
+      "contextModule": "RealAnalysisGame.Context.Lecture25.L1",
+      "namespaces": [
+        "RealAnalysisGame"
+      ],
+      "openCommands": [
+        "open Set"
+      ],
+      "declaration": "Integrable_of_UnifConv {f : ℕ → ℝ → ℝ} {F : ℝ → ℝ} {a b : ℝ} (hab : a < b) {ℓ : ℕ → ℝ} (hfint : ∀ n, HasIntegral (f n) a b (ℓ n)) (hfF : UnifConv f F) : ∃ (L : ℝ), SeqLim ℓ L ∧ HasIntegral F a b L",
+      "referenceTheorem": "Integrable_of_UnifConv"
+    },
+    "lecture25-2": {
+      "sourcePath": "Game/Levels/L25Levels/L02.lean",
+      "fullModule": "Game.Levels.L25Levels.L02",
+      "contextModule": "RealAnalysisGame.Context.Lecture25.L2",
+      "namespaces": [
+        "RealAnalysisGame"
+      ],
+      "openCommands": [
+        "open Set"
+      ],
+      "declaration": "IVT {f : ℝ → ℝ} (hf : FunCont f) {a b : ℝ} (hab : a < b) (hfa : f a < 0) (hfb : 0 < f b): ∃ c ∈ Ioo a b, f c = 0",
+      "referenceTheorem": "IVT"
+    },
+    "newtonscalculationofpi-1": {
+      "sourcePath": "Game/Levels/L2NewtonsCalculationOfPi/L01_SeqConvDef.lean",
+      "fullModule": "Game.Levels.L2NewtonsCalculationOfPi.L01_SeqConvDef",
+      "contextModule": "RealAnalysisGame.Context.NewtonsCalculationOfPi.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "ConstLim (a : ℕ → ℝ) (L : ℝ) (a_const : ∀ n, a n = L) : SeqLim a L",
+      "referenceTheorem": "ConstLim"
+    },
+    "l2pset-1": {
+      "sourcePath": "Game/Levels/L2Pset/L2Pset1.lean",
+      "fullModule": "Game.Levels.L2Pset.L2Pset1",
+      "contextModule": "RealAnalysisGame.Context.L2Pset.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": ": ∃ c, ∀ (x : ℝ), (1 + x / 2 - x ^ 2 / 8 + x ^ 3 / 16 - 5 * x ^ 4 / 128 + c * x ^ 5) ^ 2 - (1 + x) = x ^ 6 * ( 21 / 512 - 3 * x / 256 + 81 * x ^ 2 / 16384 - 35 * x ^ 3 / 16384 + 49 * x ^ 4 / 65536)",
+      "referenceTheorem": "RealAnalysisLevel_L2Pset_1"
+    },
+    "l2pset-2": {
+      "sourcePath": "Game/Levels/L2Pset/L2Pset2.lean",
+      "fullModule": "Game.Levels.L2Pset.L2Pset2",
+      "contextModule": "RealAnalysisGame.Context.L2Pset.L2",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": ": ∃ c d e, ∀ (x : ℝ), (1 + 3 * x / 2 + c * x ^ 2 + d * x ^ 3 + e * x ^ 4) ^ 2 - (1 + x) ^ 3 = x ^ 5 * ( 3/128 + (11 * x)/512 - (3 * x^2)/1024 + (9 * x^3)/16384 )",
+      "referenceTheorem": "RealAnalysisLevel_L2Pset_2"
+    },
+    "lecture3-1": {
+      "sourcePath": "Game/Levels/L3Levels/L01_ArchProp.lean",
+      "fullModule": "Game.Levels.L3Levels.L01_ArchProp",
+      "contextModule": "RealAnalysisGame.Context.Lecture3.L1",
+      "namespaces": [],
+      "openCommands": [
+        "open Nat"
+      ],
+      "declaration": "ArchProp {ε : ℝ} (hε : 0 < ε) : ∃ (N : ℕ), 1 / ε < N",
+      "referenceTheorem": "ArchProp"
+    },
+    "lecture3-2": {
+      "sourcePath": "Game/Levels/L3Levels/L02_OneOverN.lean",
+      "fullModule": "Game.Levels.L3Levels.L02_OneOverN",
+      "contextModule": "RealAnalysisGame.Context.Lecture3.L2",
+      "namespaces": [],
+      "openCommands": [
+        "open Nat"
+      ],
+      "declaration": "OneOverNLimZero (a : ℕ → ℝ) (ha : ∀ n, a n = 1 / n) : SeqLim a 0",
+      "referenceTheorem": "OneOverNLimZero"
+    },
+    "l3pset-1": {
+      "sourcePath": "Game/Levels/L3Pset/L3Pset1.lean",
+      "fullModule": "Game.Levels.L3Pset.L3Pset1",
+      "contextModule": "RealAnalysisGame.Context.L3Pset.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(x y : ℝ) (x_pos : 0 < x) (y_pos : 0 < y) : ∃ (N : ℕ), y < x * N",
+      "referenceTheorem": "RealAnalysisLevel_L3Pset_1"
+    },
+    "l3pset-2": {
+      "sourcePath": "Game/Levels/L3Pset/L3Pset2.lean",
+      "fullModule": "Game.Levels.L3Pset.L3Pset2",
+      "contextModule": "RealAnalysisGame.Context.L3Pset.L2",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(a : ℕ → ℝ) (ha : ∀ n, a n = (n + 1) / n) : ∃ L, SeqLim a L",
+      "referenceTheorem": "RealAnalysisLevel_L3Pset_2"
+    },
+    "l3pset-3": {
+      "sourcePath": "Game/Levels/L3Pset/L3Pset3.lean",
+      "fullModule": "Game.Levels.L3Pset.L3Pset3",
+      "contextModule": "RealAnalysisGame.Context.L3Pset.L3",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(a : ℕ → ℝ) (ha : ∀ n, a n = 1 / n ^ 2) : ∃ L, SeqLim a L",
+      "referenceTheorem": "RealAnalysisLevel_L3Pset_3"
+    },
+    "l3pset-4": {
+      "sourcePath": "Game/Levels/L3Pset/L3Pset4.lean",
+      "fullModule": "Game.Levels.L3Pset.L3Pset4",
+      "contextModule": "RealAnalysisGame.Context.L3Pset.L4",
+      "namespaces": [],
+      "openCommands": [
+        "open Nat"
+      ],
+      "declaration": "(a : ℕ → ℝ) (ha : ∀ n, a n = (3 * n + 8) / (2 * n + 5)) : ∃ L, SeqLim a L",
+      "referenceTheorem": "RealAnalysisLevel_L3Pset_4"
+    },
+    "lecture4-1": {
+      "sourcePath": "Game/Levels/L4Levels/L01_NonConverge.lean",
+      "fullModule": "Game.Levels.L4Levels.L01_NonConverge",
+      "contextModule": "RealAnalysisGame.Context.Lecture4.L1",
+      "namespaces": [],
+      "openCommands": [
+        "open Nat Real"
+      ],
+      "declaration": "(a : ℕ → ℝ) (ha : ∀ n, a n = (-1) ^ n) : ¬ SeqConv a",
+      "referenceTheorem": "RealAnalysisLevel_Lecture4_1"
+    },
+    "l4pset-1": {
+      "sourcePath": "Game/Levels/L4Pset/L4Pset1.lean",
+      "fullModule": "Game.Levels.L4Pset.L4Pset1",
+      "contextModule": "RealAnalysisGame.Context.L4Pset.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(a : ℕ → ℝ) (ha2n : ∀ n, a (2 * n) = 3 - 1 / n) (ha2np1 : ∀ n, a (2 * n + 1) = 1 + 1 / n) : ¬ SeqConv a",
+      "referenceTheorem": "RealAnalysisLevel_L4Pset_1"
+    },
+    "lecture5-1": {
+      "sourcePath": "Game/Levels/L5Levels/L01_DoubleSeqConv.lean",
+      "fullModule": "Game.Levels.L5Levels.L01_DoubleSeqConv",
+      "contextModule": "RealAnalysisGame.Context.Lecture5.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(a b : ℕ → ℝ) (L : ℝ) (h : SeqLim a L) (b_scaled : ∀ n, b n = 2 * a n) : SeqLim b (2 * L)",
+      "referenceTheorem": "RealAnalysisLevel_Lecture5_1"
+    },
+    "lecture6-1": {
+      "sourcePath": "Game/Levels/L6Levels/L00_SumOfSeqs.lean",
+      "fullModule": "Game.Levels.L6Levels.L00_SumOfSeqs",
+      "contextModule": "RealAnalysisGame.Context.Lecture6.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "SumLim (a b c : ℕ → ℝ) (L M : ℝ) (ha : SeqLim a L) (hb : SeqLim b M) (hc : ∀ n, c n = a n + b n) : SeqLim c (L + M)",
+      "referenceTheorem": "SumLim"
+    },
+    "lecture6-2": {
+      "sourcePath": "Game/Levels/L6Levels/L01_SplitAnds.lean",
+      "fullModule": "Game.Levels.L6Levels.L01_SplitAnds",
+      "contextModule": "RealAnalysisGame.Context.Lecture6.L2",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(x y : ℝ) (hx : x = 2) (hy : y = 3) : x = 2 ∧ y = 3",
+      "referenceTheorem": "RealAnalysisLevel_Lecture6_2"
+    },
+    "lecture6-3": {
+      "sourcePath": "Game/Levels/L6Levels/L02_LeftRight.lean",
+      "fullModule": "Game.Levels.L6Levels.L02_LeftRight",
+      "contextModule": "RealAnalysisGame.Context.Lecture6.L3",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(x y : ℝ) (hx : x = 2) (hy : y = 3) : x = 3 ∨ y = 3",
+      "referenceTheorem": "RealAnalysisLevel_Lecture6_3"
+    },
+    "lecture6-4": {
+      "sourcePath": "Game/Levels/L6Levels/L03_DotNotation.lean",
+      "fullModule": "Game.Levels.L6Levels.L03_DotNotation",
+      "contextModule": "RealAnalysisGame.Context.Lecture6.L4",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(x y : ℝ) (h : x = 2 ∧ y = 3) : y = 3",
+      "referenceTheorem": "RealAnalysisLevel_Lecture6_4"
+    },
+    "lecture6-5": {
+      "sourcePath": "Game/Levels/L6Levels/L04_Cases'.lean",
+      "fullModule": "Game.Levels.L6Levels.L04_Cases'",
+      "contextModule": "RealAnalysisGame.Context.Lecture6.L5",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(x y : ℝ) (h : x = 2 ∨ y = 3) : (x - 2) * (y - 3) = 0",
+      "referenceTheorem": "RealAnalysisLevel_Lecture6_5"
+    },
+    "lecture6-6": {
+      "sourcePath": "Game/Levels/L6Levels/L05_AbsLt.lean",
+      "fullModule": "Game.Levels.L6Levels.L05_AbsLt",
+      "contextModule": "RealAnalysisGame.Context.Lecture6.L6",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(a : ℕ → ℝ) (L : ℝ) (ha : SeqLim a L) : ∃ N, ∀ n ≥ N, a n ≥ L - 1",
+      "referenceTheorem": "RealAnalysisLevel_Lecture6_6"
+    },
+    "lecture6-7": {
+      "sourcePath": "Game/Levels/L6Levels/L06_Squeeze.lean",
+      "fullModule": "Game.Levels.L6Levels.L06_Squeeze",
+      "contextModule": "RealAnalysisGame.Context.Lecture6.L7",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "SqueezeThm (a b c : ℕ → ℝ) (L : ℝ) (aToL : SeqLim a L) (cToL : SeqLim c L) (aLeb : ∀ n, a n ≤ b n) (bLec : ∀ n, b n ≤ c n) : SeqLim b L",
+      "referenceTheorem": "SqueezeThm"
+    },
+    "l6pset-1": {
+      "sourcePath": "Game/Levels/L6Pset/L6Pset1.lean",
+      "fullModule": "Game.Levels.L6Pset.L6Pset1",
+      "contextModule": "RealAnalysisGame.Context.L6Pset.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(x y z : ℝ) (hx : x = 2) (hy : y = 3) (hz : z = 4) : x = 2 ∧ y = 3 ∧ z = 4",
+      "referenceTheorem": "RealAnalysisLevel_L6Pset_1"
+    },
+    "l6pset-2": {
+      "sourcePath": "Game/Levels/L6Pset/L6Pset2.lean",
+      "fullModule": "Game.Levels.L6Pset.L6Pset2",
+      "contextModule": "RealAnalysisGame.Context.L6Pset.L2",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(x y z : ℝ) (h : x = 2 ∧ y = 3 ∧ z = 4) : z = 4",
+      "referenceTheorem": "RealAnalysisLevel_L6Pset_2"
+    },
+    "l6pset-3": {
+      "sourcePath": "Game/Levels/L6Pset/L6Pset3.lean",
+      "fullModule": "Game.Levels.L6Pset.L6Pset3",
+      "contextModule": "RealAnalysisGame.Context.L6Pset.L3",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(a : ℕ → ℝ) (ha : SeqLim a 5) : ∃ N, ∀ n ≥ N, 0 < a n",
+      "referenceTheorem": "RealAnalysisLevel_L6Pset_3"
+    },
+    "l6pset-4": {
+      "sourcePath": "Game/Levels/L6Pset/L6Pset4.lean",
+      "fullModule": "Game.Levels.L6Pset.L6Pset4",
+      "contextModule": "RealAnalysisGame.Context.L6Pset.L4",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(a : ℕ → ℝ) (ha : ∀ N, ∃ n ≥ N, |a n| > 10) : ¬ ∃ L, |L| < 5 ∧ SeqLim a L",
+      "referenceTheorem": "RealAnalysisLevel_L6Pset_4"
+    },
+    "l6pset-5": {
+      "sourcePath": "Game/Levels/L6Pset/L6Pset5.lean",
+      "fullModule": "Game.Levels.L6Pset.L6Pset5",
+      "contextModule": "RealAnalysisGame.Context.L6Pset.L5",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(a b c d e : ℕ → ℝ) (L : ℝ) (ha : SeqLim a L) (hc : SeqLim c L) (he : SeqLim e L) (hab : ∀ n, a n ≤ b n) (hbc : ∀ n, b n ≤ c n) (hcd : ∀ n, c n ≤ d n) (hde : ∀ n, d n ≤ e n) : SeqLim b L ∧ SeqLim d L",
+      "referenceTheorem": "RealAnalysisLevel_L6Pset_5"
+    },
+    "lecture7-1": {
+      "sourcePath": "Game/Levels/L7Levels/L00_Uniqueness.lean",
+      "fullModule": "Game.Levels.L7Levels.L00_Uniqueness",
+      "contextModule": "RealAnalysisGame.Context.Lecture7.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "LimUnique (a : ℕ → ℝ) (L M : ℝ) (aToL : SeqLim a L) (aToM : SeqLim a M) : L = M",
+      "referenceTheorem": "LimUnique"
+    },
+    "lecture7-2": {
+      "sourcePath": "Game/Levels/L7Levels/L01_Eventually.lean",
+      "fullModule": "Game.Levels.L7Levels.L01_Eventually",
+      "contextModule": "RealAnalysisGame.Context.Lecture7.L2",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "EventuallyGeHalfLimPos (a : ℕ → ℝ) (L : ℝ) (aToL : SeqLim a L) (LneZero: L ≠ 0) : ∃ N, ∀ n ≥ N, |L| / 2 ≤ |a (n)|",
+      "referenceTheorem": "EventuallyGeHalfLimPos"
+    },
+    "lecture7-3": {
+      "sourcePath": "Game/Levels/L7Levels/L02_SeqOfAbs.lean",
+      "fullModule": "Game.Levels.L7Levels.L02_SeqOfAbs",
+      "contextModule": "RealAnalysisGame.Context.Lecture7.L3",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "AbsLim (a : ℕ → ℝ) (L : ℝ) (aToL : SeqLim a L) (b : ℕ → ℝ) (bEqAbsa : ∀ n, b n = |a n|) : SeqLim b |L|",
+      "referenceTheorem": "AbsLim"
+    },
+    "lecture7-4": {
+      "sourcePath": "Game/Levels/L7Levels/L03_SeqInvLim.lean",
+      "fullModule": "Game.Levels.L7Levels.L03_SeqInvLim",
+      "contextModule": "RealAnalysisGame.Context.Lecture7.L4",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "InvLim (a : ℕ → ℝ) (L : ℝ) (aToL : SeqLim a L) (LneZero : L ≠ 0) (b : ℕ → ℝ) (bEqInva : ∀ n, b n = 1 / a n) : SeqLim b (1 / L)",
+      "referenceTheorem": "InvLim"
+    },
+    "lecture7-5": {
+      "sourcePath": "Game/Levels/L7Levels/L04_ByCases.lean",
+      "fullModule": "Game.Levels.L7Levels.L04_ByCases",
+      "contextModule": "RealAnalysisGame.Context.Lecture7.L5",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "EventuallyGeHalfLim (a : ℕ → ℝ) (L : ℝ) (aToL : SeqLim a L) : ∃ N, ∀ n ≥ N, |L| / 2 ≤ |a (n)|",
+      "referenceTheorem": "EventuallyGeHalfLim"
+    },
+    "l7pset-1": {
+      "sourcePath": "Game/Levels/L7Pset/L7Pset1.lean",
+      "fullModule": "Game.Levels.L7Pset.L7Pset1",
+      "contextModule": "RealAnalysisGame.Context.L7Pset.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "EventuallyBdd_of_SeqConv (a : ℕ → ℝ) (L : ℝ) (ha : SeqLim a L) (hL : L ≠ 0) : ∃ N, ∀ n ≥ N, |a n| ≤ 2 * |L|",
+      "referenceTheorem": "EventuallyBdd_of_SeqConv"
+    },
+    "l7pset-2": {
+      "sourcePath": "Game/Levels/L7Pset/L7Pset2.lean",
+      "fullModule": "Game.Levels.L7Pset.L7Pset2",
+      "contextModule": "RealAnalysisGame.Context.L7Pset.L2",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(a b : ℕ → ℝ) (L M : ℝ) (ha : SeqLim a L) (hb : SeqLim b M) (hLM : L < M) : ∃ N, ∀ n ≥ N, a n < b n",
+      "referenceTheorem": "RealAnalysisLevel_L7Pset_2"
+    },
+    "l7pset-3": {
+      "sourcePath": "Game/Levels/L7Pset/L7Pset3.lean",
+      "fullModule": "Game.Levels.L7Pset.L7Pset3",
+      "contextModule": "RealAnalysisGame.Context.L7Pset.L3",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(x y : ℝ) : |(|x| - |y|)| ≤ |x - y|",
+      "referenceTheorem": "RealAnalysisLevel_L7Pset_3"
+    },
+    "lecture8-1": {
+      "sourcePath": "Game/Levels/L8Levels/L03_Induction'.lean",
+      "fullModule": "Game.Levels.L8Levels.L03_Induction'",
+      "contextModule": "RealAnalysisGame.Context.Lecture8.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "IdLeTwoPow (n : ℕ) : n < 2 ^ n",
+      "referenceTheorem": "IdLeTwoPow"
+    },
+    "l8pset-1": {
+      "sourcePath": "Game/Levels/L8Pset/L8Pset1.lean",
+      "fullModule": "Game.Levels.L8Pset.L8Pset1",
+      "contextModule": "RealAnalysisGame.Context.L8Pset.L1",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "Pset8Ex1 (n : ℕ) : 2 * n + 9 ≤ 2 ^ (n + 4)",
+      "referenceTheorem": "Pset8Ex1"
+    },
+    "l8pset-2": {
+      "sourcePath": "Game/Levels/L8Pset/L8Pset2.lean",
+      "fullModule": "Game.Levels.L8Pset.L8Pset2",
+      "contextModule": "RealAnalysisGame.Context.L8Pset.L2",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": ": ∃ N, ∀ n, (n + N) ^ 2 ≤ 2 ^ (n + N)",
+      "referenceTheorem": "RealAnalysisLevel_L8Pset_2"
+    },
+    "l8pset-3": {
+      "sourcePath": "Game/Levels/L8Pset/L8Pset3.lean",
+      "fullModule": "Game.Levels.L8Pset.L8Pset3",
+      "contextModule": "RealAnalysisGame.Context.L8Pset.L3",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "(n : ℕ) : ∃ k, n * (n + 1) * (2 * n + 1) = 6 * k",
+      "referenceTheorem": "RealAnalysisLevel_L8Pset_3"
+    },
+    "l8pset-4": {
+      "sourcePath": "Game/Levels/L8Pset/L8Pset4.lean",
+      "fullModule": "Game.Levels.L8Pset.L8Pset4",
+      "contextModule": "RealAnalysisGame.Context.L8Pset.L4",
+      "namespaces": [],
+      "openCommands": [],
+      "declaration": "SubseqGe {σ : ℕ → ℕ} (hσ : ∀ i j, i < j → σ (i) < σ (j)) : ∀ n, n ≤ σ (n)",
+      "referenceTheorem": "SubseqGe"
+    },
+    "lecture9-1": {
+      "sourcePath": "Game/Levels/L9Levels/L04_FiniteSums.lean",
+      "fullModule": "Game.Levels.L9Levels.L04_FiniteSums",
+      "contextModule": "RealAnalysisGame.Context.Lecture9.L1",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "TermLeSum {X : Type*} [NormedField X] [LinearOrder X] [IsStrictOrderedRing X] (a : ℕ → X) (N : ℕ) : ∀ n < N, |a n| ≤ ∑ k ∈ range N, |a k|",
+      "referenceTheorem": "TermLeSum"
+    },
+    "lecture9-2": {
+      "sourcePath": "Game/Levels/L9Levels/L05_BddOfConv.lean",
+      "fullModule": "Game.Levels.L9Levels.L05_BddOfConv",
+      "contextModule": "RealAnalysisGame.Context.Lecture9.L2",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "Bdd_of_ConvNonzero (a : ℕ → ℝ) (L : ℝ) (ha : SeqLim a L) (hL : L ≠ 0) : SeqBdd a",
+      "referenceTheorem": "Bdd_of_ConvNonzero"
+    },
+    "l9pset-1": {
+      "sourcePath": "Game/Levels/L9Pset/L9Pset1.lean",
+      "fullModule": "Game.Levels.L9Pset.L9Pset1",
+      "contextModule": "RealAnalysisGame.Context.L9Pset.L1",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "Bdd_of_Conv (a : ℕ → ℝ) (L : ℝ) (ha : SeqLim a L) : SeqBdd a",
+      "referenceTheorem": "Bdd_of_Conv"
+    },
+    "l9pset-2": {
+      "sourcePath": "Game/Levels/L9Pset/L9Pset2.lean",
+      "fullModule": "Game.Levels.L9Pset.L9Pset2",
+      "contextModule": "RealAnalysisGame.Context.L9Pset.L2",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "(N : ℕ) : ∃ k : ℕ, N * (N + 1) = 2 * k",
+      "referenceTheorem": "RealAnalysisLevel_L9Pset_2"
+    },
+    "l9pset-3": {
+      "sourcePath": "Game/Levels/L9Pset/L9Pset3.lean",
+      "fullModule": "Game.Levels.L9Pset.L9Pset3",
+      "contextModule": "RealAnalysisGame.Context.L9Pset.L3",
+      "namespaces": [],
+      "openCommands": [
+        "open Finset"
+      ],
+      "declaration": "SumFirstN (N : ℕ) : 2 * ∑ k ∈ range N, (k + 1) = N * (N + 1)",
+      "referenceTheorem": "SumFirstN"
+    }
+  }
+}

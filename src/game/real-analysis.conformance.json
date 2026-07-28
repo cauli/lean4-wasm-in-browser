@@ -1,0 +1,1263 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-28T05:48:54.603Z",
+  "mode": "regular",
+  "gameSource": {
+    "repository": "https://github.com/alexkontorovich/realanalysisgame",
+    "commit": "930c38333b2edcc3ad27c5f68b9f09210cfaaf62",
+    "license": "Apache-2.0",
+    "toolchain": "leanprover/lean4:v4.26.0",
+    "importedAt": "2026-07-28T04:49:33.682Z"
+  },
+  "browserLayer": {
+    "version": "lean-4.33.0-pre-62b6a229-real-analysis",
+    "leanCommit": "62b6a2291302d4bbeace37642a066b7510d0145c",
+    "mathlibCommit": "de3a9cf33016bbb6d15880d7680643f7ca2d25ba",
+    "gameCommit": "930c38333b2edcc3ad27c5f68b9f09210cfaaf62",
+    "modules": 4303,
+    "bytes": 849175216
+  },
+  "total": 139,
+  "passed": 125,
+  "failed": 14,
+  "verifiedReferenceSolutions": [
+    "realanalysisstory-1",
+    "realanalysisstory-2",
+    "realanalysisstory-3",
+    "realanalysisstory-4",
+    "realanalysisstory-5",
+    "realanalysisstory-6",
+    "realanalysisstory-7",
+    "realanalysisstory-8",
+    "realanalysisstory-9",
+    "l1pset-1",
+    "l1pset-2",
+    "l1pset-3",
+    "l1pset-4",
+    "l1pset-5",
+    "newtonscalculationofpi-1",
+    "l2pset-1",
+    "l2pset-2",
+    "lecture3-1",
+    "lecture3-2",
+    "l3pset-1",
+    "l3pset-2",
+    "l3pset-3",
+    "l3pset-4",
+    "lecture4-1",
+    "l4pset-1",
+    "lecture5-1",
+    "lecture6-1",
+    "lecture6-2",
+    "lecture6-3",
+    "lecture6-4",
+    "lecture6-5",
+    "lecture6-6",
+    "lecture6-7",
+    "l6pset-1",
+    "l6pset-2",
+    "l6pset-3",
+    "l6pset-4",
+    "l6pset-5",
+    "lecture7-1",
+    "lecture7-2",
+    "lecture7-3",
+    "lecture7-4",
+    "lecture7-5",
+    "l7pset-1",
+    "l7pset-2",
+    "l7pset-3",
+    "lecture8-1",
+    "l8pset-1",
+    "l8pset-2",
+    "l8pset-3",
+    "l8pset-4",
+    "lecture9-1",
+    "lecture9-2",
+    "l9pset-1",
+    "l9pset-2",
+    "l9pset-3",
+    "lecture10-2",
+    "lecture10-3",
+    "lecture10-4",
+    "l10pset-1",
+    "l10pset-2",
+    "l10pset-3",
+    "l10pset-4",
+    "l10pset-5",
+    "l10pset-6",
+    "lecture11-1",
+    "lecture11-2",
+    "lecture11-3",
+    "l11pset-1",
+    "lecture12-1",
+    "lecture12-2",
+    "lecture12-3",
+    "lecture12-4",
+    "l12pset-1",
+    "l12pset-2",
+    "lecture13-1",
+    "l13pset-1",
+    "lecture14-1",
+    "lecture15-1",
+    "l15pset-1",
+    "lecture16-1",
+    "l16pset-1",
+    "l16pset-2",
+    "l16pset-3",
+    "lecture17-1",
+    "lecture17-2",
+    "lecture17-3",
+    "lecture17-4",
+    "l17pset-1",
+    "l17pset-2",
+    "l17pset-3",
+    "lecture18-1",
+    "lecture18-2",
+    "l18pset-1",
+    "l18pset-2",
+    "l18pset-3",
+    "l18pset-4",
+    "l18pset-5",
+    "l18pset-6",
+    "l18pset-7",
+    "l18pset-8",
+    "l18pset-9",
+    "l18pset-10",
+    "lecture19-1",
+    "lecture19-2",
+    "lecture20-1",
+    "lecture20-2",
+    "lecture20-3",
+    "lecture20-4",
+    "l20pset-1",
+    "l20pset-2",
+    "l20pset-3",
+    "l20pset-4",
+    "lecture21-1",
+    "lecture21-2",
+    "lecture21-3",
+    "lecture21-4",
+    "lecture22-1",
+    "lecture22-2",
+    "lecture22-3",
+    "l22pset-1",
+    "l22pset-4",
+    "lecture24-1",
+    "lecture24-2",
+    "lecture24-5"
+  ],
+  "failedReferenceSolutions": [
+    {
+      "id": "lecture10-1",
+      "world": "Lecture10",
+      "level": 1,
+      "title": "Big Boss : Product of Sequences",
+      "kind": "compiler",
+      "detail": "Maximum call stack size exceeded",
+      "diagnostics": []
+    },
+    {
+      "id": "lecture19-3",
+      "world": "Lecture19",
+      "level": 3,
+      "title": "**Big Boss**: Rearrangement Theorem",
+      "kind": "compiler",
+      "detail": "Maximum call stack size exceeded",
+      "diagnostics": []
+    },
+    {
+      "id": "lecture19-4",
+      "world": "Lecture19",
+      "level": 4,
+      "title": "Conditional Convergence Theorem",
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers.",
+      "diagnostics": [
+        "\"sorry\" is not accepted in game answers."
+      ]
+    },
+    {
+      "id": "l22pset-2",
+      "world": "L22Pset",
+      "level": 2,
+      "title": "Continuity Exercise",
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers.",
+      "diagnostics": [
+        "\"sorry\" is not accepted in game answers."
+      ]
+    },
+    {
+      "id": "l22pset-3",
+      "world": "L22Pset",
+      "level": 3,
+      "title": "Differentiability Exercise",
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers.",
+      "diagnostics": [
+        "\"sorry\" is not accepted in game answers."
+      ]
+    },
+    {
+      "id": "lecture23-1",
+      "world": "Lecture23",
+      "level": 1,
+      "title": "Riemann Sum Refinement",
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers.",
+      "diagnostics": [
+        "\"sorry\" is not accepted in game answers."
+      ]
+    },
+    {
+      "id": "lecture23-2",
+      "world": "Lecture23",
+      "level": 2,
+      "title": "Integration Converges!",
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers.",
+      "diagnostics": [
+        "\"sorry\" is not accepted in game answers."
+      ]
+    },
+    {
+      "id": "lecture23-3",
+      "world": "Lecture23",
+      "level": 3,
+      "title": "Compactness",
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers.",
+      "diagnostics": [
+        "\"sorry\" is not accepted in game answers."
+      ]
+    },
+    {
+      "id": "lecture24-3",
+      "world": "Lecture24",
+      "level": 3,
+      "title": "Least Upper Bound Property",
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers.",
+      "diagnostics": [
+        "\"sorry\" is not accepted in game answers."
+      ]
+    },
+    {
+      "id": "lecture24-4",
+      "world": "Lecture24",
+      "level": 4,
+      "title": "Heine-Borel Theorem: Part 2a",
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers.",
+      "diagnostics": [
+        "\"sorry\" is not accepted in game answers."
+      ]
+    },
+    {
+      "id": "l24pset-1",
+      "world": "L24Pset",
+      "level": 1,
+      "title": "Lipschitz implies Uniformly Continuous",
+      "kind": "compiler",
+      "detail": "Maximum call stack size exceeded",
+      "diagnostics": []
+    },
+    {
+      "id": "l24pset-2",
+      "world": "L24Pset",
+      "level": 2,
+      "title": "Open Balls are Open",
+      "kind": "compiler",
+      "detail": "Maximum call stack size exceeded",
+      "diagnostics": []
+    },
+    {
+      "id": "lecture25-1",
+      "world": "Lecture25",
+      "level": 1,
+      "title": "Uniform Convergence Implies Integrability",
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers.",
+      "diagnostics": [
+        "\"sorry\" is not accepted in game answers."
+      ]
+    },
+    {
+      "id": "lecture25-2",
+      "world": "Lecture25",
+      "level": 2,
+      "title": "Intermediate Value Theorem",
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers.",
+      "diagnostics": [
+        "\"sorry\" is not accepted in game answers."
+      ]
+    }
+  ],
+  "results": [
+    {
+      "id": "realanalysisstory-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 412170.47999989986,
+      "detail": "Elaboration and kernel checking completed in 412170 ms."
+    },
+    {
+      "id": "realanalysisstory-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 481.1999999284744,
+      "detail": "Elaboration and kernel checking completed in 481 ms."
+    },
+    {
+      "id": "realanalysisstory-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 481.1200000047684,
+      "detail": "Elaboration and kernel checking completed in 481 ms."
+    },
+    {
+      "id": "realanalysisstory-4",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 11837.115000009537,
+      "detail": "Elaboration and kernel checking completed in 11837 ms."
+    },
+    {
+      "id": "realanalysisstory-5",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2942.9749999046326,
+      "detail": "Elaboration and kernel checking completed in 2943 ms."
+    },
+    {
+      "id": "realanalysisstory-6",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2651.3250000476837,
+      "detail": "Elaboration and kernel checking completed in 2651 ms."
+    },
+    {
+      "id": "realanalysisstory-7",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 525,
+      "detail": "Elaboration and kernel checking completed in 525 ms."
+    },
+    {
+      "id": "realanalysisstory-8",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2561.375,
+      "detail": "Elaboration and kernel checking completed in 2561 ms."
+    },
+    {
+      "id": "realanalysisstory-9",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 568.6150000095367,
+      "detail": "Elaboration and kernel checking completed in 569 ms."
+    },
+    {
+      "id": "l1pset-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 586.3799999952316,
+      "detail": "Elaboration and kernel checking completed in 586 ms."
+    },
+    {
+      "id": "l1pset-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 635.3999999761581,
+      "detail": "Elaboration and kernel checking completed in 635 ms."
+    },
+    {
+      "id": "l1pset-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 939.7549999952316,
+      "detail": "Elaboration and kernel checking completed in 940 ms."
+    },
+    {
+      "id": "l1pset-4",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 474.97500002384186,
+      "detail": "Elaboration and kernel checking completed in 475 ms."
+    },
+    {
+      "id": "l1pset-5",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 437.8700000047684,
+      "detail": "Elaboration and kernel checking completed in 438 ms."
+    },
+    {
+      "id": "newtonscalculationofpi-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 4715.104999899864,
+      "detail": "Elaboration and kernel checking completed in 4715 ms."
+    },
+    {
+      "id": "l2pset-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 3099.7949999570847,
+      "detail": "Elaboration and kernel checking completed in 3100 ms."
+    },
+    {
+      "id": "l2pset-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 994.4949998855591,
+      "detail": "Elaboration and kernel checking completed in 994 ms."
+    },
+    {
+      "id": "lecture3-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 48399.47500002384,
+      "detail": "Elaboration and kernel checking completed in 48399 ms."
+    },
+    {
+      "id": "lecture3-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 10461.799999952316,
+      "detail": "Elaboration and kernel checking completed in 10462 ms."
+    },
+    {
+      "id": "l3pset-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1456.4599999189377,
+      "detail": "Elaboration and kernel checking completed in 1456 ms."
+    },
+    {
+      "id": "l3pset-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 5021.055000066757,
+      "detail": "Elaboration and kernel checking completed in 5021 ms."
+    },
+    {
+      "id": "l3pset-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 4278.02999997139,
+      "detail": "Elaboration and kernel checking completed in 4278 ms."
+    },
+    {
+      "id": "l3pset-4",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 6663.820000052452,
+      "detail": "Elaboration and kernel checking completed in 6664 ms."
+    },
+    {
+      "id": "lecture4-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 3111.945000052452,
+      "detail": "Elaboration and kernel checking completed in 3112 ms."
+    },
+    {
+      "id": "l4pset-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2170.8399999141693,
+      "detail": "Elaboration and kernel checking completed in 2171 ms."
+    },
+    {
+      "id": "lecture5-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 680.8050000667572,
+      "detail": "Elaboration and kernel checking completed in 681 ms."
+    },
+    {
+      "id": "lecture6-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1025.929999947548,
+      "detail": "Elaboration and kernel checking completed in 1026 ms."
+    },
+    {
+      "id": "lecture6-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 872.835000038147,
+      "detail": "Elaboration and kernel checking completed in 873 ms."
+    },
+    {
+      "id": "lecture6-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 508.91999995708466,
+      "detail": "Elaboration and kernel checking completed in 509 ms."
+    },
+    {
+      "id": "lecture6-4",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 434.77499997615814,
+      "detail": "Elaboration and kernel checking completed in 435 ms."
+    },
+    {
+      "id": "lecture6-5",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1394.3799999952316,
+      "detail": "Elaboration and kernel checking completed in 1394 ms."
+    },
+    {
+      "id": "lecture6-6",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1730.905000090599,
+      "detail": "Elaboration and kernel checking completed in 1731 ms."
+    },
+    {
+      "id": "lecture6-7",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 868.289999961853,
+      "detail": "Elaboration and kernel checking completed in 868 ms."
+    },
+    {
+      "id": "l6pset-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 437.6999999284744,
+      "detail": "Elaboration and kernel checking completed in 438 ms."
+    },
+    {
+      "id": "l6pset-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 438.3899999856949,
+      "detail": "Elaboration and kernel checking completed in 438 ms."
+    },
+    {
+      "id": "l6pset-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 458107.0900000334,
+      "detail": "Elaboration and kernel checking completed in 458107 ms."
+    },
+    {
+      "id": "l6pset-4",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 5059.9800000190735,
+      "detail": "Elaboration and kernel checking completed in 5060 ms."
+    },
+    {
+      "id": "l6pset-5",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 973.4850000143051,
+      "detail": "Elaboration and kernel checking completed in 973 ms."
+    },
+    {
+      "id": "lecture7-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 50795.0949999094,
+      "detail": "Elaboration and kernel checking completed in 50795 ms."
+    },
+    {
+      "id": "lecture7-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 838.3899999856949,
+      "detail": "Elaboration and kernel checking completed in 838 ms."
+    },
+    {
+      "id": "lecture7-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2031.9400000572205,
+      "detail": "Elaboration and kernel checking completed in 2032 ms."
+    },
+    {
+      "id": "lecture7-4",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 21542.194999933243,
+      "detail": "Elaboration and kernel checking completed in 21542 ms."
+    },
+    {
+      "id": "lecture7-5",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1689.6299999952316,
+      "detail": "Elaboration and kernel checking completed in 1690 ms."
+    },
+    {
+      "id": "l7pset-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 552.7649999856949,
+      "detail": "Elaboration and kernel checking completed in 553 ms."
+    },
+    {
+      "id": "l7pset-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1201.9349999427795,
+      "detail": "Elaboration and kernel checking completed in 1202 ms."
+    },
+    {
+      "id": "l7pset-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1293.7700001001358,
+      "detail": "Elaboration and kernel checking completed in 1294 ms."
+    },
+    {
+      "id": "lecture8-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 3597.125,
+      "detail": "Elaboration and kernel checking completed in 3597 ms."
+    },
+    {
+      "id": "l8pset-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1760.335000038147,
+      "detail": "Elaboration and kernel checking completed in 1760 ms."
+    },
+    {
+      "id": "l8pset-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 881.8500000238419,
+      "detail": "Elaboration and kernel checking completed in 882 ms."
+    },
+    {
+      "id": "l8pset-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1520.5350000858307,
+      "detail": "Elaboration and kernel checking completed in 1521 ms."
+    },
+    {
+      "id": "l8pset-4",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 641.4750000238419,
+      "detail": "Elaboration and kernel checking completed in 641 ms."
+    },
+    {
+      "id": "lecture9-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 5231.72000002861,
+      "detail": "Elaboration and kernel checking completed in 5232 ms."
+    },
+    {
+      "id": "lecture9-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 766.4300000667572,
+      "detail": "Elaboration and kernel checking completed in 766 ms."
+    },
+    {
+      "id": "l9pset-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 839.9900000095367,
+      "detail": "Elaboration and kernel checking completed in 840 ms."
+    },
+    {
+      "id": "l9pset-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 564.5299999713898,
+      "detail": "Elaboration and kernel checking completed in 565 ms."
+    },
+    {
+      "id": "l9pset-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 716.8999999761581,
+      "detail": "Elaboration and kernel checking completed in 717 ms."
+    },
+    {
+      "id": "lecture10-1",
+      "success": false,
+      "kind": "compiler",
+      "elapsedMs": 2305.6200000047684,
+      "detail": "Maximum call stack size exceeded"
+    },
+    {
+      "id": "lecture10-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 689.8700000047684,
+      "detail": "Elaboration and kernel checking completed in 690 ms."
+    },
+    {
+      "id": "lecture10-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 549.7749999761581,
+      "detail": "Elaboration and kernel checking completed in 550 ms."
+    },
+    {
+      "id": "lecture10-4",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 787.1150000095367,
+      "detail": "Elaboration and kernel checking completed in 787 ms."
+    },
+    {
+      "id": "l10pset-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1039.1850000619888,
+      "detail": "Elaboration and kernel checking completed in 1039 ms."
+    },
+    {
+      "id": "l10pset-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 567.8650000095367,
+      "detail": "Elaboration and kernel checking completed in 568 ms."
+    },
+    {
+      "id": "l10pset-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 644.1899999380112,
+      "detail": "Elaboration and kernel checking completed in 644 ms."
+    },
+    {
+      "id": "l10pset-4",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 855.4349999427795,
+      "detail": "Elaboration and kernel checking completed in 855 ms."
+    },
+    {
+      "id": "l10pset-5",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 948.2649999856949,
+      "detail": "Elaboration and kernel checking completed in 948 ms."
+    },
+    {
+      "id": "l10pset-6",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 498.710000038147,
+      "detail": "Elaboration and kernel checking completed in 499 ms."
+    },
+    {
+      "id": "lecture11-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 845.7199999094009,
+      "detail": "Elaboration and kernel checking completed in 846 ms."
+    },
+    {
+      "id": "lecture11-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1501.6050000190735,
+      "detail": "Elaboration and kernel checking completed in 1502 ms."
+    },
+    {
+      "id": "lecture11-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1176.9750000238419,
+      "detail": "Elaboration and kernel checking completed in 1177 ms."
+    },
+    {
+      "id": "l11pset-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 755.2549999952316,
+      "detail": "Elaboration and kernel checking completed in 755 ms."
+    },
+    {
+      "id": "lecture12-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 439837.5199999809,
+      "detail": "Elaboration and kernel checking completed in 439838 ms."
+    },
+    {
+      "id": "lecture12-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 4967.569999933243,
+      "detail": "Elaboration and kernel checking completed in 4968 ms."
+    },
+    {
+      "id": "lecture12-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 72627.06999993324,
+      "detail": "Elaboration and kernel checking completed in 72627 ms."
+    },
+    {
+      "id": "lecture12-4",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 11111.379999995232,
+      "detail": "Elaboration and kernel checking completed in 11111 ms."
+    },
+    {
+      "id": "l12pset-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 878.8150000572205,
+      "detail": "Elaboration and kernel checking completed in 879 ms."
+    },
+    {
+      "id": "l12pset-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2867.8099999427795,
+      "detail": "Elaboration and kernel checking completed in 2868 ms."
+    },
+    {
+      "id": "lecture13-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 5121.879999995232,
+      "detail": "Elaboration and kernel checking completed in 5122 ms."
+    },
+    {
+      "id": "l13pset-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 587.0400000810623,
+      "detail": "Elaboration and kernel checking completed in 587 ms."
+    },
+    {
+      "id": "lecture14-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1533.3399999141693,
+      "detail": "Elaboration and kernel checking completed in 1533 ms."
+    },
+    {
+      "id": "lecture15-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 11810.454999923706,
+      "detail": "Elaboration and kernel checking completed in 11810 ms."
+    },
+    {
+      "id": "l15pset-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 4483.495000004768,
+      "detail": "Elaboration and kernel checking completed in 4483 ms."
+    },
+    {
+      "id": "lecture16-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2507.4500000476837,
+      "detail": "Elaboration and kernel checking completed in 2507 ms."
+    },
+    {
+      "id": "l16pset-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1599.8949999809265,
+      "detail": "Elaboration and kernel checking completed in 1600 ms."
+    },
+    {
+      "id": "l16pset-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 620.4850000143051,
+      "detail": "Elaboration and kernel checking completed in 620 ms."
+    },
+    {
+      "id": "l16pset-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 781.7150000333786,
+      "detail": "Elaboration and kernel checking completed in 782 ms."
+    },
+    {
+      "id": "lecture17-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2000.2700001001358,
+      "detail": "Elaboration and kernel checking completed in 2000 ms."
+    },
+    {
+      "id": "lecture17-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2243.9049999713898,
+      "detail": "Elaboration and kernel checking completed in 2244 ms."
+    },
+    {
+      "id": "lecture17-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 593.625,
+      "detail": "Elaboration and kernel checking completed in 594 ms."
+    },
+    {
+      "id": "lecture17-4",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2071.3700000047684,
+      "detail": "Elaboration and kernel checking completed in 2071 ms."
+    },
+    {
+      "id": "l17pset-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 535.1100000143051,
+      "detail": "Elaboration and kernel checking completed in 535 ms."
+    },
+    {
+      "id": "l17pset-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 800.210000038147,
+      "detail": "Elaboration and kernel checking completed in 800 ms."
+    },
+    {
+      "id": "l17pset-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 558.9850000143051,
+      "detail": "Elaboration and kernel checking completed in 559 ms."
+    },
+    {
+      "id": "lecture18-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1263.6399999856949,
+      "detail": "Elaboration and kernel checking completed in 1264 ms."
+    },
+    {
+      "id": "lecture18-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 595.6299999952316,
+      "detail": "Elaboration and kernel checking completed in 596 ms."
+    },
+    {
+      "id": "l18pset-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1620.585000038147,
+      "detail": "Elaboration and kernel checking completed in 1621 ms."
+    },
+    {
+      "id": "l18pset-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 817.045000076294,
+      "detail": "Elaboration and kernel checking completed in 817 ms."
+    },
+    {
+      "id": "l18pset-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1511.3899999856949,
+      "detail": "Elaboration and kernel checking completed in 1511 ms."
+    },
+    {
+      "id": "l18pset-4",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2340.314999938011,
+      "detail": "Elaboration and kernel checking completed in 2340 ms."
+    },
+    {
+      "id": "l18pset-5",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 975.0600000619888,
+      "detail": "Elaboration and kernel checking completed in 975 ms."
+    },
+    {
+      "id": "l18pset-6",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2368.350000023842,
+      "detail": "Elaboration and kernel checking completed in 2368 ms."
+    },
+    {
+      "id": "l18pset-7",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2077.179999947548,
+      "detail": "Elaboration and kernel checking completed in 2077 ms."
+    },
+    {
+      "id": "l18pset-8",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1713.7949999570847,
+      "detail": "Elaboration and kernel checking completed in 1714 ms."
+    },
+    {
+      "id": "l18pset-9",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1186.0049999952316,
+      "detail": "Elaboration and kernel checking completed in 1186 ms."
+    },
+    {
+      "id": "l18pset-10",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1051.8600000143051,
+      "detail": "Elaboration and kernel checking completed in 1052 ms."
+    },
+    {
+      "id": "lecture19-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1614.7000000476837,
+      "detail": "Elaboration and kernel checking completed in 1615 ms."
+    },
+    {
+      "id": "lecture19-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 485234.22500002384,
+      "detail": "Elaboration and kernel checking completed in 485234 ms."
+    },
+    {
+      "id": "lecture19-3",
+      "success": false,
+      "kind": "compiler",
+      "elapsedMs": 23401.644999980927,
+      "detail": "Maximum call stack size exceeded"
+    },
+    {
+      "id": "lecture19-4",
+      "success": false,
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers."
+    },
+    {
+      "id": "lecture20-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 11618.340000033379,
+      "detail": "Elaboration and kernel checking completed in 11618 ms."
+    },
+    {
+      "id": "lecture20-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 3627.9649999141693,
+      "detail": "Elaboration and kernel checking completed in 3628 ms."
+    },
+    {
+      "id": "lecture20-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1695.8999999761581,
+      "detail": "Elaboration and kernel checking completed in 1696 ms."
+    },
+    {
+      "id": "lecture20-4",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2687.4100000858307,
+      "detail": "Elaboration and kernel checking completed in 2687 ms."
+    },
+    {
+      "id": "l20pset-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 568.3900001049042,
+      "detail": "Elaboration and kernel checking completed in 568 ms."
+    },
+    {
+      "id": "l20pset-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 576.9650000333786,
+      "detail": "Elaboration and kernel checking completed in 577 ms."
+    },
+    {
+      "id": "l20pset-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 6073.625,
+      "detail": "Elaboration and kernel checking completed in 6074 ms."
+    },
+    {
+      "id": "l20pset-4",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1807.2450000047684,
+      "detail": "Elaboration and kernel checking completed in 1807 ms."
+    },
+    {
+      "id": "lecture21-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 7421.4400000572205,
+      "detail": "Elaboration and kernel checking completed in 7421 ms."
+    },
+    {
+      "id": "lecture21-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2058.944999933243,
+      "detail": "Elaboration and kernel checking completed in 2059 ms."
+    },
+    {
+      "id": "lecture21-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 905.1499999761581,
+      "detail": "Elaboration and kernel checking completed in 905 ms."
+    },
+    {
+      "id": "lecture21-4",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2209.4100000858307,
+      "detail": "Elaboration and kernel checking completed in 2209 ms."
+    },
+    {
+      "id": "lecture22-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 567.3800001144409,
+      "detail": "Elaboration and kernel checking completed in 567 ms."
+    },
+    {
+      "id": "lecture22-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 1016.8999999761581,
+      "detail": "Elaboration and kernel checking completed in 1017 ms."
+    },
+    {
+      "id": "lecture22-3",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 3429.195000052452,
+      "detail": "Elaboration and kernel checking completed in 3429 ms."
+    },
+    {
+      "id": "l22pset-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 588.2350000143051,
+      "detail": "Elaboration and kernel checking completed in 588 ms."
+    },
+    {
+      "id": "l22pset-2",
+      "success": false,
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers."
+    },
+    {
+      "id": "l22pset-3",
+      "success": false,
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers."
+    },
+    {
+      "id": "l22pset-4",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2546.0650000572205,
+      "detail": "Elaboration and kernel checking completed in 2546 ms."
+    },
+    {
+      "id": "lecture23-1",
+      "success": false,
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers."
+    },
+    {
+      "id": "lecture23-2",
+      "success": false,
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers."
+    },
+    {
+      "id": "lecture23-3",
+      "success": false,
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers."
+    },
+    {
+      "id": "lecture24-1",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2275.6349999904633,
+      "detail": "Elaboration and kernel checking completed in 2276 ms."
+    },
+    {
+      "id": "lecture24-2",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 2394.600000023842,
+      "detail": "Elaboration and kernel checking completed in 2395 ms."
+    },
+    {
+      "id": "lecture24-3",
+      "success": false,
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers."
+    },
+    {
+      "id": "lecture24-4",
+      "success": false,
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers."
+    },
+    {
+      "id": "lecture24-5",
+      "success": true,
+      "kind": "verified",
+      "elapsedMs": 987.2599999904633,
+      "detail": "Elaboration and kernel checking completed in 987 ms."
+    },
+    {
+      "id": "l24pset-1",
+      "success": false,
+      "kind": "compiler",
+      "elapsedMs": 98.72000002861023,
+      "detail": "Maximum call stack size exceeded"
+    },
+    {
+      "id": "l24pset-2",
+      "success": false,
+      "kind": "compiler",
+      "elapsedMs": 98.61500000953674,
+      "detail": "Maximum call stack size exceeded"
+    },
+    {
+      "id": "lecture25-1",
+      "success": false,
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers."
+    },
+    {
+      "id": "lecture25-2",
+      "success": false,
+      "kind": "policy",
+      "detail": "\"sorry\" is not accepted in game answers."
+    }
+  ]
+}

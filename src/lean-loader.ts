@@ -17,6 +17,17 @@ interface Manifest {
   modules: Record<string, ModuleInfo>;
 }
 
+export interface LeanArtifactPack {
+  file: string;
+  bytes: number;
+  compressedBytes: number;
+  entries: Array<{
+    path: string;
+    offset: number;
+    bytes: number;
+  }>;
+}
+
 let manifest: Manifest | null = null;
 let manifestPromise: Promise<Manifest> | null = null;
 
@@ -81,17 +92,19 @@ async function openOleanCache(): Promise<Cache | null> {
   return cachePromise;
 }
 
-// Probe once whether the server ships precompressed `<olean>.gz` siblings.
+// Probe once per library root whether the server ships precompressed `.gz`
+// siblings.
 // A plain `r.ok` check isn't enough: the Vite dev server (and SPA hosts)
 // answer a missing `.gz` with index.html at 200. So GET the probe file and
 // require the gzip magic bytes (0x1f 0x8b) — that only passes on a real gzip.
-let gzipProbe: Promise<boolean> | null = null;
-function gzipAvailable(): Promise<boolean> {
-  if (gzipProbe) return gzipProbe;
-  gzipProbe = (async () => {
+const gzipProbes = new Map<string, Promise<boolean>>();
+function gzipAvailable(libraryRoot: string, probePath: string): Promise<boolean> {
+  const cached = gzipProbes.get(libraryRoot);
+  if (cached) return cached;
+  const probe = (async () => {
     if (typeof DecompressionStream === 'undefined') return false;
     try {
-      const r = await fetch(`${LEAN_WASM_BASE}/lean-lib/Init/Prelude.olean.gz`);
+      const r = await fetch(`${LEAN_WASM_BASE}/${libraryRoot}/${probePath}.gz`);
       if (!r.ok) return false;
       const head = new Uint8Array(await r.arrayBuffer());
       return head.length >= 2 && head[0] === 0x1f && head[1] === 0x8b;
@@ -99,7 +112,8 @@ function gzipAvailable(): Promise<boolean> {
       return false;
     }
   })();
-  return gzipProbe;
+  gzipProbes.set(libraryRoot, probe);
+  return probe;
 }
 
 async function inflateGzip(data: ArrayBuffer): Promise<Uint8Array<ArrayBuffer>> {
@@ -256,12 +270,47 @@ function isValidOlean(data: Uint8Array): boolean {
   return true;
 }
 
+// Fetch one concatenated artifact pack and split it back into the exact files
+// Lean expects in /lib/lean. Real Analysis contains thousands of small files;
+// grouping them at build time avoids thousands of local HTTP requests while
+// keeping peak memory bounded to one ~16 MB raw pack.
+export async function fetchLeanArtifactPack(
+  pack: LeanArtifactPack,
+  libraryRoot = 'real-analysis-lib',
+): Promise<Map<string, Uint8Array<ArrayBuffer>>> {
+  const response = await fetch(`${LEAN_WASM_BASE}/${libraryRoot}/${pack.file}`)
+  if (!response.ok) {
+    throw new Error(`Lean artifact pack ${pack.file} returned ${response.status}.`)
+  }
+  const data = await inflateGzip(await response.arrayBuffer())
+  if (data.byteLength !== pack.bytes) {
+    throw new Error(
+      `Lean artifact pack ${pack.file} has ${data.byteLength} bytes; expected ${pack.bytes}.`,
+    )
+  }
+
+  const files = new Map<string, Uint8Array<ArrayBuffer>>()
+  for (const entry of pack.entries) {
+    const end = entry.offset + entry.bytes
+    if (entry.offset < 0 || end > data.byteLength) {
+      throw new Error(`Lean artifact ${entry.path} is outside ${pack.file}.`)
+    }
+    const artifact = data.slice(entry.offset, end)
+    if (!isValidOlean(artifact)) {
+      throw new Error(`Lean artifact ${entry.path} in ${pack.file} is invalid.`)
+    }
+    files.set(entry.path, artifact)
+  }
+  return files
+}
+
 // Fetch specific .olean files, using the persistent cache and gzip transport
 // when available. 404s are tolerated (a module may be in the manifest but not
 // the shipped library); lean itself reports missing modules precisely.
 export async function fetchOleanFiles(
   paths: string[],
-  onProgress?: (loaded: number, total: number) => void
+  onProgress?: (loaded: number, total: number) => void,
+  libraryRoot = 'lean-lib',
 ): Promise<Map<string, Uint8Array>> {
   const files = new Map<string, Uint8Array>();
   const total = paths.length;
@@ -270,7 +319,9 @@ export async function fetchOleanFiles(
   let fromCache = 0;
 
   let cache = await openOleanCache();
-  const useGzip = await gzipAvailable();
+  const useGzip = total > 0
+    ? await gzipAvailable(libraryRoot, paths[0])
+    : false;
 
   const concurrency = 20;  // Many small files: fetch in parallel
   const queue = [...paths];
@@ -279,7 +330,7 @@ export async function fetchOleanFiles(
   const fetchOne = async () => {
     while (queue.length > 0) {
       const path = queue.shift()!;
-      const url = `${LEAN_WASM_BASE}/lean-lib/${path}`;
+      const url = `${LEAN_WASM_BASE}/${libraryRoot}/${path}`;
       try {
         // 1. Persistent cache (holds decompressed bytes under the canonical URL)
         if (cache) {

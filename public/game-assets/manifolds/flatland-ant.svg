@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 420" role="img" aria-labelledby="title desc">
+  <title id="title">Ada the ant explores a curved world</title>
+  <desc id="desc">A tiny ant sees a flat patch while the wider surface curves away.</desc>
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#d8ecff"/>
+      <stop offset="1" stop-color="#8fc1e8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1000" height="420" rx="24" fill="#f7fbff"/>
+  <path d="M25 355C179 111 344 79 500 248c145 158 317 154 475-26v173H25Z" fill="url(#ground)"/>
+  <path d="M25 355C179 111 344 79 500 248c145 158 317 154 475-26" fill="none" stroke="#1976d2" stroke-width="7"/>
+  <path d="M294 190c71-29 140-23 208 28" fill="none" stroke="#ffb300" stroke-width="12" stroke-linecap="round"/>
+  <text x="328" y="150" fill="#8a5b00" font-family="ui-sans-serif,system-ui" font-size="22">Ada's nearby patch</text>
+  <g transform="translate(392 205)" fill="#17324d" stroke="#17324d" stroke-linecap="round">
+    <ellipse rx="20" ry="13"/><circle cx="25" cy="-3" r="11"/><ellipse cx="-29" cy="2" rx="16" ry="11"/>
+    <path d="M-10 8-27 29M5 9 3 31M17 7l19 25M22-11l13-20M28-10l25-10" fill="none" stroke-width="5"/>
+    <circle cx="29" cy="-6" r="2.3" fill="#fff" stroke="none"/>
+  </g>
+  <g font-family="ui-sans-serif,system-ui" font-size="22" fill="#24445f">
+    <text x="65" y="65">From far away: curved</text>
+    <text x="655" y="365">Under tiny feet: almost flat</text>
+  </g>
+</svg>

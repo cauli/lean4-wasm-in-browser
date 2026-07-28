@@ -1,0 +1,32 @@
+{
+  "sourceCommit": "727e4d219838eeb7f3945d2e9a0539f244d50540",
+  "runtime": "Init-only Lean WASM with the browser MyNat compatibility environment",
+  "verifiedReferenceSolutions": [
+    "tutorial-1",
+    "tutorial-2",
+    "tutorial-3",
+    "tutorial-4",
+    "addition-1",
+    "addition-5",
+    "multiplication-5",
+    "multiplication-6",
+    "power-9",
+    "power-10",
+    "implication-1",
+    "implication-2",
+    "implication-5",
+    "implication-6",
+    "implication-10",
+    "algorithm-1",
+    "algorithm-2",
+    "algorithm-3",
+    "algorithm-4",
+    "advaddition-4",
+    "advaddition-6"
+  ],
+  "summary": {
+    "kernel": 21,
+    "partial": 58,
+    "total": 79
+  }
+}
