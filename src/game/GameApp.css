@@ -1043,6 +1043,39 @@ button {
   letter-spacing: 0.06em;
 }
 
+.live-goal-upcoming {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.55rem 1.2rem;
+  background: #f8fafc;
+  color: var(--game-dim);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.78rem;
+}
+
+.live-goal-upcoming .goal-case-name {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.live-goal-upcoming code {
+  overflow-wrap: anywhere;
+}
+
+.live-goal-footnote {
+  margin: 0;
+  border-top: 1px solid var(--game-border-soft);
+  padding: 0.5rem 1.2rem 0.6rem;
+  color: var(--game-dim);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.live-goal-footnote code {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
 .live-goal-complete,
 .live-goal-error {
   display: flex;

@@ -722,18 +722,40 @@ function LevelWorkspace({
             <span className="live-goal-indicator">{goalPanelStatus}</span>
           </div>
           {visibleGoals.length > 0 ? (
-            <ol className="live-goal-list">
-              {visibleGoals.map((goal, index) => (
-                <li key={`${index}-${goal}`}>
-                  {visibleGoals.length > 1 && (
-                    <strong className="live-goal-number">
-                      Goal {index + 1} of {visibleGoals.length}
-                    </strong>
-                  )}
-                  <StructuredGoalView goal={splitLiveGoal(goal)} />
-                </li>
-              ))}
-            </ol>
+            <>
+              <ol className="live-goal-list">
+                {visibleGoals.map((goal, index) => {
+                  const parsed = splitLiveGoal(goal)
+                  if (index === 0) {
+                    return (
+                      <li key={`${index}-${goal}`}>
+                        {visibleGoals.length > 1 && (
+                          <strong className="live-goal-number">
+                            Active goal · {visibleGoals.length - 1} more waiting
+                          </strong>
+                        )}
+                        <StructuredGoalView goal={parsed} />
+                      </li>
+                    )
+                  }
+                  return (
+                    <li key={`${index}-${goal}`} className="live-goal-upcoming">
+                      <span className="goal-case-name">
+                        {parsed.caseName ? `case ${parsed.caseName}` : `goal ${index + 1}`}
+                      </span>
+                      <span aria-hidden="true">⊢</span>
+                      <code><LeanExpression>{parsed.goal}</LeanExpression></code>
+                    </li>
+                  )
+                })}
+              </ol>
+              {visibleGoals.length > 1 && (
+                <p className="live-goal-footnote">
+                  Tactics act on the active goal. The waiting goals keep their
+                  hypotheses and become active in order, one focus bullet <code>·</code> each.
+                </p>
+              )}
+            </>
           ) : <StructuredGoalView goal={statement} />}
         </section>
 
