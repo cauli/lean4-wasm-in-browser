@@ -17,7 +17,7 @@ import { execSync } from 'node:child_process';
 
 const ASSET_URL =
   process.env.LEAN_ARTIFACTS_URL ||
-  'https://github.com/cauli/lean4-wasm-in-browser/releases/download/test-fixtures-4.28/lean-wasm-4.28-testfixture.tar.gz';
+  'https://github.com/cauli/lean4-wasm-in-browser/releases/download/test-fixtures-4.33/lean-wasm-4.33-testfixture.tar.gz';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = process.env.LEAN_ROOT || path.join(repoRoot, 'tests/.artifacts');
 
