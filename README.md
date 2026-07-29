@@ -122,11 +122,16 @@ browser call-stack limit even in isolated workers. Branch-sensitive `Hint` /
 `Branch` evaluation remains a separate unported GameServer feature.
 
 The original **Manifold Adventure** at `/games/manifold-adventure` is a
-from-scratch conceptual bridge: 10 worlds and 50 short kernel-checked exercises
-move from Ada the ant and Flatland through topology, charts and atlases,
-spheres, tori, the Möbius strip, Riemann, smooth maps, tangent spaces,
-differential forms, metrics, curvature, and global topology. A lazy-loaded
-Three.js lab lets learners orbit and zoom a sphere, torus, or Möbius strip.
+from-scratch conceptual bridge: 6 worlds and 25 short kernel-checked exercises
+move from Ada the ant and Flatland through the local Euclidean test, charts and
+atlases, a cabinet of surfaces, smooth maps and tangent spaces, to metrics and
+curvature. Every world introduces at least one new proof move (contradiction,
+case analysis over an atlas, composing maps). Seven 3D teaching models (sphere
+with overlapping charts, torus with its generator loops, Möbius band with
+orientation arrows, trefoil vs. circle, geodesic triangle, figure eight,
+tangent plane) are built in Blender by
+`scripts/blender/build-topo-models.py` (run it inside Blender, e.g. through a
+BlenderMCP socket) and rendered as lazy-loaded interactive Three.js scenes.
 Every page explicitly distinguishes the small proposition Lean checks from the
 geometric lesson around it. Its reading path credits the
 [Quanta explainer](https://www.quantamagazine.org/what-is-a-manifold-20251103/),

@@ -25,7 +25,7 @@ import {
   type VerificationSupport,
 } from './game-data'
 import { GameMarkdown } from './GameMarkdown'
-import type { ManifoldObject } from './ManifoldObjectLab'
+import type { TopoModelId } from './topo-models'
 import { CourseWorldTree, GameInventoryOverview, NaturalNumberWorldTree } from './WorldTree'
 import {
   useLeanGameVerifier,
@@ -37,6 +37,7 @@ import {
 import './GameApp.css'
 
 const ManifoldObjectLab = lazy(() => import('./ManifoldObjectLab'))
+const TopoScene = lazy(() => import('./TopoScene'))
 
 declare global {
   interface Window {
@@ -84,12 +85,21 @@ function supportLabel(support: VerificationSupport): string {
   return 'Blocked'
 }
 
-function manifoldObjectForLevel(level: GameLevel): ManifoldObject | undefined {
-  if (level.gameId !== manifoldGame.id || level.world !== 'Objects') return undefined
-  if (level.number === 1) return 'sphere'
-  if (level.number === 2 || level.number === 3 || level.number === 5) return 'torus'
-  if (level.number === 4) return 'mobius'
-  return undefined
+const topoModelByLevel: Record<string, TopoModelId> = {
+  'localtest-4': 'figure-eight',
+  'charts-3': 'sphere-charts',
+  'cabinet-1': 'sphere-charts',
+  'cabinet-2': 'torus-loops',
+  'cabinet-3': 'mobius-band',
+  'cabinet-4': 'trefoil-circle',
+  'smooth-3': 'tangent-plane',
+  'smooth-4': 'tangent-plane',
+  'curvature-2': 'sphere-triangle',
+}
+
+function topoModelForLevel(level: GameLevel): TopoModelId | undefined {
+  if (level.gameId !== manifoldGame.id) return undefined
+  return topoModelByLevel[level.id]
 }
 
 function canOpenLevel(level: GameLevel, completed: Set<string>): boolean {
@@ -302,7 +312,7 @@ function WorldOverview({
       <div className="world-overview-grid">
         <article className="game-prose world-introduction">
           <GameMarkdown assetBase={game.assetBase}>{world.introduction}</GameMarkdown>
-          {game.id === manifoldGame.id && world.id === 'Objects' && (
+          {game.id === manifoldGame.id && world.id === 'Cabinet' && (
             <Suspense fallback={<p>Loading the local 3D model…</p>}>
               <ManifoldObjectLab />
             </Suspense>
@@ -640,9 +650,9 @@ function LevelWorkspace({
 
           <article className="game-prose level-introduction">
             <GameMarkdown assetBase={game.assetBase}>{level.introduction}</GameMarkdown>
-            {manifoldObjectForLevel(level) && (
+            {topoModelForLevel(level) && (
               <Suspense fallback={<p>Loading the 3D model...</p>}>
-                <ManifoldObjectLab initialObject={manifoldObjectForLevel(level)} compact />
+                <TopoScene model={topoModelForLevel(level)!} compact />
               </Suspense>
             )}
           </article>

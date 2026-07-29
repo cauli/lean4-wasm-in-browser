@@ -913,7 +913,7 @@ button {
 
 .goal-binding {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, max-content) minmax(6ch, 1fr);
   gap: 0.3rem;
   align-items: baseline;
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -924,6 +924,7 @@ button {
 .goal-binding dt {
   color: #b36600;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .goal-binding dd {

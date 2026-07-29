@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 
 test.skip(
   process.env.UPDATE_MANIFOLD_MATRIX !== '1',
-  'Set UPDATE_MANIFOLD_MATRIX=1 to run all 50 browser-kernel references.',
+  'Set UPDATE_MANIFOLD_MATRIX=1 to run all 25 browser-kernel references.',
 )
 
 test('Manifold Adventure reference-solution matrix', async ({ page }) => {
@@ -40,6 +40,6 @@ test('Manifold Adventure reference-solution matrix', async ({ page }) => {
     failures,
   }, null, 2))
 
-  expect(results).toHaveLength(50)
+  expect(results).toHaveLength(25)
   expect(failures).toEqual([])
 })

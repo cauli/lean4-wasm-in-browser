@@ -113,6 +113,58 @@
   text-align: center;
 }
 
+.topo-scene-footer {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1rem;
+}
+
+.topo-scene-caption {
+  margin: 0;
+  color: #48647b;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.topo-scene-footer .manifold-motion-toggle {
+  flex-shrink: 0;
+  min-height: 2.1rem;
+  border: 1px solid #9eb4c5;
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+  background: transparent;
+  color: #294861;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.topo-scene-footer .manifold-motion-toggle:hover,
+.topo-scene-footer .manifold-motion-toggle:focus-visible {
+  border-color: #1976d2;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.16);
+}
+
+.topo-scene {
+  overflow: hidden;
+  border: 1px solid rgba(25, 118, 210, 0.24);
+  border-radius: 14px;
+  background: linear-gradient(145deg, #f9fcff, #eef6fc);
+}
+
+.manifold-object-lab .topo-scene {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.topo-scene-compact .manifold-object-canvas {
+  height: 260px;
+}
+
 .manifold-object-help {
   margin: 0;
   padding: 0.7rem 1.35rem 0.8rem;

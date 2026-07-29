@@ -1,21 +1,21 @@
 {
   "source": {
     "repository": "https://github.com/cauli/lean4-wasm-in-browser",
-    "commit": "original-local-course-2026-07-28",
+    "commit": "original-local-course-2026-07-28-v2",
     "license": "No separate course license specified",
     "toolchain": "local Lean WASM",
-    "importedAt": "2026-07-27T23:15:16.000Z"
+    "importedAt": "2026-07-28T00:00:00.000Z"
   },
   "title": "The Manifold Adventure",
-  "introduction": "# Welcome, tiny geometer\n\nImagine an ant named **Ada** walking across a shape. She cannot float above it to see the whole thing. She knows only the ground near her feet. On a huge sphere, that ground feels flat. A loop looks like an ordinary line until she walks far enough to return to where she started.\n\nManifolds are full of this tension between what a space looks like nearby and what it is like as a whole.\n\nThis course starts from scratch. You do not need topology, calculus, or experience with proofs. Each level contains:\n\n1. a geometric idea, picture, or story;\n2. a small Lean proposition checked by the local browser kernel.\n\nThe Lean statements capture only the logical shape of each lesson. They do not replace the full Mathlib definitions of topological or smooth manifolds.\n\n## Typing mathematical symbols\n\nThe Lean editor converts backslash commands into symbols. Type the command, then press Space or Tab. When a lesson introduces a symbol, it gives you the command beside it.\n\n## Where the story comes from\n\n- [Paulina Rowińska's Quanta explainer](https://www.quantamagazine.org/what-is-a-manifold-20251103/) inspired Ada's point of view and the lessons on charts, intrinsic geometry, Riemann, and the double pendulum.\n- Edwin A. Abbott's 1884 [*Flatland*](https://www.gutenberg.org/ebooks/97) gives us the idea of imagining dimensions from inside them. We borrow that premise, not the book's Victorian social world.\n- [Loring Tu's *An Introduction to Manifolds*](https://link.springer.com/book/10.1007/978-1-4419-7400-6) is a good first textbook after this game.\n- [John Milnor's *Topology from the Differentiable Viewpoint*](https://math.uchicago.edu/~may/REU2017/MilnorDiff.pdf), [Guillemin-Pollack's *Differential Topology*](https://bookstore.ams.org/CHEL/370.H), and [John Lee's *Introduction to Smooth Manifolds*](https://link.springer.com/book/10.1007/978-0-387-21752-9) continue topics previewed in the later worlds.\n- [MIT 18.950](https://ocw.mit.edu/courses/18-950-differential-geometry-fall-2008/) has rigorous notes and problems about curvature. It assumes multivariable calculus and linear algebra.\n\nStart with **Ada in Flatland**. Take your time. Draw the objects, and open a hint whenever you need one.",
-  "information": "This local course is an introduction, not a replacement for a textbook.\n\nAfter the game, try Tu and then Milnor. From there, choose Lee for a broad reference or Guillemin-Pollack for differential topology. MIT 18.950 is a free option once you know multivariable calculus and linear algebra.",
-  "caption": "Follow Ada from Flatland to charts, tangent spaces, curvature, and the topology of a doughnut. Lean checks each small logical exercise in your browser.",
+  "introduction": "# Welcome, tiny geometer\n\nAda is an ant. She lives on a surface she has never seen from outside, and she never will. Everything she knows comes from measurements made at her own scale: the ground under her feet, the trail behind her, the loop that somehow brought her home.\n\nManifold theory works under the same restriction: it studies what an inhabitant of a space can define and measure without an outside view. The surprising answer, worked out from Riemann onward, is that this includes coordinates, calculus, and curvature.\n\nEach level gives you one idea, one picture, and one small Lean proposition that the browser's Lean kernel checks on the spot. The Lean statements capture the logical shape of each lesson, meaning how the pieces of an argument fit together. They are not the full Mathlib definitions of topological or smooth manifolds, and the text points out the difference where it matters.\n\n## Typing mathematical symbols\n\nThe Lean editor converts backslash commands into symbols: type the command, then press Space or Tab. Whenever a lesson introduces a symbol, the command appears beside it.\n\n## Where the story comes from\n\n- [Paulina Rowińska's Quanta explainer](https://www.quantamagazine.org/what-is-a-manifold-20251103/) inspired Ada's point of view and the lessons on charts, intrinsic geometry, Riemann, and the double pendulum.\n- Edwin A. Abbott's 1884 [*Flatland*](https://www.gutenberg.org/ebooks/97) gives us the idea of imagining dimensions from inside them. We borrow that premise, not the book's Victorian social world.\n- [Loring Tu's *An Introduction to Manifolds*](https://link.springer.com/book/10.1007/978-1-4419-7400-6) is the textbook to open the day you finish this game.\n- [John Milnor's *Topology from the Differentiable Viewpoint*](https://math.uchicago.edu/~may/REU2017/MilnorDiff.pdf), [Guillemin–Pollack's *Differential Topology*](https://bookstore.ams.org/CHEL/370.H), and [John Lee's *Introduction to Smooth Manifolds*](https://link.springer.com/book/10.1007/978-0-387-21752-9) continue the topics the later worlds only outline.\n- [MIT 18.950](https://ocw.mit.edu/courses/18-950-differential-geometry-fall-2008/) has rigorous notes and problems on curvature, once you know multivariable calculus and linear algebra.\n\nStart with **Ada in Flatland**. Spin the models, draw the shapes, and open a hint whenever you want one; hints are part of the course, not a penalty.",
+  "information": "This local course is an introduction, not a replacement for a textbook.\n\nAfter the game, read Tu, then Milnor. From there, choose Lee for a broad reference or Guillemin–Pollack for differential topology. MIT 18.950 is a free option once you know multivariable calculus and linear algebra.",
+  "caption": "Follow Ada the ant from Flatland to charts, tangent spaces, curvature, and the topology of a doughnut, with 3D models to spin and a Lean kernel checking every step in your browser.",
   "coverImage": "images/cover.svg",
   "worlds": [
     {
       "id": "Flatland",
       "title": "Ada in Flatland",
-      "introduction": "# The view from inside\n\nEdwin A. Abbott's 1884 *Flatland* asks how a two-dimensional creature might understand higher dimensions. Ada has a related problem: **what can she learn about a space without leaving it?**\n\n![Ada explores a locally flat world](images/flatland-ant.svg)\n\nWe begin with some basic Lean ingredients. You will use propositions and evidence, then equality, \"and,\" \"or,\" and implication.",
+      "introduction": "# The view from inside\n\nEdwin A. Abbott's 1884 *Flatland* asked how a two-dimensional creature could ever reason about a third dimension. Ada inherits that predicament: **what can she learn about her world without leaving it?**\n\n![Ada explores a locally flat world](images/flatland-ant.svg)\n\nBefore she can learn anything, she needs a language for evidence. That language is Lean, and this course runs on five moves. This world teaches all five, one short level each. None takes more than a minute, and every proof you write later is assembled from them.",
       "prerequisites": [],
       "verification": "kernel",
       "levels": [
@@ -23,14 +23,14 @@
           "id": "flatland-1",
           "world": "Flatland",
           "number": 1,
-          "title": "A proof is an object",
-          "introduction": "# Ada's first fact\n\nIn Lean, a proposition is a type that represents a claim. The hypothesis `evidence : groundIsNear` is evidence that the claim is true. Since the goal is `groundIsNear`, you can give Lean that hypothesis with `exact evidence`.",
-          "conclusion": "You proved the goal by naming evidence you already had. Get used to checking the goal against the hypotheses before trying anything complicated.",
+          "title": "Evidence in hand",
+          "introduction": "# Ada's first fact\n\nAda's headlamp shows solid ground ahead. Can she *prove* it?\n\nIn Lean, a claim like `groundIsNear` is a type, and a proof is an object of that type: something you can hold and hand over. Ada holds `evidence`. The goal, written after `⊢`, is the very claim that `evidence` proves. So hand it over: `exact evidence`.",
+          "conclusion": "Most proofs end like this: the goal matches something you already hold. Get in the habit of reading the hypotheses before trying anything else.",
           "statement": "manifold_proof_is_object (groundIsNear : Prop) (evidence : groundIsNear) : groundIsNear",
           "theoremName": "manifold_proof_is_object",
           "solution": "exact evidence",
           "hints": [
-            "Look at the type of `evidence`. It is the same as the goal.",
+            "Compare the type of `evidence` with the goal after `⊢`. They are identical.",
             "Enter `exact evidence`."
           ],
           "newTactics": [
@@ -51,14 +51,14 @@
           "id": "flatland-2",
           "world": "Flatland",
           "number": 2,
-          "title": "The same place",
-          "introduction": "# Equality without calculation\n\nAda marks a spot, then checks that it is still the same spot. Lean's `rfl` tactic proves that an expression equals itself. The name comes from *reflexivity*.\n\nThe equals sign [=](https://en.wikipedia.org/wiki/Equals_sign) is already on your keyboard, so it does not need a backslash command. The natural-number symbol [ℕ](https://en.wikipedia.org/wiki/Natural_number) in the goal is typed as `\\N`, followed by Space or Tab.",
-          "conclusion": "This kind of equality looks almost too easy, but it appears everywhere. Later, chart maps and their inverses will have to take you out and bring you back to the same place.",
+          "title": "The same spot",
+          "introduction": "# Equality for free\n\nAda drops a crumb, turns around twice, and checks: is this still the same spot? Lean's `rfl` tactic proves any goal of the form `x = x`, where the two sides are literally the same expression. The name is short for *reflexivity*.\n\nThe equals sign [=](https://en.wikipedia.org/wiki/Equals_sign) is already on your keyboard, so it does not need a backslash command. The natural-number symbol [ℕ](https://en.wikipedia.org/wiki/Natural_number) is typed as `\\N`, followed by Space or Tab.",
+          "conclusion": "`rfl` looks too easy to matter. It comes back later with more weight: \"leave through a chart and return to the same point\" is an equation of exactly this shape.",
           "statement": "manifold_same_place (position : ℕ) : position = position",
           "theoremName": "manifold_same_place",
           "solution": "rfl",
           "hints": [
-            "Both sides are literally the same expression.",
+            "Both sides of `=` are the same expression.",
             "Use `rfl`."
           ],
           "newTactics": [
@@ -79,15 +79,15 @@
           "id": "flatland-3",
           "world": "Flatland",
           "number": 3,
-          "title": "Two local clues",
-          "introduction": "# Package observations\n\nAda sees that the ground nearby looks flat **and** that she can walk on it. The logical conjunction symbol [∧](https://en.wikipedia.org/wiki/Logical_conjunction) means \"and.\" Type it as `\\and`, followed by Space or Tab. The `constructor` tactic turns this \"and\" goal into two separate goals.",
-          "conclusion": "Definitions often bundle several requirements together. A modern definition of a manifold does this with local Euclidean structure, separation, and countability conditions.",
+          "title": "Two clues at once",
+          "introduction": "# Bundling observations\n\nAda notices two things: the ground nearby looks flat, **and** she can walk on it. The conjunction symbol [∧](https://en.wikipedia.org/wiki/Logical_conjunction) means \"and\"; type it as `\\and`, then Space or Tab.\n\nTo prove an \"and\", prove each half. The `constructor` tactic splits the goal into the two pieces, and you finish each one with what you hold.",
+          "conclusion": "Definitions in this subject are usually bundles of requirements. \"Manifold\" will turn out to mean *locally Euclidean ∧ Hausdorff ∧ second countable*, and `constructor` is how such a bundle comes apart, one requirement at a time.",
           "statement": "manifold_two_local_clues (looksFlat canWalk : Prop) (hFlat : looksFlat) (hWalk : canWalk) : looksFlat ∧ canWalk",
           "theoremName": "manifold_two_local_clues",
           "solution": "constructor\n· exact hFlat\n· exact hWalk",
           "hints": [
-            "Use `constructor` to split the `∧` goal.",
-            "The first new goal matches `hFlat`; the second matches `hWalk`."
+            "`constructor` turns the `∧` goal into two goals.",
+            "Finish with `exact hFlat`, then `exact hWalk`."
           ],
           "newTactics": [
             "constructor"
@@ -107,18 +107,19 @@
           "id": "flatland-4",
           "world": "Flatland",
           "number": 4,
-          "title": "One route is enough",
-          "introduction": "# A fork in the path\n\nThe logical disjunction symbol [∨](https://en.wikipedia.org/wiki/Logical_disjunction) means \"or.\" Type it as `\\or`, followed by Space or Tab. To prove `east ∨ west`, you may prove either side. Ada has evidence for the route on the left, so choose that branch with `left`.",
-          "conclusion": "A disjunction records alternatives. We will use the same logical shape when a point can lie in one chart or another.",
+          "title": "A fork in the trail",
+          "introduction": "# One route is enough\n\nThe trail forks. The disjunction symbol [∨](https://en.wikipedia.org/wiki/Logical_disjunction) means \"or\"; type it as `\\or`, then Space or Tab. To prove `east ∨ west` you only need one of the routes, and you must say which. Ada holds evidence for the east route, so commit with `left`, then present it.\n\n(The `right` tactic picks the other branch. You will want it soon.)",
+          "conclusion": "Proving an \"or\" means choosing a side. Atlases produce exactly this situation later: a point lies in one chart or another, and an argument has to say which one it will use.",
           "statement": "manifold_one_route (east west : Prop) (hEast : east) : east ∨ west",
           "theoremName": "manifold_one_route",
           "solution": "left\nexact hEast",
           "hints": [
-            "Choose the side supported by `hEast`.",
+            "Ada's evidence supports the left branch.",
             "Use `left`, then `exact hEast`."
           ],
           "newTactics": [
-            "left"
+            "left",
+            "right"
           ],
           "hiddenTactics": [],
           "newTheorems": [],
@@ -135,15 +136,15 @@
           "id": "flatland-5",
           "world": "Flatland",
           "number": 5,
-          "title": "Assume, then reason",
-          "introduction": "# An implication\n\nThe implication arrow [→](https://en.wikipedia.org/wiki/Material_conditional) in `A → B` says that evidence for `A` can be turned into evidence for `B`. Type it as `\\to`, followed by Space or Tab. To prove an implication, `intro h` moves its input into your hypotheses. Here the input and output coincide.",
-          "conclusion": "You now know the few Lean moves used in most of this course: name an object, prove an equality, split an \"and,\" choose a side of an \"or,\" or introduce an implication.",
+          "title": "What if",
+          "introduction": "# Assume, then reason\n\nThe arrow [→](https://en.wikipedia.org/wiki/Material_conditional) in `A → B` promises: give me evidence for `A`, and I return evidence for `B`. Type it as `\\to`, then Space or Tab.\n\nTo prove an implication, step *into* the assumption: `intro h` takes the input and hands it to you as a hypothesis named `h`. Here, what you receive is exactly what you must produce.",
+          "conclusion": "That completes the toolkit: `exact`, `rfl`, `constructor`, `left`/`right`, `intro`. The remaining worlds add only two more tactics (`apply` and `cases`) and spend the rest of their attention on geometry.",
           "statement": "manifold_local_implication (looksLikeLine : Prop) : looksLikeLine → looksLikeLine",
           "theoremName": "manifold_local_implication",
           "solution": "intro h\nexact h",
           "hints": [
-            "Use `intro h` to assume the left side.",
-            "The new hypothesis is exactly the goal."
+            "Start with `intro h` to assume the input.",
+            "The new hypothesis is exactly the goal: `exact h`."
           ],
           "newTactics": [
             "intro"
@@ -160,74 +161,27 @@
       ]
     },
     {
-      "id": "Topology",
-      "title": "A trail through topology",
-      "introduction": "# Shape without rulers\n\nTopology studies notions such as continuity, neighborhoods, and connectedness. It also asks which features survive continuous deformation. Lengths and angles are not part of the starting data.\n\nA topological space specifies which sets are open. From open sets, we can define what \"nearby\" and \"continuous\" mean. In this world, the topology stays conceptual while Lean checks the small logical exercises.",
+      "id": "LocalTest",
+      "title": "The local test",
+      "introduction": "# Zoom in far enough and everything looks boring\n\nA circle drawn on paper looks nothing like a straight line. But Ada, standing *on* a vast circle, sees exactly what she would see on a line: one direction forward, one direction back. Zoom in far enough, and the curve is indistinguishable from a straight interval.\n\nThat is the defining test of a manifold: **every point must have a neighborhood that looks like an open piece of $\\mathbb{R}^n$**. The real-number symbol [ℝ](https://en.wikipedia.org/wiki/Real_number) is typed as `\\R`, then Space or Tab.\n\n\"Looks like\" has a precise meaning, and it never mentions distance: there must be a continuous relabeling in both directions, a *homeomorphism*. Topology only tracks which points are near which; distances come later, as extra structure.\n\n(The textbook definition adds two housekeeping conditions, *Hausdorff* and *second countable*, which exclude certain pathological gluings. Tu states them precisely; this course mentions them and moves on.)\n\nA space that passes the test at every point is a manifold. One failing point is enough to disqualify it, and this world ends with a famous example.",
       "prerequisites": [
         "Flatland"
       ],
       "verification": "kernel",
       "levels": [
         {
-          "id": "topology-1",
-          "world": "Topology",
+          "id": "localtest-1",
+          "world": "LocalTest",
           "number": 1,
-          "title": "Nearness before distance",
-          "introduction": "# No ruler required\n\nA neighborhood is a region around a point. Topology lets us discuss neighborhoods before choosing any formula for distance, so the same ideas work on many different spaces.",
-          "conclusion": "A metric produces a topology, but a topology does not always come from a metric.",
-          "statement": "manifold_nearness_before_distance (hasNeighborhood : Prop) (h : hasNeighborhood) : hasNeighborhood",
-          "theoremName": "manifold_nearness_before_distance",
-          "solution": "exact h",
-          "hints": [
-            "The goal repeats hypothesis `h`."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Topology/L01.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "topology-2",
-          "world": "Topology",
-          "number": 2,
-          "title": "An open neighborhood",
-          "introduction": "# Two jobs for a neighborhood\n\nFor a set to be a neighborhood of Ada, it must contain an open region around her. Our small proposition simplifies this to two facts: the region is open, and Ada is in it.",
-          "conclusion": "When a definition feels dense, separate its requirements. You can usually handle them one at a time.",
-          "statement": "manifold_open_neighborhood (isOpen containsAda : Prop) (hOpen : isOpen) (hAda : containsAda) : isOpen ∧ containsAda",
-          "theoremName": "manifold_open_neighborhood",
-          "solution": "constructor\n· exact hOpen\n· exact hAda",
-          "hints": [
-            "Split the `∧` with `constructor`.",
-            "Use `hOpen`, then `hAda`."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Topology/L02.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "topology-3",
-          "world": "Topology",
-          "number": 3,
-          "title": "A continuous trail",
-          "introduction": "# Follow a rule\n\nInformally, continuity says that nearby inputs give nearby outputs. A path is a continuous map from an interval into a space. Here, `bridge` turns evidence that the trail is continuous into evidence that Ada reaches the food. The `apply` tactic uses this rule and asks you to prove its input.",
-          "conclusion": "When you apply a theorem, Lean replaces the current goal with whatever that theorem still needs.",
+          "title": "A trail to the food",
+          "introduction": "# Reasoning backwards\n\nInformally, a continuous trail is one with no gaps and no jumps. Ada knows her trail is continuous, and she knows a rule: *continuous trails reach the food*.\n\nThe `apply` tactic uses a rule backwards. The goal is `reachesFood`; `apply bridge` says \"by the rule, it suffices to show the trail is continuous\", and that becomes your new goal.",
+          "conclusion": "`apply` is the tactic of \"it suffices to show\". Working backwards from the goal is normal mathematical practice, and Lean keeps track of exactly what remains to be shown.",
           "statement": "manifold_continuous_trail (trailContinuous reachesFood : Prop) (bridge : trailContinuous → reachesFood) (hTrail : trailContinuous) : reachesFood",
           "theoremName": "manifold_continuous_trail",
           "solution": "apply bridge\nexact hTrail",
           "hints": [
-            "Use `apply bridge`.",
-            "The remaining goal is exactly `hTrail`."
+            "`apply bridge` replaces the goal with what the rule needs.",
+            "Finish with `exact hTrail`."
           ],
           "newTactics": [
             "apply"
@@ -238,104 +192,23 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Topology/L03.lean",
+          "sourcePath": "Original/Manifolds/LocalTest/L01.lean",
           "verification": "kernel"
         },
         {
-          "id": "topology-4",
-          "world": "Topology",
-          "number": 4,
-          "title": "Two-way deformation",
-          "introduction": "# The homeomorphism idea\n\nTwo spaces are homeomorphic when there is a continuous bijection between them and its inverse is continuous too. You can think of this as a continuous relabeling that works in both directions.",
-          "conclusion": "Homeomorphic spaces have the same topological shape. The familiar picture of reshaping a coffee mug into a torus is an informal example, with both objects idealized as surfaces.",
-          "statement": "manifold_two_way_deformation (forward backward : Prop) (hForward : forward) (hBackward : backward) : forward ∧ backward",
-          "theoremName": "manifold_two_way_deformation",
-          "solution": "constructor\n· exact hForward\n· exact hBackward",
-          "hints": [
-            "A two-direction package calls for `constructor`."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Topology/L04.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "topology-5",
-          "world": "Topology",
-          "number": 5,
-          "title": "Connected choices",
-          "introduction": "# One piece or several?\n\nA connected space cannot be divided into two disjoint, nonempty open pieces. Ada knows that her world is connected, but the goal lists `disconnected` first. Her evidence belongs on the right.",
-          "conclusion": "The order of the two branches matters. Lean asks you to say which one your evidence proves.",
-          "statement": "manifold_connected_choice (connected disconnected : Prop) (hConnected : connected) : disconnected ∨ connected",
-          "theoremName": "manifold_connected_choice",
-          "solution": "right\nexact hConnected",
-          "hints": [
-            "Your evidence supports the second branch.",
-            "Use `right`."
-          ],
-          "newTactics": [
-            "right"
-          ],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Topology/L05.lean",
-          "verification": "kernel"
-        }
-      ]
-    },
-    {
-      "id": "LocalEuclidean",
-      "title": "The local Euclidean test",
-      "introduction": "# Zoom in\n\nEvery point of an $n$-dimensional manifold has a neighborhood that looks like an open part of $\\mathbb{R}^n$.\n\nA circle looks like a line nearby, and the surface of a sphere looks like a plane nearby. A figure eight is different at its crossing. Four arms meet there, so no small neighborhood of the crossing looks like an interval.\n\nThe real-number symbol [ℝ](https://en.wikipedia.org/wiki/Real_number) is typed in Lean as `\\R`, followed by Space or Tab.\n\nMost modern definitions also require the space to be Hausdorff and second countable. Authors do not all use exactly the same convention, so check the definition in the book you are reading.",
-      "prerequisites": [
-        "Topology"
-      ],
-      "verification": "kernel",
-      "levels": [
-        {
-          "id": "localeuclidean-1",
-          "world": "LocalEuclidean",
-          "number": 1,
-          "title": "A line close up",
-          "introduction": "# Dimension one\n\nThe real line $\\mathbb{R}$ is the model one-dimensional Euclidean space. An open interval is the local template for a one-manifold without boundary.",
-          "conclusion": "The dimension tells you how many coordinates a chart needs.",
-          "statement": "manifold_line_local_model (locallyRealLine : Prop) (h : locallyRealLine) : locallyRealLine",
-          "theoremName": "manifold_line_local_model",
-          "solution": "exact h",
-          "hints": [
-            "Use the matching hypothesis."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/LocalEuclidean/L01.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "localeuclidean-2",
-          "world": "LocalEuclidean",
+          "id": "localtest-2",
+          "world": "LocalTest",
           "number": 2,
-          "title": "A circle is locally a line",
-          "introduction": "# Loop globally, line locally\n\nOn a huge circle, Ada sees only a short arc. One real coordinate can label that arc, just as it labels an interval. If she keeps walking, she eventually discovers the loop. The local coordinate never claimed to describe the whole circle.",
-          "conclusion": "The line and the circle are both one-manifolds, but they are not homeomorphic. Looking the same nearby does not make them the same globally.",
-          "statement": "manifold_circle_local_line (circleLooksLinearNearby : Prop) (h : circleLooksLinearNearby) : circleLooksLinearNearby",
-          "theoremName": "manifold_circle_local_line",
-          "solution": "exact h",
+          "title": "Trails chain together",
+          "introduction": "# Composing trails\n\nOne continuous trail leads from camp to stream; another from stream to nest. Gluing them end to end gives a continuous trail from camp to nest: the composition of continuous maps is continuous.\n\nProve it the way you would walk it: `intro` the starting point, then `apply` the legs of the journey backwards. To reach the nest it suffices to reach the stream, and to reach the stream it suffices to start at camp.",
+          "conclusion": "You will compose maps constantly from here on: charts with inverse charts, smooth maps with smooth maps. The chain rule, when it appears, is a statement about exactly this operation.",
+          "statement": "manifold_trails_compose (campReached streamReached nestReached : Prop) (walkToStream : campReached → streamReached) (walkToNest : streamReached → nestReached) : campReached → nestReached",
+          "theoremName": "manifold_trails_compose",
+          "solution": "intro hCamp\napply walkToNest\napply walkToStream\nexact hCamp",
           "hints": [
-            "The hypothesis already supplies the local claim."
+            "Begin with `intro hCamp`.",
+            "Work backwards: `apply walkToNest`, then `apply walkToStream`.",
+            "The final goal is `campReached`, which is `hCamp`."
           ],
           "newTactics": [],
           "hiddenTactics": [],
@@ -344,79 +217,58 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/LocalEuclidean/L02.lean",
+          "sourcePath": "Original/Manifolds/LocalTest/L02.lean",
           "verification": "kernel"
         },
         {
-          "id": "localeuclidean-3",
-          "world": "LocalEuclidean",
+          "id": "localtest-3",
+          "world": "LocalTest",
           "number": 3,
-          "title": "The crossing alarm",
-          "introduction": "# A non-example\n\nTake a small neighborhood of the crossing in a planar figure eight and remove the crossing itself. Four arms remain. Do the same to an open interval and only two pieces remain. The neighborhoods cannot be homeomorphic, so the crossing is not locally a line.\n\nIn the goal, the logical negation symbol [¬](https://en.wikipedia.org/wiki/Negation) means \"not.\" Type it as `\\not`, followed by Space or Tab.",
-          "conclusion": "A single bad point is enough to spoil the manifold condition. Crossings, tips, seams, and boundaries are good places to check first.",
-          "statement": "manifold_figure_eight_crossing (crossingIsLineLike : Prop) (alarm : ¬ crossingIsLineLike) : ¬ crossingIsLineLike",
-          "theoremName": "manifold_figure_eight_crossing",
-          "solution": "exact alarm",
+          "title": "Locally a line, globally a loop",
+          "introduction": "# Same nearby, different overall\n\nEvery point of the circle passes the local test: a short arc, relabeled by one coordinate, is an interval of $\\mathbb{R}$. And yet the circle is not a line: walk far enough in one direction and you return to your starting point, which no line permits.\n\nBoth facts are true at once. Record them together.",
+          "conclusion": "The circle agrees with the line locally and disagrees with it globally. Much of this course examines that kind of disagreement; the sphere, the torus, and the Möbius band all show versions of it.",
+          "statement": "manifold_circle_local_line (looksLikeLineNearby closesIntoLoop : Prop) (hNear : looksLikeLineNearby) (hLoop : closesIntoLoop) : looksLikeLineNearby ∧ closesIntoLoop",
+          "theoremName": "manifold_circle_local_line",
+          "solution": "constructor\n· exact hNear\n· exact hLoop",
           "hints": [
-            "`alarm` has exactly the negated goal."
+            "`constructor` splits the two claims.",
+            "Each half is a hypothesis you hold."
+          ],
+          "newTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [],
+          "newDefinitions": [],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "Original/Manifolds/LocalTest/L03.lean",
+          "verification": "kernel"
+        },
+        {
+          "id": "localtest-4",
+          "world": "LocalTest",
+          "number": 4,
+          "title": "The crossing that fails",
+          "introduction": "# One bad point spoils a space\n\nTrace a figure eight and stand at the crossing, marked red on the model. Remove that single point and its neighborhood falls into four arms; remove a point from an open interval and only two pieces remain. Four is not two, and the number of pieces survives any continuous relabeling, so no neighborhood of the crossing is homeomorphic to an interval. Every other point of the figure eight passes the test; this one failure disqualifies the whole curve.\n\nIn Lean, the negation symbol [¬](https://en.wikipedia.org/wiki/Negation) (typed `\\not`, then Space or Tab) is defined as an implication: `¬ A` *is* `A → False`. So the hypothesis `fourArms` is a function that turns evidence for `crossingLooksLikeLine` into `False`. Apply it to the evidence you have.",
+          "conclusion": "In Lean, refuting a claim means building a function into `False`, and applying `fourArms` to `hopeful` is the usual proof by contradiction in that form. When you test whether a space is a manifold, check crossings, endpoints, seams, and corners first.",
+          "statement": "manifold_figure_eight_crossing (crossingLooksLikeLine : Prop) (fourArms : ¬ crossingLooksLikeLine) (hopeful : crossingLooksLikeLine) : False",
+          "theoremName": "manifold_figure_eight_crossing",
+          "solution": "exact fourArms hopeful",
+          "hints": [
+            "`¬ A` means `A → False`, so `fourArms` is a function.",
+            "Apply it to the evidence: `exact fourArms hopeful`."
           ],
           "newTactics": [],
           "hiddenTactics": [],
           "newTheorems": [],
           "newDefinitions": [
-            "Not"
+            "Not",
+            "False"
           ],
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/LocalEuclidean/L03.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "localeuclidean-4",
-          "world": "LocalEuclidean",
-          "number": 4,
-          "title": "Dimension is local",
-          "introduction": "# Count coordinates, not embedding axes\n\nA circle drawn in a plane is still one-dimensional because one local coordinate locates Ada. The surface of a sphere is two-dimensional even when we draw it in three-dimensional space. The dimension of the surrounding space is a separate matter.",
-          "conclusion": "To find the intrinsic dimension, count the independent local coordinates.",
-          "statement": "manifold_dimension_local (localDimension : ℕ) : localDimension = localDimension",
-          "theoremName": "manifold_dimension_local",
-          "solution": "rfl",
-          "hints": [
-            "This is reflexive equality."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/LocalEuclidean/L04.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "localeuclidean-5",
-          "world": "LocalEuclidean",
-          "number": 5,
-          "title": "The modern package",
-          "introduction": "# More than the slogan\n\n\"Looks Euclidean nearby\" is the part worth remembering first. Textbooks commonly add the Hausdorff and second-countability conditions. These conditions rule out troublesome spaces and make standard results available.",
-          "conclusion": "This goal packages all three requirements. Tu reviews the point-set topology needed to understand what each one does.",
-          "statement": "manifold_modern_package (locallyEuclidean hausdorff secondCountable : Prop) (hLocal : locallyEuclidean) (hHaus : hausdorff) (hCount : secondCountable) : locallyEuclidean ∧ hausdorff ∧ secondCountable",
-          "theoremName": "manifold_modern_package",
-          "solution": "constructor\n· exact hLocal\n· constructor\n  · exact hHaus\n  · exact hCount",
-          "hints": [
-            "The goal is nested as `locallyEuclidean ∧ (hausdorff ∧ secondCountable)`.",
-            "Use `constructor` twice."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/LocalEuclidean/L05.lean",
+          "sourcePath": "Original/Manifolds/LocalTest/L04.lean",
           "verification": "kernel"
         }
       ]
@@ -424,9 +276,9 @@
     {
       "id": "Charts",
       "title": "Charts and atlases",
-      "introduction": "# Coordinates are local tools\n\nA **chart** pairs an open patch of a manifold with coordinates in Euclidean space. An **atlas** is a family of compatible charts covering the manifold.\n\n![Overlapping charts turn patches into coordinates](images/charts-atlas.svg)\n\nThink of an atlas of Earth. No page needs to show the entire globe without seams or distortion. Where two charts overlap, a transition map translates between their coordinate systems.",
+      "introduction": "# Coordinates are local tools\n\nYou cannot flatten a globe onto one page without distortion. Cartographers solved this long ago: an atlas of Earth uses many pages, each accurate for one region, with margins explaining how neighboring pages fit together.\n\n![Overlapping charts turn patches into coordinates](images/charts-atlas.svg)\n\nMathematics borrows the whole metaphor, names included. A **chart** is one page: a homeomorphism from an open patch of the manifold to an open subset of Euclidean space. An **atlas** is enough charts to cover every point. Where two pages overlap, the **transition map** (out through one chart, back through the other) must itself be continuous. That consistency requirement lets purely local coordinates describe one coherent space.",
       "prerequisites": [
-        "LocalEuclidean"
+        "LocalTest"
       ],
       "verification": "kernel",
       "levels": [
@@ -434,14 +286,14 @@
           "id": "charts-1",
           "world": "Charts",
           "number": 1,
-          "title": "A chart has two sides",
-          "introduction": "# Patch and coordinate image\n\nA topological chart is a homeomorphism between an open patch of the manifold and an open subset of Euclidean space. The patch and its coordinate image both matter.",
-          "conclusion": "Coordinates belong to a particular chart. The whole manifold may not have one coordinate system.",
+          "title": "A page of the atlas",
+          "introduction": "# A chart has two sides\n\nA chart identifies a patch of Ada's world with a region of coordinate space, and both sides must be open sets. Openness keeps \"nearby\" meaningful on each side of the identification: no point of the patch sits on an edge where the relabeling breaks down.",
+          "conclusion": "Coordinates belong to a chart, never to the manifold. Asking \"what are the coordinates of this point?\" without naming a chart is like asking \"what page is Portugal on?\" without naming the atlas.",
           "statement": "manifold_chart_two_sides (patchOpen coordinatesOpen : Prop) (hPatch : patchOpen) (hCoordinates : coordinatesOpen) : patchOpen ∧ coordinatesOpen",
           "theoremName": "manifold_chart_two_sides",
           "solution": "constructor\n· exact hPatch\n· exact hCoordinates",
           "hints": [
-            "Split the conjunction."
+            "Split the conjunction with `constructor`."
           ],
           "newTactics": [],
           "hiddenTactics": [],
@@ -457,14 +309,15 @@
           "id": "charts-2",
           "world": "Charts",
           "number": 2,
-          "title": "Go there and back",
-          "introduction": "# Inverses\n\nA chart map and its inverse undo each other wherever both are defined. This exercise represents that round trip with a coordinate that returns unchanged.",
-          "conclusion": "A full proof would state these inverse laws as equations between functions.",
-          "statement": "manifold_chart_round_trip (coordinate : ℕ) : coordinate = coordinate",
+          "title": "There and back",
+          "introduction": "# The round trip\n\nA chart is invertible by definition: `chart` carries Ada into coordinates, `chartInv` brings her home. Send her on the round trip: apply `chart` to `ada`, then `chartInv` to the result. Function applications nest, so read `chartInv (chart ada)` from the inside out.\n\nOne caveat: our proposition only records that the round trip lands somewhere on the sphere. The full definition demands that it land on the *same point*, an equation of the `rfl` shape you met in Flatland.",
+          "conclusion": "You composed two maps by hand. The full definition requires this round trip to return every point of the patch unchanged, and that requirement is what makes coordinate computations trustworthy.",
+          "statement": "manifold_chart_round_trip (onSphere inCoordinates : Prop) (chart : onSphere → inCoordinates) (chartInv : inCoordinates → onSphere) (ada : onSphere) : onSphere",
           "theoremName": "manifold_chart_round_trip",
-          "solution": "rfl",
+          "solution": "exact chartInv (chart ada)",
           "hints": [
-            "Use `rfl`."
+            "First `chart ada` gives a coordinate point.",
+            "Then wrap it: `exact chartInv (chart ada)`."
           ],
           "newTactics": [],
           "hiddenTactics": [],
@@ -480,16 +333,19 @@
           "id": "charts-3",
           "world": "Charts",
           "number": 3,
-          "title": "The globe needs seams",
-          "introduction": "# No perfect flat world map\n\nLatitude and longitude are useful, but the coordinates have a seam and behave badly at the poles. Choosing different coordinates can move those problems, but it does not give the sphere one perfect flat map.",
-          "conclusion": "The sphere is still a manifold. It simply needs more than one chart.",
-          "statement": "manifold_globe_needs_charts (needsSeveralCharts : Prop) (h : needsSeveralCharts) : needsSeveralCharts",
-          "theoremName": "manifold_globe_needs_charts",
-          "solution": "exact h",
+          "title": "Whichever page you are on",
+          "introduction": "# Using a cover\n\nTwo stereographic projections chart the sphere: one from the north pole (it misses only the north pole itself), one from the south. Every point of the sphere lies on at least one page. The model shows the two pages as amber and teal caps; note the band where they overlap.\n\nTo use the covering, split into cases with the `cases` tactic: if Ada is on the north page, locate her there; if on the south page, locate her there. Either way, she is located.",
+          "conclusion": "An atlas is used through case analysis: a global argument picks whichever chart covers the point at hand and computes there. `cases` is the Lean form of that step.",
+          "statement": "manifold_sphere_chart_cover (inNorthPage inSouthPage located : Prop) (fromNorth : inNorthPage → located) (fromSouth : inSouthPage → located) (covered : inNorthPage ∨ inSouthPage) : located",
+          "theoremName": "manifold_sphere_chart_cover",
+          "solution": "cases covered with\n| inl h => exact fromNorth h\n| inr h => exact fromSouth h",
           "hints": [
-            "Use the matching evidence."
+            "Start with `cases covered with`.",
+            "Handle each branch: `| inl h => exact fromNorth h` and `| inr h => exact fromSouth h`."
           ],
-          "newTactics": [],
+          "newTactics": [
+            "cases"
+          ],
           "hiddenTactics": [],
           "newTheorems": [],
           "newDefinitions": [],
@@ -503,14 +359,14 @@
           "id": "charts-4",
           "world": "Charts",
           "number": 4,
-          "title": "Cover the sphere",
-          "introduction": "# An atlas covers every point\n\nStereographic projection from the north pole misses the north pole. Projection from the south pole misses the south pole. Used together, the two charts cover the sphere.",
-          "conclusion": "One chart may miss some points. The atlas only requires that the charts cover the manifold together.",
-          "statement": "manifold_sphere_chart_cover (northChart southChart : Prop) (covered : northChart ∨ southChart) : northChart ∨ southChart",
-          "theoremName": "manifold_sphere_chart_cover",
-          "solution": "exact covered",
+          "title": "Where pages overlap",
+          "introduction": "# The seam condition\n\nWhere two charts overlap, compose one chart's inverse with the other chart: the result translates between two coordinate systems for the same ground. For a topological atlas this transition map must be continuous, so that a calculation begun on one page survives the move to the neighboring page.",
+          "conclusion": "Remember the seams. Changing one word in this condition, *continuous* to *smooth*, is the entire definition of a smooth manifold; it arrives two worlds from now.",
+          "statement": "manifold_chart_compatibility (overlapDefined transitionContinuous : Prop) (hOverlap : overlapDefined) (hTransition : transitionContinuous) : overlapDefined ∧ transitionContinuous",
+          "theoremName": "manifold_chart_compatibility",
+          "solution": "constructor\n· exact hOverlap\n· exact hTransition",
           "hints": [
-            "The whole disjunction is already a hypothesis."
+            "`constructor`, then the two seam facts."
           ],
           "newTactics": [],
           "hiddenTactics": [],
@@ -521,53 +377,30 @@
           "disabledDefinitions": [],
           "sourcePath": "Original/Manifolds/Charts/L04.lean",
           "verification": "kernel"
-        },
-        {
-          "id": "charts-5",
-          "world": "Charts",
-          "number": 5,
-          "title": "Agree on the overlap",
-          "introduction": "# Translation between maps\n\nWhere two charts overlap, compose one coordinate map with the inverse of the other. For a topological atlas, that transition is continuous. For a smooth atlas, it must be smooth.",
-          "conclusion": "These transition maps make calculations from different charts agree on the same space.",
-          "statement": "manifold_chart_compatibility (overlapDefined transitionContinuous : Prop) (hOverlap : overlapDefined) (hTransition : transitionContinuous) : overlapDefined ∧ transitionContinuous",
-          "theoremName": "manifold_chart_compatibility",
-          "solution": "constructor\n· exact hOverlap\n· exact hTransition",
-          "hints": [
-            "Package both compatibility conditions with `constructor`."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Charts/L05.lean",
-          "verification": "kernel"
         }
       ]
     },
     {
-      "id": "Objects",
-      "title": "A cabinet of surfaces",
-      "introduction": "# Meet the recurring objects\n\n![A circle, sphere, torus, and Möbius strip](images/manifold-objects.svg)\n\nWe will keep returning to a few examples: the sphere, the torus, the configuration space of a double pendulum, and the Möbius strip. They let us separate intrinsic dimension from the dimension of the surrounding space, compare local and global shape, and meet manifolds with boundary.",
+      "id": "Cabinet",
+      "title": "A cabinet of shapes",
+      "introduction": "# Four recurring shapes\n\n![A circle, sphere, torus, and Möbius strip](images/manifold-objects.svg)\n\nFour shapes recur through the rest of the course, and each breaks a different plausible assumption. The sphere and the torus are locally identical but globally different. The Möbius band has an edge, and a twist that defeats any consistent notion of \"clockwise\". A knotted circle shows that what a space is and how it sits inside another space are separate questions.\n\nEvery level in this world has a model you can spin and zoom. Each was built for the argument on its page.",
       "prerequisites": [
         "Charts"
       ],
       "verification": "kernel",
       "levels": [
         {
-          "id": "objects-1",
-          "world": "Objects",
+          "id": "cabinet-1",
+          "world": "Cabinet",
           "number": 1,
           "title": "The globe beneath Ada",
-          "introduction": "# The two-sphere\n\nThe surface $S^2$ is a two-manifold. Every small patch looks like an open piece of $\\mathbb{R}^2$, although the surface closes around itself as a whole. The solid ball inside is a different object.",
-          "conclusion": "In discussions of manifolds, \"sphere\" often means the surface rather than the filled ball. Check the notation and context.",
+          "introduction": "# The two-sphere\n\nThe sphere $S^2$ means the *surface*: the soap film, not the solid ball inside it. It is a two-manifold, since every patch under Ada's feet relabels as a piece of the plane. (This is also why a flat Earth stayed believable for so long.) As a whole, though, the surface closes on itself: it has finite area and no edge.",
+          "conclusion": "When a geometer says \"sphere\", read \"surface\" unless told otherwise. The solid ball is a different object, a three-dimensional manifold with boundary.",
           "statement": "manifold_sphere_surface (locallyPlaneLike globallyClosed : Prop) (hLocal : locallyPlaneLike) (hGlobal : globallyClosed) : locallyPlaneLike ∧ globallyClosed",
           "theoremName": "manifold_sphere_surface",
           "solution": "constructor\n· exact hLocal\n· exact hGlobal",
           "hints": [
-            "Use `constructor`; prove local and global facts separately."
+            "`constructor`, then the local and global facts in order."
           ],
           "newTactics": [],
           "hiddenTactics": [],
@@ -576,21 +409,21 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Objects/L01.lean",
+          "sourcePath": "Original/Manifolds/Cabinet/L01.lean",
           "verification": "kernel"
         },
         {
-          "id": "objects-2",
-          "world": "Objects",
+          "id": "cabinet-2",
+          "world": "Cabinet",
           "number": 2,
-          "title": "The doughnut",
-          "introduction": "# The torus\n\nThe surface of a doughnut is a two-manifold called a torus. A small patch looks planar. Across the whole torus, one loop goes around the tube and another goes around the central hole.",
-          "conclusion": "The torus and sphere have the same local dimension, but their global topology differs.",
-          "statement": "manifold_torus_surface (locallyPlaneLike hasLoopingDirections : Prop) (hLocal : locallyPlaneLike) (hLoops : hasLoopingDirections) : locallyPlaneLike ∧ hasLoopingDirections",
+          "title": "The torus is two circles",
+          "introduction": "# Circle × circle\n\nThe model highlights two loops on the torus: coral around the tube, magenta around the central hole. Neither can be shrunk to a point without leaving the surface. A torus is the Cartesian product of two circles, $T^2 = S^1 \\times S^1$, where [×](https://en.wikipedia.org/wiki/Cartesian_product) (typed `\\times`, then Space or Tab) pairs the spaces: one angle says where around the tube, a second says where around the hole.\n\nThis has a practical reading. A double pendulum, an arm swinging on the end of an arm, has a state given by two angles, and a pair of angles is a point on a torus. The pendulum's configuration space is this doughnut; as the pendulum swings, its state traces a path on the surface.",
+          "conclusion": "A manifold need not describe a physical place; it can describe the possible states of a system. Mechanics and robotics use such configuration spaces routinely.",
+          "statement": "manifold_torus_surface (aroundTheTube aroundTheHole : Prop) (hTube : aroundTheTube) (hHole : aroundTheHole) : aroundTheTube ∧ aroundTheHole",
           "theoremName": "manifold_torus_surface",
-          "solution": "constructor\n· exact hLocal\n· exact hLoops",
+          "solution": "constructor\n· exact hTube\n· exact hHole",
           "hints": [
-            "Build the conjunction from `hLocal` and `hLoops`."
+            "Two loops, two hypotheses, one `constructor`."
           ],
           "newTactics": [],
           "hiddenTactics": [],
@@ -599,21 +432,22 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Objects/L02.lean",
+          "sourcePath": "Original/Manifolds/Cabinet/L02.lean",
           "verification": "kernel"
         },
         {
-          "id": "objects-3",
-          "world": "Objects",
+          "id": "cabinet-3",
+          "world": "Cabinet",
           "number": 3,
-          "title": "Two pendulum angles",
-          "introduction": "# A space of possibilities\n\nIn Quanta's example, each arm of a double pendulum contributes one angle. Each angle runs around a circle, so a pair of angles runs over circle × circle, which is a torus. Here the Cartesian product symbol [×](https://en.wikipedia.org/wiki/Cartesian_product) is typed in Lean as `\\times`, followed by Space or Tab. A point on this torus records a **configuration** of the pendulum. It is not a point traced by either arm.",
-          "conclusion": "A manifold can describe the possible states of a system. The same point of view is used in mechanics, robotics, dynamical systems, and data analysis.",
-          "statement": "manifold_pendulum_torus (firstAngleLoops secondAngleLoops : Prop) (hFirst : firstAngleLoops) (hSecond : secondAngleLoops) : firstAngleLoops ∧ secondAngleLoops",
-          "theoremName": "manifold_pendulum_torus",
-          "solution": "constructor\n· exact hFirst\n· exact hSecond",
+          "title": "The twisted band",
+          "introduction": "# A band with a half twist\n\nGlue a paper strip end to end with a half twist. The result misbehaves in two separate ways.\n\nFirst, run a finger along the edge: you pass along every part of it and return to where you started. The band has one boundary curve, not two. Because of that edge, the Möbius strip is a **two-manifold with boundary**: interior points have disk neighborhoods, edge points have half-disk neighborhoods. Having a boundary is not a defect; it is a category with its own local test.\n\nSecond, watch the model's arrows. Suppose you chose a consistent \"up\" across the whole band. Carried once around, the choice returns reversed; that is the hypothesis `mirror`. In the last world you used a negation; here you prove one. Since `¬ orientable` is `orientable → False`, prove it like any implication: after `constructor`, `intro` the supposed orientation and hand it to `mirror`.\n\nNote the fine print: every small patch of the band is orientable. The problem only appears when the choices are carried around the full loop.",
+          "conclusion": "Orientability is your second example of a purely global property; the circle's loop was the first. You have now used a negation (the figure eight) and proved one (here).",
+          "statement": "manifold_mobius_band (hasOneBoundaryCurve orientable : Prop) (hEdge : hasOneBoundaryCurve) (mirror : orientable → False) : hasOneBoundaryCurve ∧ ¬ orientable",
+          "theoremName": "manifold_mobius_band",
+          "solution": "constructor\n· exact hEdge\n· intro hOrient\n  exact mirror hOrient",
           "hints": [
-            "There are two independent looping angle facts."
+            "`constructor` splits the goal. The second half is `¬ orientable`, i.e. `orientable → False`.",
+            "Prove the negation like an implication: `intro hOrient`, then `exact mirror hOrient`."
           ],
           "newTactics": [],
           "hiddenTactics": [],
@@ -622,44 +456,21 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Objects/L03.lean",
+          "sourcePath": "Original/Manifolds/Cabinet/L03.lean",
           "verification": "kernel"
         },
         {
-          "id": "objects-4",
-          "world": "Objects",
+          "id": "cabinet-4",
+          "world": "Cabinet",
           "number": 4,
-          "title": "The Möbius edge",
-          "introduction": "# Twist before gluing\n\nA Möbius strip is a **two-manifold with boundary**. Interior points have disk-like neighborhoods. Points on its single boundary curve have neighborhoods like a half-disk, not an open disk. So it is not a two-manifold *without* boundary under the usual definition.\n\nIts one-sided behavior concerns orientability, which we will meet later.",
-          "conclusion": "Having a boundary is not a flaw. Manifolds with boundary form a separate category with their own local model.",
-          "statement": "manifold_mobius_boundary (interiorLooksPlanar boundaryLooksHalfPlanar : Prop) (hInterior : interiorLooksPlanar) (hBoundary : boundaryLooksHalfPlanar) : interiorLooksPlanar ∧ boundaryLooksHalfPlanar",
-          "theoremName": "manifold_mobius_boundary",
-          "solution": "constructor\n· exact hInterior\n· exact hBoundary",
-          "hints": [
-            "Keep the interior and boundary local models separate."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Objects/L04.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "objects-5",
-          "world": "Objects",
-          "number": 5,
-          "title": "Intrinsic loop, extrinsic knot",
-          "introduction": "# How a space sits versus what it is\n\nA closed string can be embedded in three-dimensional space as an unknot or a knot. Intrinsically, the string itself is still a circle. Knotting is information about the embedding in ambient space.",
-          "conclusion": "The circle describes the string itself. The knot describes how that circle sits in the surrounding space.",
-          "statement": "manifold_intrinsic_loop (sameIntrinsicLoop differentEmbedding : Prop) (hLoop : sameIntrinsicLoop) (hEmbedding : differentEmbedding) : sameIntrinsicLoop ∧ differentEmbedding",
+          "title": "The knot is in the embedding",
+          "introduction": "# What it is vs. how it sits\n\nThe model shows two closed tubes, a plain ring and a trefoil knot. An ant walking either one has the same experience: one direction forward, one direction back, and eventually the starting point again. Intrinsically both are the same one-manifold, the circle.\n\nThe knotting is real, but it is a property of the *embedding*, the way the circle sits inside three-dimensional space, not of the circle itself. Ada, who never leaves her tube, cannot even state the question of whether her world is knotted.",
+          "conclusion": "Keep the intrinsic/extrinsic distinction close; the next world depends on it. Riemann's program was to do geometry using only intrinsic data.",
+          "statement": "manifold_intrinsic_loop (sameIntrinsicCircle differentEmbedding : Prop) (hCircle : sameIntrinsicCircle) (hEmbedding : differentEmbedding) : sameIntrinsicCircle ∧ differentEmbedding",
           "theoremName": "manifold_intrinsic_loop",
-          "solution": "constructor\n· exact hLoop\n· exact hEmbedding",
+          "solution": "constructor\n· exact hCircle\n· exact hEmbedding",
           "hints": [
-            "Both the intrinsic and embedding claims are supplied."
+            "Both claims are hypotheses; bundle them."
           ],
           "newTactics": [],
           "hiddenTactics": [],
@@ -668,158 +479,32 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Objects/L05.lean",
+          "sourcePath": "Original/Manifolds/Cabinet/L04.lean",
           "verification": "kernel"
         }
       ]
     },
     {
-      "id": "Riemann",
-      "title": "Riemann changes \"space\"",
-      "introduction": "# From a stage to an object\n\nIn an 1854 lecture on the foundations of geometry, Bernhard Riemann extended ideas about curved surfaces to spaces of arbitrary dimension. The lecture was published in 1868, after his death.\n\nThe word \"manifold\" comes from Riemann's German term *Mannigfaltigkeit*, associated with multiplicity or variety. Later mathematicians developed today's precise definitions in terms of charts. Riemann introduced the underlying ideas, but he did not write down every modern axiom.",
+      "id": "Smooth",
+      "title": "Smooth worlds, tangent spaces",
+      "introduction": "# Riemann, and calculus on curved spaces\n\nIn June 1854, in Göttingen, Bernhard Riemann gave the habilitation lecture this subject descends from. His proposal: stop treating space as a fixed stage for figures, and study each space as an object in its own right, a *Mannigfaltigkeit* (\"manifold\"), of any finite dimension, measured from within. The lecture was published only after his death, and it took decades of work by later mathematicians to become the chart-based definitions you are using now.\n\nRiemann's program needs calculus on curved spaces, and the modern recipe changes one word in the atlas condition: every transition map must be not merely continuous but *infinitely differentiable*. With smooth seams, a derivative computed on one page agrees with the neighboring page's answer, so calculus stops depending on which chart you opened. An atlas with this property is a **smooth structure**, and a space carrying one is a **smooth manifold**.\n\nOnce you can differentiate, each point acquires a linear approximation: the velocities of curves through a point $p$ form an $n$-dimensional vector space, the **tangent space** at $p$.\n\n![Ada studies a tangent plane and a velocity](images/tangent-space.svg)\n\nThis is where linear algebra enters geometry.",
       "prerequisites": [
-        "Objects"
+        "Cabinet"
       ],
       "verification": "kernel",
       "levels": [
         {
-          "id": "riemann-1",
-          "world": "Riemann",
+          "id": "smooth-1",
+          "world": "Smooth",
           "number": 1,
-          "title": "Space becomes an object",
-          "introduction": "# Space becomes part of the problem\n\nClassical geometry often put figures inside a fixed Euclidean space. With manifolds, the space itself can vary and become the thing we study.",
-          "conclusion": "We can now compare spaces, define maps between them, classify them, and add further structure.",
-          "statement": "manifold_space_as_object (spaceCanBeStudied : Prop) (h : spaceCanBeStudied) : spaceCanBeStudied",
-          "theoremName": "manifold_space_as_object",
-          "solution": "exact h",
-          "hints": [
-            "Use `h`."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Riemann/L01.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "riemann-2",
-          "world": "Riemann",
-          "number": 2,
-          "title": "The 1854 lecture",
-          "introduction": "# A careful historical marker\n\nRiemann delivered his habilitation lecture in Göttingen on June 10, 1854. He discussed geometry in arbitrary dimensions, although the ideas took time to spread.",
-          "conclusion": "The date does not define a manifold. It marks a point when geometry began moving beyond one fixed Euclidean setting.",
-          "statement": "manifold_riemann_lecture (lectureGeneralizedDimension : Prop) (historicalEvidence : lectureGeneralizedDimension) : lectureGeneralizedDimension",
-          "theoremName": "manifold_riemann_lecture",
-          "solution": "exact historicalEvidence",
-          "hints": [
-            "The named evidence matches the goal."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Riemann/L02.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "riemann-3",
-          "world": "Riemann",
-          "number": 3,
-          "title": "Mannigfaltigkeit",
-          "introduction": "# The name\n\nQuanta notes that \"manifold\" comes from Riemann's German *Mannigfaltigkeit*, a word associated with variety or multiplicity. It suggests a space whose points can vary through one or more parameters.",
-          "conclusion": "The name carries some history, but the definition in your text determines its precise meaning.",
-          "statement": "manifold_name_origin (termSignalsVariety : Prop) (h : termSignalsVariety) : termSignalsVariety",
-          "theoremName": "manifold_name_origin",
-          "solution": "exact h",
-          "hints": [
-            "Use the matching hypothesis."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Riemann/L03.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "riemann-4",
-          "world": "Riemann",
-          "number": 4,
-          "title": "Measure from within",
-          "introduction": "# Intrinsic geometry\n\nAda can ask intrinsic questions by measuring distances and angles along her surface. She does not need an outside observer or an embedding into a larger Euclidean space.",
-          "conclusion": "Gauss developed this way of thinking about surfaces, and Riemann carried it into higher dimensions.",
-          "statement": "manifold_intrinsic_geometry (usesInternalMeasurements ignoresAmbientView : Prop) (hInternal : usesInternalMeasurements) (hAmbient : ignoresAmbientView) : usesInternalMeasurements ∧ ignoresAmbientView",
-          "theoremName": "manifold_intrinsic_geometry",
-          "solution": "constructor\n· exact hInternal\n· exact hAmbient",
-          "hints": [
-            "Package the two intrinsic features."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Riemann/L04.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "riemann-5",
-          "world": "Riemann",
-          "number": 5,
-          "title": "Any finite dimension",
-          "introduction": "# Beyond visualization\n\nWe can picture dimensions one, two, and three, but the definition works in every finite dimension. An $n$-manifold needs $n$ local coordinates even when we cannot picture the space.",
-          "conclusion": "Charts let us calculate in dimensions that we cannot draw.",
-          "statement": "manifold_arbitrary_dimension (dimensionChosen localCoordinatesMatch : Prop) (hDimension : dimensionChosen) (hCoordinates : localCoordinatesMatch) : dimensionChosen ∧ localCoordinatesMatch",
-          "theoremName": "manifold_arbitrary_dimension",
-          "solution": "constructor\n· exact hDimension\n· exact hCoordinates",
-          "hints": [
-            "Use `constructor`."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Riemann/L05.lean",
-          "verification": "kernel"
-        }
-      ]
-    },
-    {
-      "id": "SmoothMaps",
-      "title": "Smooth maps",
-      "introduction": "# Add calculus to the atlas\n\nA topological manifold lets us talk about continuity. A **smooth manifold** has an atlas whose transition maps are infinitely differentiable. This extra condition lets us do calculus without depending on one choice of coordinates.\n\nThis world is only a preview. The full subject needs multivariable calculus and careful definitions. Tu introduces smooth structures and maps early; Lee treats them in more detail.",
-      "prerequisites": [
-        "Riemann"
-      ],
-      "verification": "kernel",
-      "levels": [
-        {
-          "id": "smoothmaps-1",
-          "world": "SmoothMaps",
-          "number": 1,
-          "title": "Compatible smooth charts",
-          "introduction": "# Smooth stitching\n\nWhere two charts overlap, the transition function changes from one Euclidean coordinate system to the other. If these functions are smooth, derivatives computed in different charts agree.",
-          "conclusion": "A smooth structure adds mathematical information to a topological manifold. It is not a property of how we draw the space.",
+          "title": "Smooth seams",
+          "introduction": "# A condition on overlaps\n\nA smooth structure is an atlas whose transition maps are infinitely differentiable; that is the entire definition. No chart is special. Smoothness is not a property of any single page but a compatibility condition between pages, checked on their overlaps.",
+          "conclusion": "Smoothness is extra information, not something you can read off from the topology. Choosing a smooth atlas equips the space for calculus; choosing a metric, later, will equip it for measurement.",
           "statement": "manifold_smooth_charts (chartsOverlap transitionsSmooth : Prop) (hOverlap : chartsOverlap) (hSmooth : transitionsSmooth) : chartsOverlap ∧ transitionsSmooth",
           "theoremName": "manifold_smooth_charts",
           "solution": "constructor\n· exact hOverlap\n· exact hSmooth",
           "hints": [
-            "Prove both parts of the smooth compatibility package."
+            "`constructor`, then both halves of the pact."
           ],
           "newTactics": [],
           "hiddenTactics": [],
@@ -828,45 +513,22 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/SmoothMaps/L01.lean",
+          "sourcePath": "Original/Manifolds/Smooth/L01.lean",
           "verification": "kernel"
         },
         {
-          "id": "smoothmaps-2",
-          "world": "SmoothMaps",
+          "id": "smooth-2",
+          "world": "Smooth",
           "number": 2,
-          "title": "Test a map in coordinates",
-          "introduction": "# Translate, calculate, translate back\n\nTo test a map between smooth manifolds, write it in local coordinates. The resulting map between Euclidean spaces should be smooth. The definition is arranged so that the answer does not depend on picking a lucky pair of charts.",
-          "conclusion": "We use charts to perform familiar calculus, but smoothness is a property of the map itself.",
-          "statement": "manifold_coordinate_test (coordinateExpressionSmooth mapSmooth : Prop) (criterion : coordinateExpressionSmooth → mapSmooth) (hCoordinate : coordinateExpressionSmooth) : mapSmooth",
-          "theoremName": "manifold_coordinate_test",
-          "solution": "apply criterion\nexact hCoordinate",
-          "hints": [
-            "Apply `criterion` to reduce the goal.",
-            "Finish with `hCoordinate`."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/SmoothMaps/L02.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "smoothmaps-3",
-          "world": "SmoothMaps",
-          "number": 3,
-          "title": "Composition stays smooth",
-          "introduction": "# Chain maps\n\nThe composition of two smooth maps is smooth. In coordinates, this follows from the multivariable chain rule. This exercise records the two smoothness facts that the full proof would use.",
-          "conclusion": "Because composition stays smooth, smooth manifolds and smooth maps form a category.",
-          "statement": "manifold_smooth_composition (firstSmooth secondSmooth : Prop) (hFirst : firstSmooth) (hSecond : secondSmooth) : firstSmooth ∧ secondSmooth",
+          "title": "Smoothness survives composition",
+          "introduction": "# The chain rule\n\nFollow a smooth map with another smooth map: the composite is smooth, and in coordinates the proof is the multivariable chain rule.\n\nThe hypothesis `chainRule` takes two inputs, smoothness of each map, and returns smoothness of the composite. Apply a function to two arguments by listing them in order: `chainRule hf hg`.",
+          "conclusion": "Because smoothness survives composition, smooth manifolds and smooth maps form a category: composing two maps in the class never leaves the class.",
+          "statement": "manifold_smooth_composition (fSmooth gSmooth compositeSmooth : Prop) (chainRule : fSmooth → gSmooth → compositeSmooth) (hf : fSmooth) (hg : gSmooth) : compositeSmooth",
           "theoremName": "manifold_smooth_composition",
-          "solution": "constructor\n· exact hFirst\n· exact hSecond",
+          "solution": "exact chainRule hf hg",
           "hints": [
-            "Package the two supplied smoothness facts."
+            "`chainRule` wants two arguments, in order.",
+            "Enter `exact chainRule hf hg`."
           ],
           "newTactics": [],
           "hiddenTactics": [],
@@ -875,124 +537,21 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/SmoothMaps/L03.lean",
+          "sourcePath": "Original/Manifolds/Smooth/L02.lean",
           "verification": "kernel"
         },
         {
-          "id": "smoothmaps-4",
-          "world": "SmoothMaps",
-          "number": 4,
-          "title": "Smooth in both directions",
-          "introduction": "# Diffeomorphism\n\nA diffeomorphism is a smooth bijection whose inverse is also smooth. It is the smooth version of a homeomorphism. Two diffeomorphic manifolds count as the same smooth shape.",
-          "conclusion": "Different formulas and coordinates may still describe diffeomorphic manifolds.",
-          "statement": "manifold_diffeomorphism (forwardSmooth inverseSmooth : Prop) (hForward : forwardSmooth) (hInverse : inverseSmooth) : forwardSmooth ∧ inverseSmooth",
-          "theoremName": "manifold_diffeomorphism",
-          "solution": "constructor\n· exact hForward\n· exact hInverse",
-          "hints": [
-            "Both directions are required."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/SmoothMaps/L04.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "smoothmaps-5",
-          "world": "SmoothMaps",
-          "number": 5,
-          "title": "Local formulas, global map",
-          "introduction": "# Gluing\n\nSuppose formulas are defined on separate chart domains and agree wherever the domains overlap. Under suitable conditions, we can glue them into one global object. This move appears often in geometry.",
-          "conclusion": "Charts divide the work into local pieces. Agreement on overlaps puts those pieces back together.",
-          "statement": "manifold_local_to_global_map (localFormulasAgree coverWholeManifold : Prop) (hAgree : localFormulasAgree) (hCover : coverWholeManifold) : localFormulasAgree ∧ coverWholeManifold",
-          "theoremName": "manifold_local_to_global_map",
-          "solution": "constructor\n· exact hAgree\n· exact hCover",
-          "hints": [
-            "Use `constructor`, then the two hypotheses."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/SmoothMaps/L05.lean",
-          "verification": "kernel"
-        }
-      ]
-    },
-    {
-      "id": "Tangent",
-      "title": "Tangent spaces",
-      "introduction": "# Every point gets a linear world\n\nAt each point of a smooth $n$-manifold, the tangent space is an $n$-dimensional vector space of possible instantaneous directions. Tangent vectors can be defined as velocities of curves or as derivations acting on smooth functions.\n\n![Ada studies a tangent plane and a velocity](images/tangent-space.svg)\n\nThis is where linear algebra becomes part of the story.",
-      "prerequisites": [
-        "SmoothMaps"
-      ],
-      "verification": "kernel",
-      "levels": [
-        {
-          "id": "tangent-1",
-          "world": "Tangent",
-          "number": 1,
-          "title": "Velocity at an instant",
-          "introduction": "# A curve leaves a direction\n\nA smooth curve through a point has a velocity at that point. Two different curves can represent the same tangent vector when they agree to first order there.",
-          "conclusion": "A tangent vector records the motion at one instant, not the whole path.",
-          "statement": "manifold_curve_velocity (curvePassesPoint velocityDefined : Prop) (hCurve : curvePassesPoint) (hVelocity : velocityDefined) : curvePassesPoint ∧ velocityDefined",
-          "theoremName": "manifold_curve_velocity",
-          "solution": "constructor\n· exact hCurve\n· exact hVelocity",
-          "hints": [
-            "Record both the point condition and velocity condition."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Tangent/L01.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "tangent-2",
-          "world": "Tangent",
-          "number": 2,
-          "title": "The tangent line",
-          "introduction": "# Circle at one point\n\nAt any point on a circle, the tangent space is a line. That line is not the circle. It is the linear space of directions available at that point.",
-          "conclusion": "The circle is curved, but each tangent space is an ordinary vector space.",
-          "statement": "manifold_tangent_line (oneDimensionalManifold oneDimensionalTangent : Prop) (hManifold : oneDimensionalManifold) (hTangent : oneDimensionalTangent) : oneDimensionalManifold ∧ oneDimensionalTangent",
-          "theoremName": "manifold_tangent_line",
-          "solution": "constructor\n· exact hManifold\n· exact hTangent",
-          "hints": [
-            "Use both supplied facts."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Tangent/L02.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "tangent-3",
-          "world": "Tangent",
+          "id": "smooth-3",
+          "world": "Smooth",
           "number": 3,
           "title": "The tangent plane",
-          "introduction": "# Sphere at Ada's feet\n\nAt a point on a smooth surface, the tangent directions form a plane. This explains why the ground feels flat to Ada even though the whole surface may curve.",
-          "conclusion": "The tangent plane changes as Ada moves. The collection of all those planes is the tangent bundle.",
+          "introduction": "# Why the ground feels flat\n\nStand Ada anywhere on the sphere and collect every velocity she could have at that instant, every direction at every speed. Together they form a plane: the tangent plane at her point, shown in the model as a sheet of glass. It is written $T_p M$, read \"the tangent space to $M$ at $p$\".\n\nThe tangent space always matches the manifold's dimension: a curve gets tangent lines, a surface gets tangent planes, an $n$-manifold gets a copy of $\\mathbb{R}^n$. It is the linear space Ada mistakes for her world when she only looks near her feet.",
+          "conclusion": "The tangent plane changes from point to point. The collection of all of them, with the right bookkeeping, is itself a manifold, the *tangent bundle*, where vector fields and flows are defined. This course goes no further in that direction; Tu and Lee both do.",
           "statement": "manifold_tangent_plane (surfaceTwoDimensional tangentPlaneTwoDimensional : Prop) (hSurface : surfaceTwoDimensional) (hPlane : tangentPlaneTwoDimensional) : surfaceTwoDimensional ∧ tangentPlaneTwoDimensional",
           "theoremName": "manifold_tangent_plane",
           "solution": "constructor\n· exact hSurface\n· exact hPlane",
           "hints": [
-            "Package the surface and tangent-space dimensions."
+            "Surface dimension and tangent dimension: two facts, one `constructor`."
           ],
           "newTactics": [],
           "hiddenTactics": [],
@@ -1001,21 +560,22 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Tangent/L03.lean",
+          "sourcePath": "Original/Manifolds/Smooth/L03.lean",
           "verification": "kernel"
         },
         {
-          "id": "tangent-4",
-          "world": "Tangent",
+          "id": "smooth-4",
+          "world": "Smooth",
           "number": 4,
-          "title": "Push directions forward",
-          "introduction": "# The differential\n\nA smooth map gives a linear map between tangent spaces. This map is called the differential, or pushforward, and it tells us what happens to velocities.",
-          "conclusion": "The familiar derivative becomes a map between tangent spaces that does not depend on coordinates.",
-          "statement": "manifold_differential_pushes (mapSmooth tangentVectorGiven : Prop) (hMap : mapSmooth) (hVector : tangentVectorGiven) : mapSmooth ∧ tangentVectorGiven",
+          "title": "Velocities push forward",
+          "introduction": "# The differential\n\nA smooth map from Ada's world into another manifold carries her curves along, and with them each curve's velocity. The induced map between tangent spaces is the **differential** (also called the pushforward) of the map at that point, and it is linear.\n\nYou hold a velocity `v` at Ada's point. Push it forward.",
+          "conclusion": "From now on, \"derivative\" means this: at each point, a linear map between tangent spaces, defined without coordinates. In any pair of charts it becomes the familiar matrix of partial derivatives.",
+          "statement": "manifold_differential_pushes (velocityHere velocityThere : Prop) (differential : velocityHere → velocityThere) (v : velocityHere) : velocityThere",
           "theoremName": "manifold_differential_pushes",
-          "solution": "constructor\n· exact hMap\n· exact hVector",
+          "solution": "apply differential\nexact v",
           "hints": [
-            "The differential needs a smooth map and a tangent input."
+            "`apply differential` asks you for a velocity here.",
+            "You hold one: `exact v`."
           ],
           "newTactics": [],
           "hiddenTactics": [],
@@ -1024,166 +584,17 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Tangent/L04.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "tangent-5",
-          "world": "Tangent",
-          "number": 5,
-          "title": "A bundle of directions",
-          "introduction": "# Tangent bundle\n\nCollect every tangent space while keeping track of the point to which each vector belongs. The result is itself a manifold called the tangent bundle $TM$. A vector field smoothly chooses one tangent vector at each point.",
-          "conclusion": "Vector bundles generalize this idea of attaching a vector space to every point. They occur throughout geometry and physics.",
-          "statement": "manifold_tangent_bundle (everyPointHasTangent spacesVarySmoothly : Prop) (hEvery : everyPointHasTangent) (hSmoothly : spacesVarySmoothly) : everyPointHasTangent ∧ spacesVarySmoothly",
-          "theoremName": "manifold_tangent_bundle",
-          "solution": "constructor\n· exact hEvery\n· exact hSmoothly",
-          "hints": [
-            "Use `constructor`."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Tangent/L05.lean",
-          "verification": "kernel"
-        }
-      ]
-    },
-    {
-      "id": "FormsMetrics",
-      "title": "Forms, metrics, and orientation",
-      "introduction": "# Measure directions and regions\n\nTangent vectors represent directions, while covectors assign numbers to tangent vectors. Differential forms extend this idea to quantities that we can integrate over curves, surfaces, and higher-dimensional regions.\n\nA Riemannian metric puts an inner product on each tangent space. It gives us lengths, angles, areas, and geodesics. An orientation makes a consistent choice of positive direction for integration.",
-      "prerequisites": [
-        "Tangent"
-      ],
-      "verification": "kernel",
-      "levels": [
-        {
-          "id": "formsmetrics-1",
-          "world": "FormsMetrics",
-          "number": 1,
-          "title": "A covector measures",
-          "introduction": "# Linear measurement\n\nA covector is a linear function that takes a tangent vector and returns a number. If a tangent vector is an arrow, a covector is a linear way to measure it.",
-          "conclusion": "All covectors at a point form the cotangent space, which is dual to the tangent space.",
-          "statement": "manifold_covector_measures (tangentVectorAvailable covectorAvailable : Prop) (hVector : tangentVectorAvailable) (hCovector : covectorAvailable) : tangentVectorAvailable ∧ covectorAvailable",
-          "theoremName": "manifold_covector_measures",
-          "solution": "constructor\n· exact hVector\n· exact hCovector",
-          "hints": [
-            "Provide the vector and its measuring covector."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/FormsMetrics/L01.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "formsmetrics-2",
-          "world": "FormsMetrics",
-          "number": 2,
-          "title": "One-forms along paths",
-          "introduction": "# Integrate along a route\n\nA differential one-form chooses a covector smoothly at every point. Integrating the form along an oriented path adds up those local measurements.",
-          "conclusion": "One-forms provide an intrinsic way to write familiar line integrals.",
-          "statement": "manifold_one_form_path (oneFormGiven pathOriented : Prop) (hForm : oneFormGiven) (hPath : pathOriented) : oneFormGiven ∧ pathOriented",
-          "theoremName": "manifold_one_form_path",
-          "solution": "constructor\n· exact hForm\n· exact hPath",
-          "hints": [
-            "Both a form and an oriented path are recorded."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/FormsMetrics/L02.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "formsmetrics-3",
-          "world": "FormsMetrics",
-          "number": 3,
-          "title": "Forms measure area",
-          "introduction": "# Higher-degree forms\n\nA two-form can be integrated over an oriented surface. More generally, a $k$-form can be integrated over a $k$-dimensional region. Stokes' theorem relates an integral over a region to an integral over its boundary.",
-          "conclusion": "Tu develops forms, integration, and de Rham theory. Milnor uses related tools to study topology.",
-          "statement": "manifold_two_form_area (twoFormGiven surfaceOriented : Prop) (hForm : twoFormGiven) (hSurface : surfaceOriented) : twoFormGiven ∧ surfaceOriented",
-          "theoremName": "manifold_two_form_area",
-          "solution": "constructor\n· exact hForm\n· exact hSurface",
-          "hints": [
-            "Use `constructor`."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/FormsMetrics/L03.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "formsmetrics-4",
-          "world": "FormsMetrics",
-          "number": 4,
-          "title": "A metric adds geometry",
-          "introduction": "# Topology is not distance\n\nA smooth manifold does not come with lengths or angles by default. A Riemannian metric adds an inner product to every tangent space, and those inner products vary smoothly with the point.",
-          "conclusion": "After choosing a metric, we can define length, distance, angle, volume, geodesics, and curvature.",
-          "statement": "manifold_metric_geometry (lengthsDefined anglesDefined : Prop) (hLengths : lengthsDefined) (hAngles : anglesDefined) : lengthsDefined ∧ anglesDefined",
-          "theoremName": "manifold_metric_geometry",
-          "solution": "constructor\n· exact hLengths\n· exact hAngles",
-          "hints": [
-            "Package the two metric consequences."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/FormsMetrics/L04.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "formsmetrics-5",
-          "world": "FormsMetrics",
-          "number": 5,
-          "title": "The Möbius orientation test",
-          "introduction": "# Carry an arrow around the strip\n\nCarry a local orientation once around the Möbius strip. When it returns, it points the other way. No choice of orientation works consistently over the whole strip, so the Möbius strip is non-orientable. It is still a smooth two-manifold **with boundary**.",
-          "conclusion": "Every small patch can be oriented. The problem appears only when we try to make those choices agree around the full loop.",
-          "statement": "manifold_mobius_not_orientable (mobiusOrientable : Prop) (twistObstruction : ¬ mobiusOrientable) : ¬ mobiusOrientable",
-          "theoremName": "manifold_mobius_not_orientable",
-          "solution": "exact twistObstruction",
-          "hints": [
-            "The obstruction hypothesis is exactly the negated goal."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/FormsMetrics/L05.lean",
+          "sourcePath": "Original/Manifolds/Smooth/L04.lean",
           "verification": "kernel"
         }
       ]
     },
     {
       "id": "Curvature",
-      "title": "Curvature and what comes next",
-      "introduction": "# Local calculus meets global shape\n\nCurvature measures how a geometry differs from flat Euclidean geometry. On a Riemannian manifold, it can be defined using the metric alone. Some theorems connect these local measurements with the topology of the whole space.\n\n![Flat, spherical, and toroidal geometry](images/curvature-topology.svg)\n\nThis world gives you a first look at those connections. It does not try to squeeze a graduate course into five levels.",
+      "title": "Curvature from within",
+      "introduction": "# Geometry measured from inside\n\nA smooth manifold still has no distances; smoothness lets you differentiate, not measure. A **Riemannian metric** supplies the missing structure: an inner product on each tangent space, varying smoothly from point to point. From it, one defines lengths, angles, areas, straightest-possible paths (*geodesics*), and curvature.\n\n![Flat, spherical, and toroidal geometry](images/curvature-topology.svg)\n\nGauss proved the surprising part: curvature is *intrinsic*. An inhabitant can measure it with surveying tools, without leaving the surface and without assuming an outside exists. Gauss named the result the Theorema Egregium, the \"remarkable theorem\", and Riemann extended it to every dimension.\n\nThis world is a first look, not a course. Differential forms, the objects one integrates over curves and surfaces and the setting for Stokes' theorem, need more room than a game level; Tu covers them properly. Here we take what fits: the metric, triangles, holes, and one theorem connecting local measurements to global shape.",
       "prerequisites": [
-        "FormsMetrics"
+        "Smooth"
       ],
       "verification": "kernel",
       "levels": [
@@ -1191,14 +602,14 @@
           "id": "curvature-1",
           "world": "Curvature",
           "number": 1,
-          "title": "Curvature from within",
-          "introduction": "# No outside bending required\n\nThe metric of a Riemannian manifold determines its intrinsic curvature. A cylinder and a plane sit differently in three-dimensional space, but both have zero Gaussian curvature away from any crease.",
-          "conclusion": "Bending in the surrounding space and intrinsic curvature are different ideas.",
-          "statement": "manifold_intrinsic_curvature (metricChosen curvatureIntrinsic : Prop) (hMetric : metricChosen) (hCurvature : curvatureIntrinsic) : metricChosen ∧ curvatureIntrinsic",
-          "theoremName": "manifold_intrinsic_curvature",
-          "solution": "constructor\n· exact hMetric\n· exact hCurvature",
+          "title": "A metric adds geometry",
+          "introduction": "# Topology is not geometry\n\nTo a topologist, the mug and the doughnut are the same. Add a metric and they stop being the same: with an inner product on every tangent space, curves acquire lengths, crossings acquire angles, and the two shapes become measurably different.\n\nOne smooth manifold admits many metrics. A marble-sized sphere and an Earth-sized one are the same manifold with different metrics.",
+          "conclusion": "The hierarchy so far: topology says what is near, smoothness lets you differentiate, a metric lets you measure. Each layer is a separate choice added to the one below.",
+          "statement": "manifold_metric_geometry (lengthsDefined anglesDefined : Prop) (hLengths : lengthsDefined) (hAngles : anglesDefined) : lengthsDefined ∧ anglesDefined",
+          "theoremName": "manifold_metric_geometry",
+          "solution": "constructor\n· exact hLengths\n· exact hAngles",
           "hints": [
-            "Use both the metric and curvature facts."
+            "Lengths and angles: `constructor`, then both."
           ],
           "newTactics": [],
           "hiddenTactics": [],
@@ -1214,14 +625,14 @@
           "id": "curvature-2",
           "world": "Curvature",
           "number": 2,
-          "title": "Triangles notice curvature",
-          "introduction": "# A navigational experiment\n\nSome geodesic triangles on a unit sphere have angles that add up to more than $180^\\circ$. A triangle in the Euclidean plane has angle sum $180^\\circ$. Travelers can discover the difference without leaving either surface.",
-          "conclusion": "An inhabitant can detect curvature by making measurements within the space.",
+          "title": "Triangles detect curvature",
+          "introduction": "# Surveying from inside\n\nWalk the triangle on the model: down a meridian from the pole, along the equator, back up to the pole. Every turn is a right angle, so the angles sum to\n\n$$90^\\circ + 90^\\circ + 90^\\circ = 270^\\circ,$$\n\na full $90^\\circ$ more than the $180^\\circ$ that every flat triangle carries.\n\nNo aerial view is needed: an inhabitant with a protractor detects the sphere's curvature by walking, which is Gauss's Theorema Egregium in action. An angle sum above $180^\\circ$ indicates positive curvature, as on the sphere; below $180^\\circ$, negative curvature, as on a saddle; exactly $180^\\circ$, a flat region.",
+          "conclusion": "Curvature here does not mean bending visible from outside. A rolled sheet of paper is bent in space but intrinsically flat, and triangles drawn on it still sum to $180^\\circ$; the triangle test measures the intrinsic kind.",
           "statement": "manifold_triangle_curvature (sphereTriangleExcess planeTriangleFlat : Prop) (hSphere : sphereTriangleExcess) (hPlane : planeTriangleFlat) : sphereTriangleExcess ∧ planeTriangleFlat",
           "theoremName": "manifold_triangle_curvature",
           "solution": "constructor\n· exact hSphere\n· exact hPlane",
           "hints": [
-            "Record the spherical and planar observations."
+            "Record the spherical and the flat observation."
           ],
           "newTactics": [],
           "hiddenTactics": [],
@@ -1237,14 +648,14 @@
           "id": "curvature-3",
           "world": "Curvature",
           "number": 3,
-          "title": "Holes are global",
-          "introduction": "# Same local dimension, different topology\n\nThe sphere and torus are both connected $2$-manifolds without boundary. The torus has a handle and essential loops that the sphere does not. A single local chart cannot reveal this difference.",
-          "conclusion": "Topologists use invariants such as fundamental groups, homology, cohomology, and degree to tell spaces apart.",
+          "title": "Holes are global facts",
+          "introduction": "# What no chart can see\n\nThe sphere and the torus are both closed surfaces, and chart by chart they are indistinguishable: every page of either atlas is a disk. The difference is global. The torus carries loops that cannot be shrunk to a point, and no inspection of a single chart can detect them.\n\nLocal geometry nevertheless records the difference. The Gauss–Bonnet theorem says that for any closed surface $M$ the total curvature is a topological constant:\n\n$$\\int_M K \\, dA = 2\\pi \\, \\chi(M),$$\n\nwhere the *Euler characteristic* $\\chi$ counts holes: $\\chi = 2$ for the sphere, giving total curvature $4\\pi$, and $\\chi = 0$ for the torus, giving exactly zero for every metric. Summed over the whole surface, local measurements determine the global shape.",
+          "conclusion": "Local data, assembled over the whole space, detecting global structure: differential topology is built from arguments of this kind. Milnor's book is the classic introduction; Guillemin–Pollack continues it.",
           "statement": "manifold_torus_topology (sphereHasNoHandle torusHasHandle : Prop) (hSphere : sphereHasNoHandle) (hTorus : torusHasHandle) : sphereHasNoHandle ∧ torusHasHandle",
           "theoremName": "manifold_torus_topology",
           "solution": "constructor\n· exact hSphere\n· exact hTorus",
           "hints": [
-            "Package the contrasting global facts."
+            "Two global facts, one `constructor`."
           ],
           "newTactics": [],
           "hiddenTactics": [],
@@ -1260,14 +671,15 @@
           "id": "curvature-4",
           "world": "Curvature",
           "number": 4,
-          "title": "Local data, global theorem",
-          "introduction": "# From local calculations to global facts\n\nDifferential topology uses local smooth calculations to prove facts about an entire space. Milnor develops this approach through regular values, Sard's theorem, degree, orientation, and the Poincaré-Hopf theorem. Guillemin-Pollack continues with transversality and intersection theory.",
-          "conclusion": "Local calculations can carry information about the topology of the whole manifold.",
-          "statement": "manifold_local_global_bridge (localCalculus globalTopology : Prop) (hLocal : localCalculus) (hGlobal : globalTopology) : localCalculus ∧ globalTopology",
-          "theoremName": "manifold_local_global_bridge",
-          "solution": "constructor\n· exact hLocal\n· exact hGlobal",
+          "title": "Choose your next world",
+          "introduction": "# Where to go next\n\nThis course ends here; the subject continues. A sensible route onward:\n\n1. Review sets, functions, and point-set topology, then work through [Loring Tu](https://link.springer.com/book/10.1007/978-1-4419-7400-6), exercises included.\n2. Read [Milnor](https://math.uchicago.edu/~may/REU2017/MilnorDiff.pdf) once you know tangent spaces and smooth maps; it pairs well with those chapters of Tu.\n3. Keep [Lee](https://link.springer.com/book/10.1007/978-0-387-21752-9) as the broad reference, or take [Guillemin–Pollack](https://bookstore.ams.org/CHEL/370.H) for differential topology.\n4. Try [MIT 18.950](https://ocw.mit.edu/courses/18-950-differential-geometry-fall-2008/) after multivariable calculus and linear algebra.\n\nOne last proof: the goal nests as `A ∧ (B ∧ C)`, so it wants `constructor` twice. You have known how to do this since Flatland.",
+          "conclusion": "The course kept one restriction from start to finish: every construction used only what an inhabitant of the space could observe. That was enough for neighborhoods, charts, derivatives, and curvature. Ada never left her world, and nothing in these six worlds required her to.",
+          "statement": "manifold_learning_route (topologyReviewed calculusReady linearAlgebraReady : Prop) (hTopology : topologyReviewed) (hCalculus : calculusReady) (hLinear : linearAlgebraReady) : topologyReviewed ∧ calculusReady ∧ linearAlgebraReady",
+          "theoremName": "manifold_learning_route",
+          "solution": "constructor\n· exact hTopology\n· constructor\n  · exact hCalculus\n  · exact hLinear",
           "hints": [
-            "Combine the local and global ingredients."
+            "The goal is `topologyReviewed ∧ (calculusReady ∧ linearAlgebraReady)`.",
+            "`constructor`, close the first goal, then `constructor` again."
           ],
           "newTactics": [],
           "hiddenTactics": [],
@@ -1277,30 +689,6 @@
           "disabledTheorems": [],
           "disabledDefinitions": [],
           "sourcePath": "Original/Manifolds/Curvature/L04.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "curvature-5",
-          "world": "Curvature",
-          "number": 5,
-          "title": "What to study next",
-          "introduction": "# A route into the subject\n\nIf you want to continue on your own, this is a sensible route:\n\n1. Review functions, basic proofs, sets, and point-set topology.\n2. Study multivariable calculus and linear algebra if either subject is new to you.\n3. Work through [Loring Tu](https://link.springer.com/book/10.1007/978-1-4419-7400-6), including the exercises.\n4. Read [Milnor](https://math.uchicago.edu/~may/REU2017/MilnorDiff.pdf) once you know tangent spaces and smooth maps. You can also read it alongside those chapters in Tu.\n5. Use [Lee](https://link.springer.com/book/10.1007/978-0-387-21752-9) as a broad reference, or choose [Guillemin-Pollack](https://bookstore.ams.org/CHEL/370.H) for differential topology.\n6. Try [MIT 18.950](https://ocw.mit.edu/courses/18-950-differential-geometry-fall-2008/) after multivariable calculus and linear algebra.\n\nYou do not have to feel completely ready before starting. Draw the examples, work out computations, and attempt the exercises.",
-          "conclusion": "You now have a map of the subject. Topology gives us neighborhoods and global invariants. Charts supply coordinates, smoothness allows calculus, tangent spaces turn local motion into linear algebra, forms can be integrated, and metrics let us measure curvature. Ada still has plenty to explore.",
-          "statement": "manifold_learning_route (topologyReviewed calculusReady linearAlgebraReady : Prop) (hTopology : topologyReviewed) (hCalculus : calculusReady) (hLinear : linearAlgebraReady) : topologyReviewed ∧ calculusReady ∧ linearAlgebraReady",
-          "theoremName": "manifold_learning_route",
-          "solution": "constructor\n· exact hTopology\n· constructor\n  · exact hCalculus\n  · exact hLinear",
-          "hints": [
-            "The goal is a nested three-part conjunction.",
-            "Use `constructor` twice."
-          ],
-          "newTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "Original/Manifolds/Curvature/L05.lean",
           "verification": "kernel"
         }
       ]

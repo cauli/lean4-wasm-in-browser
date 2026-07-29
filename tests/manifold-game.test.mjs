@@ -15,9 +15,9 @@ const levels = game.worlds.flatMap((world) => world.levels)
 
 test('the original Manifold Adventure has a complete linear learning path', () => {
   assert.equal(game.title, 'The Manifold Adventure')
-  assert.equal(game.worlds.length, 10)
-  assert.equal(levels.length, 50)
-  assert.equal(new Set(levels.map((level) => level.id)).size, 50)
+  assert.equal(game.worlds.length, 6)
+  assert.equal(levels.length, 25)
+  assert.equal(new Set(levels.map((level) => level.id)).size, 25)
   assert.deepEqual(game.worlds[0].prerequisites, [])
 
   for (let index = 1; index < game.worlds.length; index += 1) {
@@ -26,6 +26,31 @@ test('the original Manifold Adventure has a complete linear learning path', () =
       [game.worlds[index - 1].id],
       `${game.worlds[index].id} should follow the previous world`,
     )
+  }
+})
+
+test('every world teaches at least one genuinely new proof move', () => {
+  // A proof's "shape" keeps the tactic, its argument count, and whether it
+  // nests applications — so `exact h`, `exact f h`, and `exact f (g h)` are
+  // three different moves, but renaming hypotheses changes nothing.
+  const proofShape = (solution) => solution
+    .split('\n')
+    .map((line) => {
+      const tokens = line.trim().replace(/^·\s*/, '').split(/\s+/)
+      const nested = line.includes('(') ? '(nested)' : ''
+      return `${tokens[0]}/${tokens.length - 1}${nested}`
+    })
+    .join(' ')
+  const seenShapes = new Set()
+  for (const world of game.worlds) {
+    const newShapes = world.levels
+      .map((level) => proofShape(level.solution))
+      .filter((shape) => !seenShapes.has(shape))
+    assert.ok(
+      newShapes.length > 0,
+      `${world.id} only repeats proof shapes already taught`,
+    )
+    newShapes.forEach((shape) => seenShapes.add(shape))
   }
 })
 
@@ -43,10 +68,10 @@ test('every Manifold Adventure level is an honest kernel exercise with a referen
   }
 })
 
-test('the browser-kernel matrix covers all 50 Manifold Adventure references', () => {
+test('the browser-kernel matrix covers all 25 Manifold Adventure references', () => {
   assert.equal(conformance.sourceCommit, game.source.commit)
   assert.equal(conformance.summary.total, levels.length)
-  assert.equal(conformance.summary.kernel, 50)
+  assert.equal(conformance.summary.kernel, 25)
   assert.equal(conformance.summary.partial, 0)
   assert.deepEqual(
     new Set(conformance.verifiedReferenceSolutions),
@@ -69,6 +94,8 @@ test('the course covers the requested objects without common manifold misconcept
   assert.match(content, /Differential forms/)
   assert.match(content, /Riemannian metric/)
   assert.match(content, /curvature/)
+  assert.match(content, /Theorema Egregium/)
+  assert.match(content, /Gauss–Bonnet/)
 })
 
 test('course credits and reading links are present in the local data', () => {
@@ -130,5 +157,22 @@ test('all Manifold Adventure SVG assets referenced by the course are bundled', (
   assert.ok(references.length >= 6)
   for (const reference of references) {
     assert.ok(assets.has(reference), `missing manifold asset ${reference}`)
+  }
+})
+
+test('all Blender-built GLB models used by the 3D scenes are bundled', () => {
+  const modelDirectory = new URL('../public/game-assets/manifolds/models/', import.meta.url)
+  const models = new Set(fs.readdirSync(modelDirectory))
+  const expected = [
+    'sphere-charts.glb',
+    'torus-loops.glb',
+    'mobius-band.glb',
+    'trefoil-circle.glb',
+    'sphere-triangle.glb',
+    'figure-eight.glb',
+    'tangent-plane.glb',
+  ]
+  for (const model of expected) {
+    assert.ok(models.has(model), `missing 3D model ${model}`)
   }
 })
