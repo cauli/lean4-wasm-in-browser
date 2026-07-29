@@ -4,6 +4,8 @@ name: playground tests
 # check it compiles a suite of Lean snippets correctly. The multi-GB wasm/oleans
 # aren't in the repo, so fetch-artifacts.mjs pulls them from a GitHub release
 # fixture (GitHub-hosted — the live deploy behind Cloudflare 403s CI IPs).
+#
+# A green run on main triggers the deploy-pages workflow.
 
 on:
   push:
@@ -27,8 +29,13 @@ jobs:
           # Node 24+: earlier V8 caps WASM exports at 100k, but the -sEXPORT_ALL
           # lean.wasm has ~201k exports and won't instantiate below that.
           node-version: 24
+          cache: npm
 
-      # No `npm ci`: the tests use only Node built-ins (node:test, node:vm, fetch).
+      # The game-data suites bundle the browser verifier with esbuild and render
+      # lesson markdown with the real react-markdown pipeline.
+      - name: Install dependencies
+        run: npm ci
+
       - name: Fetch deployed Lean artifacts
         run: node tests/fetch-artifacts.mjs
         env:

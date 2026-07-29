@@ -1,5 +1,33 @@
 # Deploying to Cloudflare
 
+## Continuous deployment
+
+Pushes to `main` publish automatically: the `playground tests` workflow runs
+the full headless suite, and a green run triggers `deploy pages`, which builds
+the Pages output and deploys the tested commit. The workflow downloads the
+static Lean assets (base `.olean`/`.ir` tree, `lean-lib-files.json`, Real
+Analysis packs) from the `pages-assets-*` GitHub release because the full Lean
+build tree only exists on a dev machine.
+
+CI needs two repository secrets:
+
+```text
+CLOUDFLARE_API_TOKEN   API token with "Cloudflare Pages: Edit" on the account
+CLOUDFLARE_ACCOUNT_ID  the personal account id
+```
+
+After a Lean artifact swap, run `deploy/upload-r2.sh` (as before), then rebuild
+and upload the release asset and point the workflow at it:
+
+```bash
+bash deploy/pack-pages-assets.sh
+gh release create pages-assets-<ver> --title "Pages static assets" \
+  --notes "Static Pages assets" /tmp/pages-assets.tar.gz
+# update PAGES_ASSETS_URL in .github/workflows/deploy-pages.yml
+```
+
+The manual path below still works and stays the fallback.
+
 The production deployment is static-first and keeps proof checking in each
 visitor's browser:
 
