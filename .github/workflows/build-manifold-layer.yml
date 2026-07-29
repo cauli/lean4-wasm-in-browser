@@ -1,0 +1,167 @@
+name: build manifold Mathlib layer
+
+# Builds the supplemental browser package with the native i386 toolchain from
+# the matching Lean WASM fork CI run. i386 is intentional: `.olean` files embed
+# pointer-sized data, so ordinary x86_64 Mathlib caches cannot be loaded by
+# wasm32 Lean.
+on:
+  workflow_dispatch:
+    inputs:
+      lean_run_id:
+        description: cauli/lean4 CI run containing the exact build-Linux 32bit artifact
+        required: true
+        default: "29165653896"
+      lean_repository:
+        description: Lean fork repository
+        required: true
+        default: cauli/lean4
+      lean_commit:
+        description: Exact Lean fork commit baked into the WASM/core artifacts
+        required: true
+        default: 62b6a2291302d4bbeace37642a066b7510d0145c
+      mathlib_commit:
+        description: Exact compatible Mathlib commit
+        required: true
+        default: de3a9cf33016bbb6d15880d7680643f7ca2d25ba
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  PAGES_ASSETS_URL: https://github.com/cauli/lean4-wasm-in-browser/releases/download/pages-assets-4.28/pages-assets.tar.gz
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout playground
+        uses: actions/checkout@v5
+
+      - name: Checkout exact Lean fork source
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ inputs.lean_repository }}
+          ref: ${{ inputs.lean_commit }}
+          path: lean4-source
+          token: ${{ secrets.LEAN_FORK_TOKEN || github.token }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Install i386 runtime and build libraries
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y \
+            libc6:i386 libstdc++6:i386 zlib1g:i386 libuv1:i386 libssl3t64:i386 \
+            gcc-multilib g++-multilib zstd
+
+      - name: Download exact native-i386 Lean toolchain
+        env:
+          GH_TOKEN: ${{ secrets.LEAN_FORK_TOKEN || github.token }}
+        run: |
+          gh run download \
+            "${{ inputs.lean_run_id }}" \
+            -R "${{ inputs.lean_repository }}" \
+            -n "build-Linux 32bit" \
+            -D lean-artifact
+          mkdir lean-toolchain
+          tar --use-compress-program=unzstd \
+            -xf lean-artifact/*.tar.zst \
+            -C lean-toolchain \
+            --strip-components=1
+          file lean-toolchain/bin/lean
+          file lean-toolchain/bin/lean | grep -q 'ELF 32-bit'
+          echo "$GITHUB_WORKSPACE/lean-toolchain/bin" >> "$GITHUB_PATH"
+          lean-toolchain/bin/lean --githash > lean-githash.txt || true
+          grep -qx "${{ inputs.lean_commit }}" lean-githash.txt
+
+      - name: Fetch matching browser base assets
+        run: |
+          mkdir -p public/lean-wasm
+          curl --fail --location --retry 3 "$PAGES_ASSETS_URL" \
+            | tar -xz -C public/lean-wasm
+          node -e '
+          const fs = require("fs");
+          const manifest = JSON.parse(fs.readFileSync("public/lean-wasm/real-analysis-layer.json"));
+          if (manifest.leanCommit !== process.argv[1]) {
+            throw new Error(`base layer uses ${manifest.leanCommit}, expected ${process.argv[1]}`);
+          }
+          if (manifest.mathlibCommit !== process.argv[2]) {
+            throw new Error(`base layer uses ${manifest.mathlibCommit}, expected ${process.argv[2]}`);
+          }
+          ' "${{ inputs.lean_commit }}" "${{ inputs.mathlib_commit }}"
+
+      - name: Checkout pinned Mathlib
+        run: |
+          git clone --filter=blob:none https://github.com/leanprover-community/mathlib4.git mathlib4
+          git -C mathlib4 checkout "${{ inputs.mathlib_commit }}"
+
+      - name: Build the manifold dependency closure with 32-bit Lean
+        run: |
+          cd mathlib4
+          lake build Mathlib.Geometry.Manifold.IsManifold.Basic
+
+      - name: Regenerate and compile the course theorem base
+        run: |
+          node scripts/create-manifold-game.mjs
+          git diff --exit-code -- \
+            lean/ManifoldAdventure/BrowserBase.lean \
+            src/game/manifolds.generated.json \
+            src/game/manifolds-verifier.generated.json
+          bash scripts/build-manifold-course.sh "$PWD/mathlib4"
+          MATHLIB_ROOT="$PWD/mathlib4" node scripts/verify-manifold-references.mjs
+
+      - name: Package only artifacts missing from the shared Mathlib layer
+        run: |
+          node scripts/package-real-analysis-layer.mjs \
+            "$PWD/mathlib4" \
+            "$PWD/lean" \
+            "$PWD/public/lean-wasm/manifold-lib" \
+            "$PWD/public/lean-wasm/manifold-layer.json" \
+            "$PWD/public/lean-wasm/lean-lib" \
+            "$PWD/public/lean-wasm/lean-lib-files.json" \
+            "$PWD/lean4-source/src" \
+            "$PWD/lean" \
+            ManifoldAdventure.BrowserBase \
+            "$PWD/public/lean-wasm/real-analysis-layer.json"
+
+      - name: Validate package pins and contents
+        run: |
+          node -e '
+          const fs = require("fs");
+          const m = JSON.parse(fs.readFileSync("public/lean-wasm/manifold-layer.json"));
+          const c = JSON.parse(fs.readFileSync("src/game/manifolds.conformance.json"));
+          if (m.leanCommit !== process.argv[1]) throw new Error("Lean pin changed");
+          if (m.mathlibCommit !== process.argv[2]) throw new Error("Mathlib pin changed");
+          if (c.validation?.compilerCommit !== process.argv[1]) {
+            throw new Error("reference matrix did not use the exact Lean fork compiler");
+          }
+          if (!m.files.includes("ManifoldAdventure/BrowserBase.olean")) {
+            throw new Error("course BrowserBase.olean is missing");
+          }
+          if (!m.files.some(f => f.startsWith("Mathlib/Geometry/Manifold/"))) {
+            throw new Error("Mathlib manifold modules are missing");
+          }
+          console.log(`${m.modules} supplemental modules, ${m.packs.length} packs`);
+          ' "${{ inputs.lean_commit }}" "${{ inputs.mathlib_commit }}"
+
+      - name: Stage artifact
+        run: |
+          mkdir manifold-browser-layer
+          cp public/lean-wasm/manifold-layer.json manifold-browser-layer/
+          cp -R public/lean-wasm/manifold-lib manifold-browser-layer/
+          cp src/game/manifolds.conformance.json manifold-browser-layer/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: manifold-layer-${{ inputs.lean_commit }}
+          path: manifold-browser-layer
+          retention-days: 30

@@ -6,8 +6,8 @@ Pushes to `main` publish automatically: the `playground tests` workflow runs
 the full headless suite, and a green run triggers `deploy pages`, which builds
 the Pages output and deploys the tested commit. The workflow downloads the
 static Lean assets (base `.olean`/`.ir` tree, `lean-lib-files.json`, Real
-Analysis packs) from the `pages-assets-*` GitHub release because the full Lean
-build tree only exists on a dev machine.
+Analysis packs, and the supplemental manifold packs) from the `pages-assets-*`
+GitHub release because the full Lean build tree only exists on a dev machine.
 
 CI needs two repository secrets:
 
@@ -20,6 +20,9 @@ After a Lean artifact swap, run `deploy/upload-r2.sh` (as before), then rebuild
 and upload the release asset and point the workflow at it:
 
 ```bash
+# First run "build manifold Mathlib layer" in Actions. Its defaults select the
+# exact Lean 62b6 native-i386 artifact and pinned Mathlib checkout. Copy the
+# downloaded manifold-layer.json and manifold-lib/ into public/lean-wasm/.
 bash deploy/pack-pages-assets.sh
 gh release create pages-assets-<ver> --title "Pages static assets" \
   --notes "Static Pages assets" /tmp/pages-assets.tar.gz
@@ -32,7 +35,8 @@ The production deployment is static-first and keeps proof checking in each
 visitor's browser:
 
 - Cloudflare Pages serves the Vite app, worker scripts, game images, the base
-  Lean library, and the 52 compressed Real Analysis Mathlib/course packs.
+  Lean library, the compressed Real Analysis Mathlib/course packs, and the
+  supplemental manifold packs.
 - A private R2 bucket stores the files that exceed Pages' per-file limit:
   `lean.js`, `lean.wasm`, the optional iOS/slim pair, and baked snapshots.
 - `functions/lean-wasm/[[path]].js` exposes those R2 objects through the
@@ -75,11 +79,14 @@ lean-lib/
 lean-lib-files.json
 real-analysis-layer.json
 real-analysis-lib/artifacts-000.pack ... artifacts-051.pack
+manifold-layer.json
+manifold-lib/artifacts-000.pack ...
 ```
 
 The optional `slim/` and `snapshots/` directories are uploaded when present.
-The Pages build validates every Real Analysis pack against its manifest and
-fails if the layer is absent or incomplete.
+The Pages build validates every Real Analysis and manifold pack against its
+manifest and fails if either layer is absent, incomplete, or pinned to a
+different Lean/Mathlib pair.
 
 ## Deploy
 
@@ -106,8 +113,10 @@ Check these URLs on the deployed origin:
 /games                    game catalog
 /game/tutorial/1          Natural Number Game
 /games/real-analysis-game Real Analysis course
+/games/manifold-adventure Mathlib-native manifold course
 /lean-wasm/lean.wasm      application/wasm, served from R2
 /lean-wasm/real-analysis-layer.json
+/lean-wasm/manifold-layer.json
 ```
 
 The top-level document and worker responses must include:
@@ -117,6 +126,7 @@ Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Embedder-Policy: require-corp
 ```
 
-Finally, verify one NNG proof and one Real Analysis proof in a fresh browser
-profile. The first Real Analysis proof should download 52 packs and then report
-that Mathlib and the course are ready.
+Finally, verify one NNG proof, one Real Analysis proof, and one Manifold
+Adventure proof in a fresh browser profile. The first manifold proof should
+load the shared Real Analysis/Mathlib layer, then only the supplemental
+manifold packs.

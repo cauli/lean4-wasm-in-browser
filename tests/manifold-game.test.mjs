@@ -6,16 +6,34 @@ const game = JSON.parse(fs.readFileSync(
   new URL('../src/game/manifolds.generated.json', import.meta.url),
   'utf8',
 ))
+const verifier = JSON.parse(fs.readFileSync(
+  new URL('../src/game/manifolds-verifier.generated.json', import.meta.url),
+  'utf8',
+))
 const conformance = JSON.parse(fs.readFileSync(
   new URL('../src/game/manifolds.conformance.json', import.meta.url),
   'utf8',
 ))
+const browserBase = fs.readFileSync(
+  new URL('../lean/ManifoldAdventure/BrowserBase.lean', import.meta.url),
+  'utf8',
+)
 
 const levels = game.worlds.flatMap((world) => world.levels)
 
-test('the original Manifold Adventure has a complete linear learning path', () => {
+test('the Mathlib-native Manifold Adventure is a complete linear path', () => {
   assert.equal(game.title, 'The Manifold Adventure')
-  assert.equal(game.worlds.length, 6)
+  assert.deepEqual(
+    game.worlds.map((world) => [world.id, world.levels.length]),
+    [
+      ['Homeomorphisms', 4],
+      ['LocalCharts', 4],
+      ['ChartedSpaces', 5],
+      ['CanonicalCharts', 4],
+      ['SmoothManifolds', 4],
+      ['TangentSpaces', 4],
+    ],
+  )
   assert.equal(levels.length, 25)
   assert.equal(new Set(levels.map((level) => level.id)).size, 25)
   assert.deepEqual(game.worlds[0].prerequisites, [])
@@ -29,135 +47,145 @@ test('the original Manifold Adventure has a complete linear learning path', () =
   }
 })
 
-test('every world teaches at least one genuinely new proof move', () => {
-  // A proof's "shape" keeps the tactic, its argument count, and whether it
-  // nests applications — so `exact h`, `exact f h`, and `exact f (g h)` are
-  // three different moves, but renaming hypotheses changes nothing.
-  const proofShape = (solution) => solution
-    .split('\n')
-    .map((line) => {
-      const tokens = line.trim().replace(/^·\s*/, '').split(/\s+/)
-      const nested = line.includes('(') ? '(nested)' : ''
-      return `${tokens[0]}/${tokens.length - 1}${nested}`
-    })
-    .join(' ')
-  const seenShapes = new Set()
-  for (const world of game.worlds) {
-    const newShapes = world.levels
-      .map((level) => proofShape(level.solution))
-      .filter((shape) => !seenShapes.has(shape))
-    assert.ok(
-      newShapes.length > 0,
-      `${world.id} only repeats proof shapes already taught`,
-    )
-    newShapes.forEach((shape) => seenShapes.add(shape))
+test('the goals use actual Mathlib manifold structures instead of local stand-ins', () => {
+  const statements = levels.map((level) => level.statement).join('\n')
+  const requiredStructures = [
+    ['Homeomorph', /≃ₜ/],
+    ['OpenPartialHomeomorph', /\bOpenPartialHomeomorph\b/],
+    ['ChartedSpace', /\bChartedSpace\b/],
+    ['atlas', /\batlas\b/],
+    ['chartAt', /\bchartAt\b/],
+    ['ModelWithCorners', /\bModelWithCorners\b/],
+    ['IsManifold', /\bIsManifold\b/],
+    ['TangentSpace', /\bTangentSpace\b/],
+    ['TangentBundle', /\bTangentBundle\b/],
+  ]
+
+  for (const [name, pattern] of requiredStructures) {
+    assert.match(statements, pattern, `${name} never appears in a goal`)
+  }
+  assert.match(game.introduction, /Mathlib's real manifold API/)
+  assert.match(game.introduction, /Mathlib declarations/)
+  assert.match(game.introduction, /your course declarations/)
+  assert.doesNotMatch(statements, /\b(manifoldLike|chartCompatible|smoothLike)\b/i)
+})
+
+test('the unlock ladder exposes real Mathlib declarations and Lean tactics', () => {
+  const introducedTactics = [...new Set(levels.flatMap((level) => level.newTactics))]
+  assert.deepEqual(introducedTactics, [
+    'exact',
+    'apply',
+    'constructor',
+    'intro',
+    'rw',
+    'simpa',
+    'infer_instance',
+    'rfl',
+    'refine',
+  ])
+
+  const introducedTheorems = levels.flatMap((level) => level.newTheorems)
+  const expectedTheorems = [
+    'Homeomorph.continuous',
+    'Homeomorph.continuous_symm',
+    'Homeomorph.symm_apply_apply',
+    'Homeomorph.trans_apply',
+    'OpenPartialHomeomorph.open_source',
+    'OpenPartialHomeomorph.continuousOn',
+    'OpenPartialHomeomorph.map_source',
+    'OpenPartialHomeomorph.left_inv',
+    'mem_chart_source',
+    'chart_mem_atlas',
+    'mem_chart_target',
+    'chart_source_mem_nhds',
+    'iUnion_source_chartAt',
+    'chartAt_self_eq',
+    'chartedSpaceSelf_atlas',
+    'prodChartedSpace_chartAt',
+    'instIsManifoldModelSpace',
+    'IsManifold.of_le',
+    'IsManifold.prod',
+  ]
+  assert.deepEqual(introducedTheorems, expectedTheorems)
+
+  const introducedDefinitions = new Set(levels.flatMap((level) => level.newDefinitions))
+  for (const name of [
+    'TopologicalSpace',
+    'Homeomorph',
+    'OpenPartialHomeomorph',
+    'ChartedSpace',
+    'ModelWithCorners',
+    'IsManifold',
+    'TangentSpace',
+    'TangentBundle',
+  ]) {
+    assert.ok(introducedDefinitions.has(name), `${name} is not unlocked explicitly`)
   }
 })
 
-test('every Manifold Adventure level is an honest kernel exercise with a reference proof', () => {
+test('each level creates a reusable course declaration without placeholders', () => {
   for (const level of levels) {
     assert.equal(level.verification, 'kernel', `${level.id} support changed`)
     assert.ok(level.statement.startsWith(`${level.theoremName} `), `${level.id} lost its theorem name`)
     assert.ok(level.solution.trim(), `${level.id} has no solution`)
     assert.doesNotMatch(level.solution, /\b(sorry|admit|unsafe)\b/, `${level.id} uses a placeholder`)
-    assert.doesNotMatch(
-      level.introduction,
-      /What Lean checks here:/,
-      `${level.id} repeats the verification note`,
-    )
+  }
+
+  const finalLevel = levels.at(-1)
+  assert.equal(finalLevel.theoremName, 'tangent_bundle_has_zero')
+  assert.match(finalLevel.solution, /\btangent_zero I x\b/)
+})
+
+test('the generated verifier maps every challenge to the pinned browser module', () => {
+  assert.equal(verifier.baseModule, 'ManifoldAdventure.BrowserBase')
+  assert.equal(game.source.mathlibCommit, verifier.mathlibCommit)
+  assert.equal(verifier.leanCommit, '62b6a2291302d4bbeace37642a066b7510d0145c')
+  assert.equal(verifier.leanUpstreamCommit, 'ecf55de08b9d855e749f80c491c6f294dd307e60')
+  assert.deepEqual(new Set(Object.keys(verifier.levels)), new Set(levels.map((level) => level.id)))
+
+  for (const level of levels) {
+    const metadata = verifier.levels[level.id]
+    assert.equal(metadata.declaration, level.statement)
+    assert.equal(metadata.fullModule, verifier.baseModule)
+    assert.equal(metadata.contextModule, verifier.baseModule)
+    assert.deepEqual(metadata.namespaces, ['ManifoldAdventure'])
+    assert.equal(metadata.referenceTheorem, `ManifoldAdventure.${level.theoremName}`)
   }
 })
 
-test('the browser-kernel matrix covers all 25 Manifold Adventure references', () => {
+test('one generated Lean module is the source of truth for all reference proofs', () => {
+  assert.match(browserBase, /public import Mathlib\.Geometry\.Manifold\.IsManifold\.Basic/)
+  assert.match(browserBase, /namespace ManifoldAdventure/)
+  assert.equal(
+    [...browserBase.matchAll(/^(?:theorem|(?:noncomputable )?def) /gm)].length,
+    levels.length,
+  )
+  assert.equal([...browserBase.matchAll(/^(?:noncomputable )?def /gm)].length, 2)
+  assert.doesNotMatch(browserBase, /\b(sorry|admit|axiom|unsafe)\b/)
+
+  for (const level of levels) {
+    assert.match(
+      browserBase,
+      new RegExp(`^${level.declarationKind} ${level.theoremName}\\b`, 'm'),
+    )
+    for (const line of level.solution.split('\n')) {
+      assert.ok(browserBase.includes(`  ${line}`), `${level.id} reference proof drifted`)
+    }
+  }
+})
+
+test('the conformance record covers all pinned reference solutions', () => {
   assert.equal(conformance.sourceCommit, game.source.commit)
+  assert.equal(conformance.leanCommit, verifier.leanCommit)
+  assert.equal(conformance.leanUpstreamCommit, verifier.leanUpstreamCommit)
+  assert.equal(conformance.mathlibCommit, verifier.mathlibCommit)
   assert.equal(conformance.summary.total, levels.length)
-  assert.equal(conformance.summary.kernel, 25)
+  assert.equal(conformance.summary.kernel, levels.length)
   assert.equal(conformance.summary.partial, 0)
   assert.deepEqual(
     new Set(conformance.verifiedReferenceSolutions),
     new Set(levels.map((level) => level.id)),
   )
-})
-
-test('the course covers the requested objects without common manifold misconceptions', () => {
-  const content = JSON.stringify(game)
-
-  assert.match(content, /Ada/)
-  assert.match(content, /Flatland/)
-  assert.match(content, /sphere/)
-  assert.match(content, /torus/)
-  assert.match(content, /double pendulum/)
-  assert.match(content, /Möbius strip is a \*\*two-manifold with boundary\*\*/)
-  assert.match(content, /figure eight/)
-  assert.match(content, /Riemann/)
-  assert.match(content, /tangent space/)
-  assert.match(content, /Differential forms/)
-  assert.match(content, /Riemannian metric/)
-  assert.match(content, /curvature/)
-  assert.match(content, /Theorema Egregium/)
-  assert.match(content, /Gauss–Bonnet/)
-})
-
-test('course credits and reading links are present in the local data', () => {
-  const content = `${game.introduction}\n${game.information}`
-  const expectedLinks = [
-    'https://www.quantamagazine.org/what-is-a-manifold-20251103/',
-    'https://www.gutenberg.org/ebooks/97',
-    'https://link.springer.com/book/10.1007/978-1-4419-7400-6',
-    'https://math.uchicago.edu/~may/REU2017/MilnorDiff.pdf',
-    'https://bookstore.ams.org/CHEL/370.H',
-    'https://link.springer.com/book/10.1007/978-0-387-21752-9',
-    'https://ocw.mit.edu/courses/18-950-differential-geometry-fall-2008/',
-  ]
-
-  for (const link of expectedLinks) {
-    assert.ok(content.includes(link), `missing credited source ${link}`)
-  }
-})
-
-test('introduced mathematical symbols link to references and show their Lean input', () => {
-  const prose = [
-    game.introduction,
-    game.information,
-    ...game.worlds.flatMap((world) => [
-      world.introduction,
-      ...world.levels.flatMap((level) => [
-        level.introduction,
-        level.conclusion,
-        ...level.hints,
-      ]),
-    ]),
-  ].join('\n')
-  const symbols = [
-    ['=', 'https://en.wikipedia.org/wiki/Equals_sign', null],
-    ['ℕ', 'https://en.wikipedia.org/wiki/Natural_number', '\\N'],
-    ['∧', 'https://en.wikipedia.org/wiki/Logical_conjunction', '\\and'],
-    ['∨', 'https://en.wikipedia.org/wiki/Logical_disjunction', '\\or'],
-    ['→', 'https://en.wikipedia.org/wiki/Material_conditional', '\\to'],
-    ['ℝ', 'https://en.wikipedia.org/wiki/Real_number', '\\R'],
-    ['¬', 'https://en.wikipedia.org/wiki/Negation', '\\not'],
-    ['×', 'https://en.wikipedia.org/wiki/Cartesian_product', '\\times'],
-  ]
-
-  for (const [symbol, link, command] of symbols) {
-    assert.ok(prose.includes(`[${symbol}](${link})`), `${symbol} is not linked to ${link}`)
-    if (command) {
-      assert.ok(prose.includes(`\`${command}\``), `${symbol} does not show ${command}`)
-    }
-  }
-  assert.match(prose, /equals sign \[=\].*does not need a backslash command/)
-})
-
-test('all Manifold Adventure SVG assets referenced by the course are bundled', () => {
-  const assetDirectory = new URL('../public/game-assets/manifolds/', import.meta.url)
-  const assets = new Set(fs.readdirSync(assetDirectory))
-  const references = [...JSON.stringify(game).matchAll(/images\/([^)"\\]+\.svg)/g)]
-    .map((match) => match[1])
-
-  assert.ok(references.length >= 6)
-  for (const reference of references) {
-    assert.ok(assets.has(reference), `missing manifold asset ${reference}`)
-  }
 })
 
 test('all Blender-built GLB models used by the 3D scenes are bundled', () => {

@@ -1,5 +1,5 @@
 import {
-  allLevels,
+  gameForLevel,
   levelsAvailableBefore,
   policyInventoryForLevel,
   type NngLevel,
@@ -166,14 +166,15 @@ function proofIdentifiers(proof: string): string[] {
 
 function inventoryPolicyForProof(level: NngLevel, proof: string): LeanInventoryPolicy {
   const inventory = policyInventoryForLevel(level)
-  const knownTactics = allLevels.flatMap((candidate) => [
+  const gameLevels = gameForLevel(level).worlds.flatMap((world) => world.levels)
+  const knownTactics = gameLevels.flatMap((candidate) => [
     ...candidate.newTactics,
     ...(candidate.hiddenTactics || []),
   ]).map(shortName)
 
   const gameTheorems = new Set<string>()
   const gameDefinitions = new Set<string>()
-  for (const candidate of allLevels) {
+  for (const candidate of gameLevels) {
     candidate.newTheorems.flatMap(nameVariants).forEach((name) => gameTheorems.add(name))
     candidate.newDefinitions.flatMap(nameVariants).forEach((name) => gameDefinitions.add(name))
     if (candidate.theoremName) {
@@ -388,8 +389,9 @@ export function buildChallengeSource(
 ): ChallengeSource {
   const normalized = normalizeGameProofSyntax(proof)
   const enforceInventory = options.enforceInventory ?? true
+  const gameLevels = gameForLevel(level).worlds.flatMap((world) => world.levels)
   const sourceLevels = options.unlockAll
-    ? allLevels.filter((candidate) => candidate.id !== level.id)
+    ? gameLevels.filter((candidate) => candidate.id !== level.id)
     : levelsAvailableBefore(level)
   const availableAxioms = sourceLevels
     .map(axiomFromLevel)

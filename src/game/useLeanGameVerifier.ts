@@ -24,6 +24,10 @@ import {
   buildRealAnalysisChallengeSource,
   buildRealAnalysisGoalInspectionSource,
 } from './real-analysis-verification-source'
+import {
+  buildManifoldChallengeSource,
+  buildManifoldGoalInspectionSource,
+} from './manifold-verification-source'
 
 export type CheckerStatus = 'idle' | 'loading' | 'ready' | 'checking' | 'error'
 
@@ -187,6 +191,7 @@ export function useLeanGameVerifier() {
   const initializePromiseRef = useRef<Promise<void> | null>(null)
   const initFilesPromiseRef = useRef<Promise<void> | null>(null)
   const realAnalysisLayerPromiseRef = useRef<Promise<void> | null>(null)
+  const manifoldLayerPromiseRef = useRef<Promise<void> | null>(null)
   const bootPendingRef = useRef<{ resolve: () => void; reject: (error: Error) => void } | null>(null)
   const filesPendingRef = useRef<{ resolve: () => void } | null>(null)
   const snapshotPendingRef = useRef<{ resolve: (result: WorkerResult) => void } | null>(null)
@@ -327,18 +332,26 @@ export function useLeanGameVerifier() {
     return result.success
   }, [])
 
-  const ensureRealAnalysisLayer = useCallback(async () => {
-    if (realAnalysisLayerPromiseRef.current) return realAnalysisLayerPromiseRef.current
-    const promise = (async () => {
+  const loadArtifactLayer = useCallback(async ({
+    manifestFile,
+    libraryRoot,
+    label,
+    readyMessage,
+  }: {
+    manifestFile: string
+    libraryRoot: string
+    label: string
+    readyMessage: string
+  }) => {
       const worker = workerRef.current
       if (!worker) throw new Error('Lean worker is unavailable.')
       if (LEAN_VARIANT === 'slim') {
-        throw new Error('Real Analysis verification requires the desktop full Lean runtime.')
+        throw new Error(`${label} verification requires the desktop full Lean runtime.`)
       }
-      setProgress('Reading the local Real Analysis package...')
-      const response = await fetch(`${LEAN_WASM_BASE}/real-analysis-layer.json`)
+      setProgress(`Reading the local ${label} package...`)
+      const response = await fetch(`${LEAN_WASM_BASE}/${manifestFile}`)
       if (!response.ok) {
-        throw new Error('The local Real Analysis Lean package was not found.')
+        throw new Error(`The local ${label} Lean package was not found.`)
       }
       const manifest = await response.json() as {
         files?: string[]
@@ -346,7 +359,7 @@ export function useLeanGameVerifier() {
       }
       const paths = manifest.files || []
       if (paths.length === 0) {
-        throw new Error('The local Real Analysis Lean package is empty.')
+        throw new Error(`The local ${label} Lean package is empty.`)
       }
 
       const addFilesToWorker = async (files: Map<string, Uint8Array>) => {
@@ -364,7 +377,7 @@ export function useLeanGameVerifier() {
             filesPendingRef.current = { resolve }
             worker.postMessage({ type: 'add_files', files: payload }, transfer)
           }),
-          rejectAfter(120000, 'Real Analysis package transfer timed out.'),
+          rejectAfter(120000, `${label} package transfer timed out.`),
         ])
       }
 
@@ -374,33 +387,45 @@ export function useLeanGameVerifier() {
         for (let index = 0; index < packs.length; index += 1) {
           const pack = packs[index]
           setProgress(
-            `Loading Mathlib and course modules: pack ${index + 1} / ${packs.length}`,
+            `Loading ${label}: pack ${index + 1} / ${packs.length}`,
           )
-          const files = await fetchLeanArtifactPack(pack)
+          const files = await fetchLeanArtifactPack(pack, libraryRoot)
           const expectedPaths = new Set(pack.entries.map((entry) => entry.path))
           const missing = [...expectedPaths].filter((file) => !files.has(file))
           if (missing.length > 0) {
-            throw new Error(`The local Real Analysis package is incomplete (${missing.length} files missing).`)
+            throw new Error(`The local ${label} package is incomplete (${missing.length} files missing).`)
           }
           await addFilesToWorker(files)
           loaded += files.size
-          setProgress(`Loading Mathlib and course modules: ${loaded} / ${paths.length} files`)
+          setProgress(`Loading ${label}: ${loaded} / ${paths.length} files`)
         }
       } else {
         const batchSize = 80
         for (let offset = 0; offset < paths.length; offset += batchSize) {
           const batch = paths.slice(offset, offset + batchSize)
           const files = await fetchOleanFiles(batch, (loaded) => {
-            setProgress(`Loading Mathlib and course modules: ${offset + loaded} / ${paths.length} files`)
-          }, 'real-analysis-lib')
+            setProgress(`Loading ${label}: ${offset + loaded} / ${paths.length} files`)
+          }, libraryRoot)
           const missing = batch.filter((file) => !files.has(file))
           if (missing.length > 0) {
-            throw new Error(`The local Real Analysis package is incomplete (${missing.length} files missing).`)
+            throw new Error(`The local ${label} package is incomplete (${missing.length} files missing).`)
           }
           await addFilesToWorker(files)
         }
       }
 
+      setProgress(readyMessage)
+  }, [])
+
+  const ensureRealAnalysisLayer = useCallback(async () => {
+    if (realAnalysisLayerPromiseRef.current) return realAnalysisLayerPromiseRef.current
+    const promise = (async () => {
+      await loadArtifactLayer({
+        manifestFile: 'real-analysis-layer.json',
+        libraryRoot: 'real-analysis-lib',
+        label: 'Mathlib and Real Analysis',
+        readyMessage: 'Mathlib and the Real Analysis course are ready.',
+      })
       const suffix = LEAN_ASSET_VERSION ? `?v=${encodeURIComponent(LEAN_ASSET_VERSION)}` : ''
       await loadSnapshot(
         'real-analysis.snap',
@@ -414,7 +439,27 @@ export function useLeanGameVerifier() {
     })
     realAnalysisLayerPromiseRef.current = promise
     return promise
-  }, [loadSnapshot])
+  }, [loadArtifactLayer, loadSnapshot])
+
+  const ensureManifoldLayer = useCallback(async () => {
+    if (manifoldLayerPromiseRef.current) return manifoldLayerPromiseRef.current
+    const promise = (async () => {
+      // The manifold package is a small, pinned extension of the existing
+      // Mathlib/Real Analysis package, so load its base artifacts first.
+      await ensureRealAnalysisLayer()
+      await loadArtifactLayer({
+        manifestFile: 'manifold-layer.json',
+        libraryRoot: 'manifold-lib',
+        label: 'Mathlib manifold modules',
+        readyMessage: 'Mathlib and the Manifold Adventure are ready.',
+      })
+    })().catch((error) => {
+      manifoldLayerPromiseRef.current = null
+      throw error
+    })
+    manifoldLayerPromiseRef.current = promise
+    return promise
+  }, [ensureRealAnalysisLayer, loadArtifactLayer])
 
   const trySnapshot = useCallback(async (): Promise<boolean> => {
     const suffix = LEAN_ASSET_VERSION ? `?v=${encodeURIComponent(LEAN_ASSET_VERSION)}` : ''
@@ -481,20 +526,23 @@ export function useLeanGameVerifier() {
 
   const initializeForLevel = useCallback(async (level: GameLevel) => {
     await initialize()
-    if (gameForLevel(level).verifier === 'real-analysis') {
+    const verifier = gameForLevel(level).verifier
+    if (verifier === 'real-analysis') {
       // This packed layer also stages Init, Lean, and Std. A snapshot restores
       // Init's environment, but module imports still resolve those artifacts
       // through Lean's virtual filesystem.
       await ensureRealAnalysisLayer()
+    } else if (verifier === 'manifold') {
+      await ensureManifoldLayer()
     }
-  }, [ensureRealAnalysisLayer, initialize])
+  }, [ensureManifoldLayer, ensureRealAnalysisLayer, initialize])
 
   const inspectGoals = useCallback(async (
     level: GameLevel,
     proof: string,
     rules: GameRules = 'regular',
   ): Promise<GameGoalInspection> => {
-    const isRealAnalysis = gameForLevel(level).verifier === 'real-analysis'
+    const verifier = gameForLevel(level).verifier
     const policy = checkProofPolicy(level, proof, { enforceInventory: rules !== 'none' })
     if (!policy.ok) {
       const diagnostics = policy.messages.map((message) => ({
@@ -513,9 +561,11 @@ export function useLeanGameVerifier() {
       }
     }
 
-    const source = isRealAnalysis
+    const source = verifier === 'real-analysis'
       ? buildRealAnalysisGoalInspectionSource(level, proof, rules !== 'none')
-      : buildGoalInspectionSource(level, proof, {
+      : verifier === 'manifold'
+        ? buildManifoldGoalInspectionSource(level, proof, rules !== 'none')
+        : buildGoalInspectionSource(level, proof, {
           unlockAll: rules === 'none',
           enforceInventory: rules !== 'none',
         })
@@ -583,7 +633,7 @@ export function useLeanGameVerifier() {
     proof: string,
     rules: GameRules = 'regular',
   ): Promise<GameVerificationResult> => {
-    const isRealAnalysis = gameForLevel(level).verifier === 'real-analysis'
+    const verifier = gameForLevel(level).verifier
     const policy = checkProofPolicy(level, proof, { enforceInventory: rules !== 'none' })
     if (!policy.ok) {
       return {
@@ -614,9 +664,11 @@ export function useLeanGameVerifier() {
       }
     }
 
-    const challenge = isRealAnalysis
+    const challenge = verifier === 'real-analysis'
       ? buildRealAnalysisChallengeSource(level, proof, rules !== 'none')
-      : buildChallengeSource(level, proof, {
+      : verifier === 'manifold'
+        ? buildManifoldChallengeSource(level, proof, rules !== 'none')
+        : buildChallengeSource(level, proof, {
           unlockAll: rules === 'none',
           enforceInventory: rules !== 'none',
         })
@@ -674,7 +726,7 @@ export function useLeanGameVerifier() {
             state: 'passed',
             detail: rules === 'none'
               ? 'Inventory restrictions were intentionally disabled for this check.'
-              : isRealAnalysis
+              : verifier !== 'natural-number'
                 ? 'Unsafe placeholders were blocked and the proof was checked in the exact local course context.'
                 : 'Lean syntax and semantic theorem inventory restrictions were enforced locally.',
           },

@@ -171,7 +171,7 @@ test('every imported Real Analysis prose formula renders without a KaTeX error',
   assert.ok(formulaCount > 250, `expected a mathematics-heavy course, found ${formulaCount} formulas`)
 })
 
-test('every Manifold Adventure formula and local illustration renders cleanly', () => {
+test('every Mathlib-native Manifold Adventure lesson renders cleanly', () => {
   const prose = [
     manifoldGame.introduction,
     manifoldGame.information,
@@ -184,8 +184,8 @@ test('every Manifold Adventure formula and local illustration renders cleanly', 
       ]),
     ]),
   ].filter(Boolean)
-  let formulaCount = 0
-  let imageCount = 0
+  let codeCount = 0
+  let mathlibNameCount = 0
 
   for (const markdown of prose) {
     const html = renderMarkdown(markdown, '/game-assets/manifolds')
@@ -194,10 +194,15 @@ test('every Manifold Adventure formula and local illustration renders cleanly', 
       /class="katex-error"/,
       `KaTeX rejected Manifold Adventure prose containing: ${markdown}`,
     )
-    formulaCount += html.match(/class="katex"/g)?.length || 0
-    imageCount += html.match(/src="\/game-assets\/manifolds\//g)?.length || 0
+    codeCount += html.match(/<code>/g)?.length || 0
+    mathlibNameCount += html.match(
+      /(Homeomorph|OpenPartialHomeomorph|ChartedSpace|ModelWithCorners|IsManifold|TangentSpace|TangentBundle)/g,
+    )?.length || 0
   }
 
-  assert.ok(formulaCount >= 15, `expected at least 15 rendered formulas, found ${formulaCount}`)
-  assert.ok(imageCount >= 5, `expected at least 5 local illustrations, found ${imageCount}`)
+  assert.ok(codeCount >= 75, `expected Lean-rich lessons, found ${codeCount} code spans`)
+  assert.ok(
+    mathlibNameCount >= 40,
+    `expected repeated contact with Mathlib's structures, found ${mathlibNameCount} names`,
+  )
 })

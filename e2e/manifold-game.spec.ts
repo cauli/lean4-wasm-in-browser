@@ -1,54 +1,78 @@
 import { expect, test, type Page } from '@playwright/test'
 
+const progressKey = 'manifoldAdventureV4MathlibProgress'
+
 async function resetManifoldGame(page: Page) {
   await page.goto('/games/manifold-adventure')
-  await page.evaluate(() => localStorage.removeItem('manifoldAdventureLocalProgress'))
+  await page.evaluate((key) => localStorage.removeItem(key), progressKey)
   await page.reload()
 }
 
-test('opens the full Manifold Adventure and verifies its first beginner proof locally', async ({ page }) => {
+async function setEditor(page: Page, value: string) {
+  await page.waitForFunction(() => Boolean(
+    (window as unknown as {
+      __leanEditor?: { getModel: () => unknown }
+    }).__leanEditor?.getModel(),
+  ))
+  await page.evaluate((nextValue) => {
+    const editor = (window as unknown as {
+      __leanEditor?: { setValue: (content: string) => void }
+    }).__leanEditor
+    editor?.setValue(nextValue)
+  }, value)
+}
+
+test('opens the Mathlib-native course and kernel-checks its first proof locally', async ({ page }) => {
   await resetManifoldGame(page)
 
-  await expect(page.getByRole('heading', { name: 'Welcome, tiny geometer' })).toBeVisible()
+  await expect(page.getByRole('heading', {
+    name: 'Learn the structures Lean geometers actually use',
+  })).toBeVisible()
   await expect(page.locator('.course-world-card')).toHaveCount(6)
   await expect(page.locator('.course-level-dots a')).toHaveCount(25)
   await expect(page.getByText('6 worlds · 25 levels')).toBeVisible()
   await expect(page.locator('.game-header').getByLabel('Work in progress')).toBeVisible()
-  await expect(page.getByText(/Loring Tu/).first()).toBeVisible()
+  await expect(page.getByText(/Mathlib's real manifold API/).first()).toBeVisible()
   await expect(page.locator('.course-world-card').first()).toHaveClass(/unlocked/)
   await expect(page.locator('.course-world-card').nth(1)).toHaveClass(/locked/)
 
-  await page.goto('/games/manifold-adventure/flatland')
-  await expect(page.locator('.world-introduction img')).toHaveAttribute(
-    'src',
-    '/game-assets/manifolds/flatland-ant.svg',
-  )
+  await page.goto('/games/manifold-adventure/homeomorphisms/1')
+  await expect(page.getByRole('heading', { name: 'Continuity is bundled' })).toBeVisible()
+  await expect(page.locator('.goal-target')).toContainText('Continuous e')
 
-  await page.goto('/games/manifold-adventure/flatland/1')
-  await expect(page.getByRole('heading', { name: 'Evidence in hand' })).toBeVisible()
-  await expect(page.locator('.goal-target')).toContainText('groundIsNear')
-  await expect(page.locator('.level-introduction')).not.toContainText('What Lean checks here')
+  const rewards = page.getByLabel('Level unlocks')
+  await expect(rewards).toContainText('exact')
+  await expect(rewards).toContainText('Homeomorph.continuous')
+  await expect(rewards).toContainText('Homeomorph')
+  await expect(rewards).toContainText('Prove this course declaration')
+  await expect(rewards).toContainText('homeomorph_continuous')
+
+  await setEditor(page, 'exact e.continuous_symm')
+  await expect(page.locator('.proof-feedback .live-goal-error')).toContainText(
+    /not unlocked.*continuous_symm/i,
+    { timeout: 180_000 },
+  )
 
   await page.getByRole('button', { name: 'View solution' }).click()
   await expect(page.getByText('reference answer')).toBeVisible()
   await page.getByRole('button', { name: 'Use in editor' }).click()
-  await expect(page.locator('.game-editor')).toContainText('exact evidence')
+  await expect(page.locator('.game-editor')).toContainText('exact e.continuous')
   await expect(page.locator('.proof-feedback').getByText('No goals remain', { exact: true })).toBeVisible({
     timeout: 180_000,
   })
-  await expect(page.locator('.goal-panel .goal-target')).toContainText('groundIsNear')
 
   await page.getByRole('button', { name: 'Verify answer' }).click()
   await expect(page.locator('.proof-feedback .verification-result')).toBeVisible({ timeout: 180_000 })
   await expect(page.getByRole('heading', {
     name: 'Proof accepted by the local Lean kernel.',
   })).toBeVisible()
-  await expect(page.locator('.goal-panel .goal-target')).toContainText('groundIsNear')
+  await expect(rewards).toContainText('Level rewards earned')
+  await expect(rewards).toContainText('Course declaration earned')
   await expect(page.locator('.game-header-complete')).toContainText('Completed')
-  await expect(page.getByRole('link', { name: 'Next level: The same spot' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Next: The inverse is continuous too' })).toBeVisible()
 })
 
-test('catalog lists the original course separately with local-only progress', async ({ page }) => {
+test('catalog presents the manifold course as local Mathlib', async ({ page }) => {
   await page.goto('/games')
   await expect(page.locator('.game-card')).toHaveCount(3)
   await expect(page.getByRole('heading', { name: 'The Manifold Adventure' })).toBeVisible()
@@ -57,22 +81,13 @@ test('catalog lists the original course separately with local-only progress', as
   await expect(card.locator('img')).toHaveAttribute('src', '/game-assets/manifolds/cover.svg')
   await expect(card).toContainText('6 worlds')
   await expect(card).toContainText('25 levels')
-  await expect(card).toContainText('25 browser-kernel levels')
+  await expect(card).toContainText('25 browser-kernel levels · local Mathlib')
   await expect(card.getByLabel('Work in progress')).toContainText('WIP')
-  await expect(card.getByLabel('Work in progress')).toContainText('Work in progress')
   await expect(card).toContainText('By this project')
-
-  const worldsBox = await card.locator('.game-card-meta > span').first().boundingBox()
-  const badgeBox = await card.getByLabel('Work in progress').boundingBox()
-  expect(worldsBox).not.toBeNull()
-  expect(badgeBox).not.toBeNull()
-  expect(Math.abs(
-    (worldsBox!.y + worldsBox!.height / 2) - (badgeBox!.y + badgeBox!.height / 2),
-  )).toBeLessThan(1)
 })
 
-test('explores the Blender-built shape cabinet in the local 3D lab', async ({ page }) => {
-  await page.goto('/games/manifold-adventure/cabinet')
+test('keeps the Blender-built manifold lab in the canonical-chart world', async ({ page }) => {
+  await page.goto('/games/manifold-adventure/canonicalcharts')
 
   const lab = page.locator('.manifold-object-lab')
   const canvas = lab.getByRole('img', { name: /Interactive 3D model of a Sphere with two charts/ })
@@ -84,42 +99,29 @@ test('explores the Blender-built shape cabinet in the local 3D lab', async ({ pa
   await lab.getByRole('tab', { name: 'Torus with its two loops' }).click()
   await expect(lab.getByRole('heading', { name: 'Torus with its two loops' })).toBeVisible()
   await expect(lab.getByRole('img', { name: /Interactive 3D model of a Torus/ })).toBeVisible()
-
-  await lab.getByRole('tab', { name: 'Möbius band' }).click()
-  await expect(lab.getByRole('heading', { name: 'Möbius band' })).toBeVisible()
-  const mobius = lab.getByRole('img', { name: /Interactive 3D model of a Möbius band/ })
-  await expect(mobius).toBeVisible()
-
-  const rotation = lab.getByRole('button', { name: 'Pause rotation' })
-  await expect(rotation).toHaveAttribute('aria-pressed', 'true')
-  await rotation.click()
-  await expect(lab.getByRole('button', { name: 'Resume rotation' })).toHaveAttribute('aria-pressed', 'false')
-
-  const box = await mobius.boundingBox()
-  expect(box).not.toBeNull()
-  await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.5)
-  await page.mouse.down()
-  await page.mouse.move(box!.x + box!.width * 0.7, box!.y + box!.height * 0.4, { steps: 8 })
-  await page.mouse.up()
 })
 
-test('level pages embed the purpose-built model for their lesson', async ({ page }) => {
+test('level pages embed models alongside matching Mathlib lessons', async ({ page }) => {
   await page.goto('/games/manifold-adventure')
-  await page.evaluate(() => {
-    const worlds = ['flatland', 'localtest', 'charts', 'cabinet', 'smooth', 'curvature']
-    const completed = worlds.flatMap((world) => (
-      Array.from({ length: 5 }, (_, index) => `${world}-${index + 1}`)
-    ))
-    localStorage.setItem('manifoldAdventureLocalProgress', JSON.stringify({
+  await page.evaluate((key) => {
+    const completed = [
+      'homeomorphisms-1', 'homeomorphisms-2', 'homeomorphisms-3', 'homeomorphisms-4',
+      'localcharts-1', 'localcharts-2', 'localcharts-3', 'localcharts-4',
+      'chartedspaces-1', 'chartedspaces-2', 'chartedspaces-3', 'chartedspaces-4',
+      'chartedspaces-5',
+      'canonicalcharts-1', 'canonicalcharts-2', 'canonicalcharts-3', 'canonicalcharts-4',
+      'smoothmanifolds-1', 'smoothmanifolds-2', 'smoothmanifolds-3', 'smoothmanifolds-4',
+    ]
+    localStorage.setItem(key, JSON.stringify({
       answers: {}, completed, attempts: {}, rules: 'regular',
     }))
-  })
+  }, progressKey)
 
-  await page.goto('/games/manifold-adventure/localtest/4')
-  await expect(page.getByRole('img', { name: /Interactive 3D model of a The crossing that fails/ }))
+  await page.goto('/games/manifold-adventure/localcharts/4')
+  await expect(page.getByRole('img', { name: /Interactive 3D model of a Sphere with two charts/ }))
     .toBeVisible()
 
-  await page.goto('/games/manifold-adventure/curvature/2')
-  await expect(page.getByRole('img', { name: /Interactive 3D model of a A triangle with three right angles/ }))
+  await page.goto('/games/manifold-adventure/tangentspaces/1')
+  await expect(page.getByRole('img', { name: /Interactive 3D model of a Tangent plane/ }))
     .toBeVisible()
 })

@@ -77,9 +77,44 @@ cp -L "$REAL_ANALYSIS_MANIFEST" dist/lean-wasm/real-analysis-layer.json
 rsync -aL --delete --include='artifacts-*.pack' --exclude='*' \
   "$REAL_ANALYSIS_PACKS/" dist/lean-wasm/real-analysis-lib/
 
+# Manifold Adventure extends the exact same pinned Mathlib environment with the
+# Geometry.Manifold dependency closure and its generated BrowserBase theorem
+# module. Keeping it as a supplemental layer avoids duplicating the many files
+# already shipped for Real Analysis.
+MANIFOLD_MANIFEST=public/lean-wasm/manifold-layer.json
+MANIFOLD_PACKS=public/lean-wasm/manifold-lib
+if [ ! -f "$MANIFOLD_MANIFEST" ] || [ ! -d "$MANIFOLD_PACKS" ]; then
+  echo "error: Manifold Adventure browser layer is missing." >&2
+  echo "run npm run build:manifold-course && npm run package:manifold first." >&2
+  exit 1
+fi
+node -e '
+const fs = require("fs");
+const manifest = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+const base = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+if (manifest.leanCommit !== base.leanCommit || manifest.mathlibCommit !== base.mathlibCommit) {
+  throw new Error("Manifold layer does not match the Real Analysis base layer");
+}
+if (!Array.isArray(manifest.packs) || manifest.packs.length === 0) {
+  throw new Error("Manifold manifest contains no packs");
+}
+for (const pack of manifest.packs) {
+  const file = `${process.argv[2]}/${pack.file}`;
+  const stat = fs.statSync(file);
+  if (stat.size !== pack.compressedBytes) {
+    throw new Error(`${pack.file} has ${stat.size} bytes; expected ${pack.compressedBytes}`);
+  }
+}
+' "$MANIFOLD_MANIFEST" "$MANIFOLD_PACKS" "$REAL_ANALYSIS_MANIFEST"
+mkdir -p dist/lean-wasm/manifold-lib
+cp -L "$MANIFOLD_MANIFEST" dist/lean-wasm/manifold-layer.json
+rsync -aL --delete --include='artifacts-*.pack' --exclude='*' \
+  "$MANIFOLD_PACKS/" dist/lean-wasm/manifold-lib/
+
 echo "Pages output ready in dist/ ($(du -shL dist | cut -f1)):"
 echo "  static .olean files: $(find dist/lean-wasm/lean-lib -name '*.olean' | wc -l | tr -d ' ')"
 echo "  static .ir files:    $(find dist/lean-wasm/lean-lib -name '*.ir' | wc -l | tr -d ' ')"
 echo "  static .ir.sig files: $(find dist/lean-wasm/lean-lib -name '*.ir.sig' | wc -l | tr -d ' ')"
 echo "  Real Analysis packs: $(find dist/lean-wasm/real-analysis-lib -name 'artifacts-*.pack' | wc -l | tr -d ' ')"
+echo "  Manifold packs:      $(find dist/lean-wasm/manifold-lib -name 'artifacts-*.pack' | wc -l | tr -d ' ')"
 echo "  R2 (upload via deploy/upload-r2.sh): lean.js, lean.wasm, snapshots"

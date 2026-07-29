@@ -20,12 +20,34 @@ const coreFileListPath = path.resolve(
 const leanSourceRoot = path.resolve(
   process.argv[8] || '/tmp/lean4-62b6a22/src',
 )
+const manifoldRoot = process.argv[9]
+  ? path.resolve(process.argv[9])
+  : null
+const seedModules = (process.argv[10]
+  ? process.argv[10].split(',').map((name) => name.trim()).filter(Boolean)
+  : ['RealAnalysisGame.BrowserBase'])
+const baseManifestPath = process.argv[11]
+  ? path.resolve(process.argv[11])
+  : null
+const baseManifest = baseManifestPath
+  ? JSON.parse(fs.readFileSync(baseManifestPath, 'utf8'))
+  : null
+const baseFiles = new Set(baseManifest?.files || [])
 const hasExactCoreSources = fs.existsSync(path.join(leanSourceRoot, 'Init.lean'))
 
-for (const [label, root] of [['Mathlib', mathlibRoot], ['course', courseRoot]]) {
+for (const [label, root] of [
+  ['Mathlib', mathlibRoot],
+  ['Real Analysis course', courseRoot],
+  ...(manifoldRoot ? [['Manifold Adventure course', manifoldRoot]] : []),
+]) {
   if (!fs.existsSync(root)) throw new Error(`${label} build root not found: ${root}`)
 }
-if (outputRoot === mathlibRoot || outputRoot === courseRoot || outputRoot === path.parse(outputRoot).root) {
+if (
+  outputRoot === mathlibRoot
+  || outputRoot === courseRoot
+  || (manifoldRoot && outputRoot === manifoldRoot)
+  || outputRoot === path.parse(outputRoot).root
+) {
   throw new Error(`Refusing to replace unsafe layer path: ${outputRoot}`)
 }
 
@@ -41,6 +63,7 @@ function packageLibraryRoots() {
   const roots = [
     path.join(mathlibRoot, '.lake/build/lib/lean'),
     path.join(courseRoot, '.lake/build/lib/lean'),
+    ...(manifoldRoot ? [path.join(manifoldRoot, '.lake/build/lib/lean')] : []),
   ]
   for (const workspaceRoot of [courseRoot, mathlibRoot]) {
     const packages = path.join(workspaceRoot, '.lake/packages')
@@ -54,7 +77,7 @@ function packageLibraryRoots() {
 }
 
 function packageSourceRoots() {
-  const roots = [mathlibRoot, courseRoot]
+  const roots = [mathlibRoot, courseRoot, ...(manifoldRoot ? [manifoldRoot] : [])]
   if (hasExactCoreSources) roots.push(leanSourceRoot)
   for (const workspaceRoot of [courseRoot, mathlibRoot]) {
     const packages = path.join(workspaceRoot, '.lake/packages')
@@ -171,7 +194,7 @@ for (const sourceRoot of packageSourceRoots()) {
 const neededModules = new Set()
 // Lean inserts `Init` implicitly into ordinary modules. Seed it explicitly so
 // the browser layer includes precisely that core dependency closure too.
-const pendingModules = ['RealAnalysisGame.BrowserBase', 'Init']
+const pendingModules = [...seedModules, 'Init']
 while (pendingModules.length > 0) {
   const moduleName = pendingModules.pop()
   if (!moduleName || neededModules.has(moduleName)) continue
@@ -213,7 +236,10 @@ for (const libraryRoot of packageLibraryRoots()) {
 }
 
 const sources = new Map(
-  [...allSources].filter(([relativePath]) => neededModules.has(moduleForArtifact(relativePath))),
+  [...allSources].filter(([relativePath]) => (
+    neededModules.has(moduleForArtifact(relativePath))
+    && !baseFiles.has(relativePath)
+  )),
 )
 
 // Importing Mathlib resolves core artifacts from /lib/lean. With the exact
@@ -230,6 +256,7 @@ for (const oleanPath of coreOleans) {
     oleanPath.replace(/\.olean$/, '.ir'),
     oleanPath.replace(/\.olean$/, '.ir.sig'),
   ]) {
+    if (baseFiles.has(relativePath)) continue
     if (
       hasExactCoreSources
       && !neededModules.has(moduleForArtifact(relativePath))
@@ -293,11 +320,27 @@ for (const [relativePath, sourcePath] of [...sources].sort()) {
 flushPack()
 
 const files = [...sources.keys()].sort()
+const manifoldVerifier = JSON.parse(fs.readFileSync(
+  path.resolve('src/game/manifolds-verifier.generated.json'),
+  'utf8',
+))
 const manifest = {
-  version: 'lean-4.33.0-pre-62b6a229-real-analysis',
-  leanCommit: '62b6a2291302d4bbeace37642a066b7510d0145c',
+  version: `lean-${manifoldVerifier.leanCommit.slice(0, 10)}-mathlib-games`,
+  leanCommit: manifoldVerifier.leanCommit,
+  leanUpstreamCommit: manifoldVerifier.leanUpstreamCommit,
   mathlibCommit: gitCommit(mathlibRoot),
-  gameCommit: gitCommit('/tmp/realanalysisgame-port'),
+  gameCommit: baseManifest?.gameCommit ?? gitCommit('/tmp/realanalysisgame-port'),
+  manifoldCourseCommit: seedModules.some((name) => name.startsWith('ManifoldAdventure.'))
+    ? gitCommit(path.resolve('.'))
+    : null,
+  baseModules: seedModules,
+  extends: baseManifestPath
+    ? {
+        manifest: path.basename(baseManifestPath),
+        leanCommit: baseManifest.leanCommit,
+        mathlibCommit: baseManifest.mathlibCommit,
+      }
+    : null,
   generatedAt: new Date().toISOString(),
   files,
   packs,

@@ -824,6 +824,80 @@ button {
   padding: 0.8rem 0 1rem;
 }
 
+.level-rewards {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0 0 1rem;
+  padding: 0.85rem;
+  border: 1px solid #b9cee4;
+  border-radius: 0.28rem;
+  background: #f3f8fd;
+}
+
+.level-rewards-earned {
+  border-color: #9bc59b;
+  background: #f1f8f1;
+}
+
+.level-rewards-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--game-accent-dark);
+  font-size: 0.76rem;
+}
+
+.level-rewards-earned .level-rewards-heading {
+  color: #176a27;
+}
+
+.level-rewards-heading > span {
+  display: inline-grid;
+  width: 1.15rem;
+  height: 1.15rem;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.67rem;
+}
+
+.level-reward-row {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.level-reward-row > span,
+.level-rewards > p {
+  margin: 0;
+  color: var(--game-dim);
+  font-size: 0.65rem;
+  line-height: 1.45;
+}
+
+.level-reward-row > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.level-reward-row code {
+  width: fit-content;
+  padding: 0.25rem 0.38rem;
+  border: 1px solid rgba(25, 118, 210, 0.24);
+  border-radius: 0.2rem;
+  background: white;
+  color: var(--game-accent-dark);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.65rem;
+  overflow-wrap: anywhere;
+}
+
+.level-rewards-earned .level-reward-row code {
+  border-color: rgba(23, 106, 39, 0.25);
+  color: #176a27;
+}
+
 .level-statement {
   margin: 0 0 1rem;
   padding: 0.2rem 0.2rem 0.9rem;

@@ -7,7 +7,7 @@ import manifoldConformance from './manifolds.conformance.json'
 
 export type VerificationSupport = 'kernel' | 'partial' | 'blocked'
 export type GameRules = 'regular' | 'relaxed' | 'none'
-export type GameVerifierKind = 'natural-number' | 'real-analysis'
+export type GameVerifierKind = 'natural-number' | 'real-analysis' | 'manifold'
 
 export interface GameLevel {
   gameId: string
@@ -166,9 +166,9 @@ export const manifoldGame = enrichGame(
     symbol: '𝓜',
     developmentStatus: 'work-in-progress',
     basePath: '/games/manifold-adventure',
-    progressKey: 'manifoldAdventureLocalProgress',
+    progressKey: 'manifoldAdventureV4MathlibProgress',
     assetBase: '/game-assets/manifolds',
-    verifier: 'natural-number',
+    verifier: 'manifold',
     creator: 'this project',
     creatorUrl: 'https://github.com/cauli/lean4-wasm-in-browser',
     courseNotesUrl: 'https://link.springer.com/book/10.1007/978-1-4419-7400-6',

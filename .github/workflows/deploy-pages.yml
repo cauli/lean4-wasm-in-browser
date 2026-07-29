@@ -54,7 +54,10 @@ jobs:
           mkdir -p public/lean-wasm
           curl --fail --location --retry 3 "$PAGES_ASSETS_URL" \
             | tar -xz -C public/lean-wasm
-          ls public/lean-wasm/lean-lib/Init.olean public/lean-wasm/real-analysis-layer.json
+          ls \
+            public/lean-wasm/lean-lib/Init.olean \
+            public/lean-wasm/real-analysis-layer.json \
+            public/lean-wasm/manifold-layer.json
 
       - name: Build Pages output
         run: bash deploy/build-pages.sh

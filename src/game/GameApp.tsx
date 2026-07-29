@@ -86,15 +86,12 @@ function supportLabel(support: VerificationSupport): string {
 }
 
 const topoModelByLevel: Record<string, TopoModelId> = {
-  'localtest-4': 'figure-eight',
-  'charts-3': 'sphere-charts',
-  'cabinet-1': 'sphere-charts',
-  'cabinet-2': 'torus-loops',
-  'cabinet-3': 'mobius-band',
-  'cabinet-4': 'trefoil-circle',
-  'smooth-3': 'tangent-plane',
-  'smooth-4': 'tangent-plane',
-  'curvature-2': 'sphere-triangle',
+  'localcharts-4': 'sphere-charts',
+  'chartedspaces-5': 'sphere-charts',
+  'canonicalcharts-3': 'torus-loops',
+  'canonicalcharts-4': 'torus-loops',
+  'tangentspaces-1': 'tangent-plane',
+  'tangentspaces-2': 'tangent-plane',
 }
 
 function topoModelForLevel(level: GameLevel): TopoModelId | undefined {
@@ -251,15 +248,17 @@ function VerificationAudit({ game }: { game: LeanGame }) {
     { label: 'Version parity', state: 'partial', detail: `The course targets ${game.source.toolchain}; a reproducible compatibility transform builds it against the exact newer Lean and Mathlib commits used by this browser.` },
   ]
   const manifoldRows: typeof nngRows = [
-    { label: 'Course structure', state: 'ready', detail: 'The course has 10 worlds and 50 levels. It begins with basic Lean proofs and ends with a preview of curvature and topology.' },
-    { label: 'Proof elaboration', state: 'ready', detail: 'Lean elaborates every exercise in this browser using small propositions from Init.' },
+    { label: 'Course structure', state: 'ready', detail: 'The course has 6 worlds and 25 levels, from homeomorphisms through charts, atlases, smooth manifolds, products, and tangent bundles.' },
+    { label: 'Difficulty ladder', state: 'ready', detail: 'The ladder moves from projections out of bundled structures to typeclass synthesis and construction of dependent tangent-bundle values.' },
+    { label: 'Proof elaboration', state: 'ready', detail: 'Every exercise elaborates in the pinned Mathlib manifold context; the statements use Mathlib structures rather than proxy propositions.' },
     { label: 'Kernel verification', state: 'ready', detail: "Lean's local kernel checks every accepted proof. No proof server is involved." },
-    { label: 'Reference solutions', state: 'ready', detail: 'Every level has a short reference proof. Open it with View solution.' },
-    { label: 'Mathematical scope', state: 'partial', detail: 'Each goal is a logical model of the lesson. It is not a formal Mathlib theorem about manifolds.' },
-    { label: 'Learning prerequisites', state: 'ready', detail: 'You can begin without knowing topology, calculus, linear algebra, or Lean.' },
-    { label: 'Sources', state: 'ready', detail: 'The course links its sources: Quanta, Abbott, Tu, Milnor, Guillemin-Pollack, Lee, and MIT OpenCourseWare.' },
-    { label: 'Geometric examples', state: 'ready', detail: 'Ada encounters Flatland, circles, spheres, the torus, the Möbius strip, charts, tangent spaces, forms, and curved triangles.' },
-    { label: 'Full Mathlib formalization', state: 'missing', detail: 'The game explains TopologicalSpace, Manifold, tangent bundles, forms, metrics, and curvature, but its Lean statements do not encode those definitions.' },
+    { label: 'Mathlib API unlocks', state: 'ready', detail: 'Levels unlock actual declarations such as Homeomorph.continuous, mem_chart_source, chartAt_self_eq, IsManifold.of_le, and IsManifold.prod.' },
+    { label: 'Course theorem unlocks', state: 'ready', detail: 'Each completed exercise also adds its proved ManifoldAdventure theorem to the inventory for later reuse.' },
+    { label: 'Reference solutions', state: 'ready', detail: 'The generated BrowserBase contains no course axioms, sorry declarations, or unsafe placeholders.' },
+    { label: 'Pinned source', state: 'ready', detail: 'Compiler, upstream Lean base, and Mathlib revisions are recorded in the verifier metadata and conformance manifest.' },
+    { label: 'Learning prerequisites', state: 'partial', detail: 'The opening worlds introduce Lean notation, but the smooth-manifold worlds assume some topology and linear-algebra vocabulary.' },
+    { label: 'Sources', state: 'ready', detail: 'The course links its generated Lean source and recommends Tu, Lee, and Milnor for the surrounding mathematics.' },
+    { label: 'Browser artifacts', state: 'ready', detail: 'The course layer is designed for the pointer-width-compatible native-i386 and WASM artifacts produced by the local Lean fork CI.' },
     { label: 'Saved progress', state: 'ready', detail: 'The game keeps answers, attempts, completed levels, locks, and rule settings in its own local save.' },
   ]
   const rows = game.id === nngGame.id
@@ -312,7 +311,7 @@ function WorldOverview({
       <div className="world-overview-grid">
         <article className="game-prose world-introduction">
           <GameMarkdown assetBase={game.assetBase}>{world.introduction}</GameMarkdown>
-          {game.id === manifoldGame.id && world.id === 'Cabinet' && (
+          {game.id === manifoldGame.id && world.id === 'CanonicalCharts' && (
             <Suspense fallback={<p>Loading the local 3D model…</p>}>
               <ManifoldObjectLab />
             </Suspense>
@@ -445,7 +444,7 @@ function Inventory({ game, level, rules }: { game: LeanGame; level: GameLevel; r
         <summary>Verification scope</summary>
         <p>
           {game.id === manifoldGame.id
-            ? 'Lean checks each logical exercise and shows its live goals in your browser. The manifold lesson explains the mathematics, but it is not a full Mathlib formalization.'
+            ? 'A pinned local Mathlib layer checks these Homeomorph, ChartedSpace, IsManifold, and TangentBundle exercises and shows their live goals in your browser.'
             : game.verifier === 'natural-number'
               ? 'The local kernel checks proofs and live goals. Exact contextual Branch and Hint matching is still being ported.'
             : 'A lazy local Mathlib layer checks proofs and live goals in this browser. Branch-sensitive hints and exact GameServer inventory semantics remain outside the current port.'}
@@ -539,6 +538,65 @@ function StructuredGoalView({ goal }: { goal: StructuredGoal }) {
         <code><LeanExpression>{goal.goal}</LeanExpression></code>
       </div>
     </div>
+  )
+}
+
+function LevelRewards({
+  game,
+  level,
+  completed,
+}: {
+  game: LeanGame
+  level: GameLevel
+  completed: boolean
+}) {
+  const newTools = [
+    ...level.newTactics.map((name) => ({ kind: 'Tactic', name })),
+    ...level.newDefinitions.map((name) => ({
+      kind: game.id === manifoldGame.id ? 'Mathlib definition' : 'Definition',
+      name,
+    })),
+    ...level.newTheorems.map((name) => ({
+      kind: game.id === manifoldGame.id ? 'Mathlib declaration' : 'Theorem',
+      name,
+    })),
+  ]
+
+  return (
+    <aside
+      className={`level-rewards${completed ? ' level-rewards-earned' : ''}`}
+      aria-label="Level unlocks"
+    >
+      <div className="level-rewards-heading">
+        <span aria-hidden="true">{completed ? '✓' : '◇'}</span>
+        <strong>{completed ? 'Level rewards earned' : 'Level rewards'}</strong>
+      </div>
+      {newTools.length > 0 && (
+        <div className="level-reward-row">
+          <span>New this level</span>
+          <div>
+            {newTools.map(({ kind, name }) => (
+              <code title={kind} key={`${kind}-${name}`}>{name}</code>
+            ))}
+          </div>
+        </div>
+      )}
+      {level.theoremName && (
+        <div className="level-reward-row">
+          <span>
+            {game.id === manifoldGame.id
+              ? completed ? 'Course declaration earned' : 'Prove this course declaration'
+              : completed ? 'Theorem unlocked' : 'Prove to unlock'}
+          </span>
+          <code>{level.theoremName}</code>
+        </div>
+      )}
+      <p>
+        {game.id === manifoldGame.id
+          ? 'Mathlib names are library declarations; the course declaration is your reusable result.'
+          : 'Unlocked theorems become usable in later proofs under regular rules.'}
+      </p>
+    </aside>
   )
 }
 
@@ -665,6 +723,10 @@ function LevelWorkspace({
               </Suspense>
             )}
           </article>
+
+          {game.id === manifoldGame.id && (
+            <LevelRewards game={game} level={level} completed={levelCompleted} />
+          )}
 
           {hintIndex >= 0 && (
             <aside className="hint-panel">
@@ -1146,11 +1208,11 @@ export default function GameApp() {
       <footer className={`game-footer${selectedLevel || isWorldMap || isCatalog ? ' game-footer-level' : ''}`}>
         <span>Convenience port of Lean4Game; upstream creators and licenses retain credit.</span>
         <span>
-          {game?.verifier === 'natural-number'
-            ? 'Proof checking stays in this browser.'
-            : game?.verifier === 'real-analysis'
-              ? 'Mathlib proof checking stays in this browser.'
-              : 'Choose a game to begin.'}
+          {game
+            ? game.verifier === 'natural-number'
+              ? 'Proof checking stays in this browser.'
+              : 'Mathlib proof checking stays in this browser.'
+            : 'Choose a game to begin.'}
         </span>
       </footer>
     </div>

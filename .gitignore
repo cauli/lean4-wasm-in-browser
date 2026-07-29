@@ -24,5 +24,6 @@ dist-ssr
 *.sw?
 
 /public/lean-wasm
+/lean/.lake/
 tests/.artifacts/
 test-results/
