@@ -952,6 +952,19 @@ button {
   font-style: italic;
 }
 
+.goal-inaccessible-note {
+  margin: 0.5rem 0 0;
+  border-top: 1px dashed rgba(179, 102, 0, 0.35);
+  padding-top: 0.5rem;
+  color: #8a5a00;
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.goal-inaccessible-note code {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
 .goal-target {
   display: flex;
   position: relative;

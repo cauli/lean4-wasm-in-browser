@@ -155,7 +155,9 @@ The trail forks. The disjunction symbol [∨](https://en.wikipedia.org/wiki/Logi
 
 The arrow [→](https://en.wikipedia.org/wiki/Material_conditional) in \`A → B\` promises: give me evidence for \`A\`, and I return evidence for \`B\`. Type it as \`\\to\`, then Space or Tab.
 
-To prove an implication, step *into* the assumption: \`intro h\` takes the input and hands it to you as a hypothesis named \`h\`. Here, what you receive is exactly what you must produce.`,
+To prove an implication, step *into* the assumption: \`intro h\` takes the input and hands it to you as a hypothesis named \`h\`. Here, what you receive is exactly what you must produce.
+
+Always give the hypothesis a name. A bare \`intro\` files it under an inaccessible placeholder, shown as \`a✝\`, that no tactic can refer to afterwards.`,
           conclusion: `That completes the toolkit: \`exact\`, \`rfl\`, \`constructor\`, \`left\`/\`right\`, \`intro\`. The remaining worlds add only two more tactics (\`apply\` and \`cases\`) and spend the rest of their attention on geometry.`,
           solution: 'intro h\nexact h',
           hints: ['Start with `intro h` to assume the input.', 'The new hypothesis is exactly the goal: `exact h`.'],
@@ -201,7 +203,7 @@ The \`apply\` tactic uses a rule backwards. The goal is \`reachesFood\`; \`apply
 
 One continuous trail leads from camp to stream; another from stream to nest. Gluing them end to end gives a continuous trail from camp to nest: the composition of continuous maps is continuous.
 
-Prove it the way you would walk it: \`intro\` the starting point, then \`apply\` the legs of the journey backwards. To reach the nest it suffices to reach the stream, and to reach the stream it suffices to start at camp.`,
+Prove it the way you would walk it. Name your starting point with \`intro hCamp\`, then \`apply\` the legs of the journey backwards: to reach the nest it suffices to reach the stream, and to reach the stream it suffices to start at camp.`,
           conclusion: `You will compose maps constantly from here on: charts with inverse charts, smooth maps with smooth maps. The chain rule, when it appears, is a statement about exactly this operation.`,
           solution: 'intro hCamp\napply walkToNest\napply walkToStream\nexact hCamp',
           hints: ['Begin with `intro hCamp`.', 'Work backwards: `apply walkToNest`, then `apply walkToStream`.', 'The final goal is `campReached`, which is `hCamp`.'],
@@ -344,7 +346,7 @@ Glue a paper strip end to end with a half twist. The result misbehaves in two se
 
 First, run a finger along the edge: you pass along every part of it and return to where you started. The band has one boundary curve, not two. Because of that edge, the Möbius strip is a **two-manifold with boundary**: interior points have disk neighborhoods, edge points have half-disk neighborhoods. Having a boundary is not a defect; it is a category with its own local test.
 
-Second, watch the model's arrows. Suppose you chose a consistent "up" across the whole band. Carried once around, the choice returns reversed; that is the hypothesis \`mirror\`. In the last world you used a negation; here you prove one. Since \`¬ orientable\` is \`orientable → False\`, prove it like any implication: after \`constructor\`, \`intro\` the supposed orientation and hand it to \`mirror\`.
+Second, watch the model's arrows. Suppose you chose a consistent "up" across the whole band. Carried once around, the choice returns reversed; that is the hypothesis \`mirror\`. In the last world you used a negation; here you prove one. Since \`¬ orientable\` is \`orientable → False\`, prove it like any implication: after \`constructor\`, name the supposed orientation with \`intro hOrient\` and hand it to \`mirror\`.
 
 Note the fine print: every small patch of the band is orientable. The problem only appears when the choices are carried around the full loop.`,
           conclusion: `Orientability is your second example of a purely global property; the circle's loop was the first. You have now used a negation (the figure eight) and proved one (here).`,

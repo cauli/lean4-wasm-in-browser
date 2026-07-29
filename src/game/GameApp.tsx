@@ -515,6 +515,8 @@ function GoalBindingList({
 }
 
 function StructuredGoalView({ goal }: { goal: StructuredGoal }) {
+  const hasInaccessible = [...goal.objects, ...goal.assumptions]
+    .some((binding) => binding.names.includes('✝'))
   return (
     <div className="structured-goal">
       {goal.caseName && <p className="goal-case-name">case {goal.caseName}</p>}
@@ -523,6 +525,13 @@ function StructuredGoalView({ goal }: { goal: StructuredGoal }) {
         <GoalBindingList title="Assumptions" bindings={goal.assumptions} />
         {goal.objects.length === 0 && goal.assumptions.length === 0 && (
           <p className="goal-empty-context">No local objects or assumptions</p>
+        )}
+        {hasInaccessible && (
+          <p className="goal-inaccessible-note">
+            A hypothesis marked <code>✝</code> has no name, so tactics cannot refer
+            to it. Give it one when you create it, for example <code>intro hCamp</code>{' '}
+            instead of <code>intro</code>.
+          </p>
         )}
       </div>
       <div className="goal-target">
