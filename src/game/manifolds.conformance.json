@@ -3,11 +3,11 @@
   "leanCommit": "62b6a2291302d4bbeace37642a066b7510d0145c",
   "leanUpstreamCommit": "ecf55de08b9d855e749f80c491c6f294dd307e60",
   "mathlibCommit": "de3a9cf33016bbb6d15880d7680643f7ca2d25ba",
-  "testedAt": "2026-07-29T15:36:56.895Z",
+  "testedAt": "2026-07-30T01:26:53.790Z",
   "rules": "regular",
   "validation": {
     "kind": "pinned-mathlib-native-kernel",
-    "compilerCommit": "1422c82ab7f5d9124c6dbcf1bbe00b545ad6cb39",
+    "compilerCommit": "62b6a2291302d4bbeace37642a066b7510d0145c",
     "targetBrowserLeanCommit": "62b6a2291302d4bbeace37642a066b7510d0145c",
     "referenceModule": "ManifoldAdventure.BrowserBase",
     "semanticInventoryPolicy": true,

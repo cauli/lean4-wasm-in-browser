@@ -64,9 +64,20 @@ test('the goals use actual Mathlib manifold structures instead of local stand-in
   for (const [name, pattern] of requiredStructures) {
     assert.match(statements, pattern, `${name} never appears in a goal`)
   }
-  assert.match(game.introduction, /Mathlib's real manifold API/)
-  assert.match(game.introduction, /Mathlib declarations/)
-  assert.match(game.introduction, /your course declarations/)
+  assert.match(
+    game.introduction,
+    /\[Mathlib's manifold API\]\(https:\/\/leanprover-community\.github\.io\/mathlib4_docs\//,
+  )
+  for (const name of requiredStructures.map(([structure]) => structure)) {
+    assert.ok(
+      game.introduction.includes(
+        `[\`${name}\`](https://leanprover-community.github.io/mathlib4_docs/`,
+      ),
+      `${name} is not linked to its Mathlib documentation`,
+    )
+  }
+  assert.doesNotMatch(game.introduction, /Your inventory will contain names from two sources/)
+  assert.doesNotMatch(game.introduction, /Reading the notation/)
   assert.doesNotMatch(statements, /\b(manifoldLike|chartCompatible|smoothLike)\b/i)
 })
 
@@ -179,6 +190,8 @@ test('the conformance record covers all pinned reference solutions', () => {
   assert.equal(conformance.leanCommit, verifier.leanCommit)
   assert.equal(conformance.leanUpstreamCommit, verifier.leanUpstreamCommit)
   assert.equal(conformance.mathlibCommit, verifier.mathlibCommit)
+  assert.equal(conformance.validation.compilerCommit, verifier.leanCommit)
+  assert.equal(conformance.validation.targetBrowserLeanCommit, verifier.leanCommit)
   assert.equal(conformance.summary.total, levels.length)
   assert.equal(conformance.summary.kernel, levels.length)
   assert.equal(conformance.summary.partial, 0)

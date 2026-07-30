@@ -218,6 +218,28 @@ function moduleForArtifact(relativePath) {
     .join('.')
 }
 
+function readOleanIdentity(filePath) {
+  const header = fs.readFileSync(filePath).subarray(0, 96)
+  if (header.length < 48 || header.subarray(0, 5).toString('ascii') !== 'olean') {
+    throw new Error(`Invalid .olean header: ${filePath}`)
+  }
+  const versionEnd = header.indexOf(0, 7)
+  const version = header
+    .subarray(7, versionEnd === -1 ? header.length : versionEnd)
+    .toString('ascii')
+  const commit = header.toString('latin1').match(/[0-9a-f]{40}/)?.[0]
+  if (!commit) throw new Error(`Lean commit is missing from .olean header: ${filePath}`)
+  return {
+    format: header.subarray(5, 7).toString('hex'),
+    version,
+    commit,
+  }
+}
+
+function describeOleanIdentity(identity) {
+  return `${identity.version}, ${identity.commit}, format ${identity.format}`
+}
+
 const allSources = new Map()
 for (const libraryRoot of packageLibraryRoots()) {
   for (const relativePath of walk(libraryRoot)) {
@@ -272,6 +294,28 @@ for (const oleanPath of coreOleans) {
 }
 
 if (sources.size === 0) throw new Error('No built .olean/.ir artifacts were found.')
+
+const coreInitPath = path.join(coreRoot, 'Init.olean')
+if (!fs.existsSync(coreInitPath)) {
+  throw new Error(`Browser core Init.olean was not found at ${coreInitPath}`)
+}
+const browserOleanIdentity = readOleanIdentity(coreInitPath)
+for (const [relativePath, sourcePath] of sources) {
+  if (!relativePath.endsWith('.olean')) continue
+  const sourceIdentity = readOleanIdentity(sourcePath)
+  if (
+    sourceIdentity.format !== browserOleanIdentity.format
+    || sourceIdentity.version !== browserOleanIdentity.version
+    || sourceIdentity.commit !== browserOleanIdentity.commit
+  ) {
+    throw new Error(
+      `Incompatible .olean header for ${relativePath}: `
+      + `${describeOleanIdentity(sourceIdentity)}; browser core requires `
+      + `${describeOleanIdentity(browserOleanIdentity)}. `
+      + 'Rebuild the library and course with the exact native 32-bit Lean compiler.',
+    )
+  }
+}
 
 fs.rmSync(outputRoot, { recursive: true, force: true })
 fs.mkdirSync(outputRoot, { recursive: true })
