@@ -56,10 +56,17 @@ const compilerResult = spawnSync(
   ['env', 'lean', '--githash'],
   { cwd: mathlibRoot, encoding: 'utf8', env: process.env },
 )
-if (compilerResult.status !== 0) {
-  throw new Error(`Could not identify the native Lean compiler: ${compilerResult.stderr}`)
-}
 const compilerCommit = compilerResult.stdout.trim()
+// The WASM fork's native-i386 `lean --githash` currently prints the correct
+// commit and then exits nonzero. Treat the hash itself as the contract; the CI
+// package validation below still requires it to equal the exact browser pin.
+if (!/^[0-9a-f]{40}$/i.test(compilerCommit)) {
+  throw new Error([
+    `Could not identify the native Lean compiler (exit ${compilerResult.status}).`,
+    `stdout: ${compilerResult.stdout}`,
+    `stderr: ${compilerResult.stderr}`,
+  ].join('\n'))
+}
 
 function compileSource(filename, code) {
   const sourcePath = path.join(tempRoot, filename)
