@@ -295,7 +295,7 @@ The class ${mathlibDoc('ChartedSpace', MATHLIB_DOCS.chartedSpace)} equips a surf
     place ∈ (chartAt Coordinates place).source`,
           introduction: `Wherever Ada stops, she selects a leaf whose shaded patch contains her current position. A preferred map that missed her would be useless.
 
-The instance \`[ChartedSpace Coordinates Surface]\` is Ada's whole stack of compatible leaves. Mathlib's ${mathlibDoc('mem_chart_source', MATHLIB_DOCS.chartedSpace)} says that \`chartAt Coordinates place\`, the leaf chosen at her current location, contains \`place\` in its source.
+The instance \`[ChartedSpace Coordinates Surface]\` is Ada's collection of local leaves. Mathlib's ${mathlibDoc('mem_chart_source', MATHLIB_DOCS.chartedSpace)} says that \`chartAt Coordinates place\`, the leaf chosen at her current location, contains \`place\` in its source. Smooth compatibility between overlapping leaves comes later, with \`IsManifold\`.
 
 **Objective:** Show that \`place\` lies in the source of the chart chosen there.`,
           conclusion: `Ada can always choose a chart that contains where she stands.`,
@@ -333,7 +333,7 @@ In Lean, Ada's stack is \`atlas Coordinates Surface\`, and her chosen leaf is \`
     chartAt Coordinates place place ∈ (chartAt Coordinates place).target`,
           introduction: `Ada presses her current position through the chosen chart. Its mark lands inside the coordinate patch drawn on the leaf.
 
-The expression \`chartAt Coordinates place place\` first selects Ada's chart at \`place\`, then uses it to draw that same place in \`Coordinates\`. Mathlib packages the target-membership proof as ${mathlibDoc('mem_chart_target', MATHLIB_DOCS.chartedSpace)}.
+Read \`chartAt Coordinates place place\` as \`(chartAt Coordinates place) place\`. The first \`place\` selects Ada's chart, and the second is the point drawn in \`Coordinates\`. Mathlib packages the target-membership proof as ${mathlibDoc('mem_chart_target', MATHLIB_DOCS.chartedSpace)}.
 
 **Objective:** Show that the coordinates of \`place\` lie inside the chosen chart's target.`,
           conclusion: `Ada's current position now has coordinates inside the drawn patch.`,
@@ -351,7 +351,7 @@ The expression \`chartAt Coordinates place place\` first selects Ada's chart at 
     (chartAt Coordinates place).source ∈ 𝓝 place`,
           introduction: `The chosen leaf covers a patch around Ada's footprint. Throughout that neighborhood, the same coordinates remain valid.
 
-Mathlib writes the neighborhoods of Ada's location as \`𝓝 place\`; type \`\\nhds\` for \`𝓝\`. The theorem ${mathlibDoc('chart_source_mem_nhds', MATHLIB_DOCS.chartedSpace)} says that the source of \`chartAt Coordinates place\` is one of those neighborhoods.
+Mathlib writes the neighborhood filter at Ada's location as \`𝓝 place\`; type \`\\nhds\` for \`𝓝\`. This filter is a collection of sets. Thus \`source ∈ 𝓝 place\` says that the source contains an open set around \`place\`, not that a point belongs to a set. The theorem ${mathlibDoc('chart_source_mem_nhds', MATHLIB_DOCS.chartedSpace)} supplies exactly that fact for \`chartAt Coordinates place\`.
 
 **Objective:** Show that the chosen chart is valid on a whole neighborhood of \`place\`.`,
           conclusion: `The chosen coordinates work throughout a neighborhood of \`place\`.`,
@@ -387,21 +387,21 @@ The indexed union \`⋃ place : Surface, (chartAt Coordinates place).source\` sp
       'Identity and product charts',
       `# Charts Lean already knows
 
-Ada pauses over a blank leaf before returning to the curved surface. A flat reference sheet maps to itself. A place with two independent directions needs a pair of maps.
+Ada sets two identical reference grids on top of each other before returning to the curved surface. One maps to the other without moving a mark. A place with two independent readings needs a pair of maps.
 
-Mathlib supplies canonical ${mathlibDoc('ChartedSpace', MATHLIB_DOCS.chartedSpace)} instances for self charts and products. Here the goal names the two torus factors \`FirstSurface\` and \`SecondSurface\`, together with their coordinate spaces. The types determine which instance Lean uses, even though the notation \`chartAt\` stays the same.`,
+Mathlib supplies canonical ${mathlibDoc('ChartedSpace', MATHLIB_DOCS.chartedSpace)} instances for self charts and products. Here the goal names the two torus factors \`FirstSurface\` and \`SecondSurface\`, together with their coordinate spaces. The types determine which instance Lean uses, even though the notation \`chartAt\` stays the same. The shape gallery below is optional; some objects return in the levels, while others preview later topology.`,
       ['ChartedSpaces'],
       [
         {
-          title: 'A blank leaf maps to itself',
+          title: 'The reference grid stays put',
           theoremName: 'self_chart_is_identity',
           signature: `{Coordinates : Type u}
     [coordinateTopology : TopologicalSpace Coordinates]
     (mark : Coordinates) :
     chartAt Coordinates mark = OpenPartialHomeomorph.refl Coordinates`,
-          introduction: `Ada lays a blank leaf on top of an identical reference leaf. Every mark already sits in the right place, so the map does nothing.
+          introduction: `Ada lays one reference grid on top of an identical grid. Every mark already sits in the right place, so the map does nothing.
 
-Both leaves are represented by the same type, \`Coordinates\`, and \`mark\` is one point on them. The canonical \`ChartedSpace Coordinates Coordinates\` therefore uses \`OpenPartialHomeomorph.refl Coordinates\`. Mathlib states this as ${mathlibDoc('chartAt_self_eq', MATHLIB_DOCS.chartedSpace)}.
+Both grids are represented by the same type, \`Coordinates\`, and \`mark\` is one point on them. Mathlib's canonical \`ChartedSpace Coordinates Coordinates\` instance uses \`OpenPartialHomeomorph.refl Coordinates\`. The theorem ${mathlibDoc('chartAt_self_eq', MATHLIB_DOCS.chartedSpace)} describes this chosen self-chart; it does not say that every atlas on \`Coordinates\` must use only identity charts.
 
 **Objective:** Show that a space used as its own coordinate model has the identity as its preferred chart.`,
           conclusion: `The reference leaf needs only the identity chart.`,
@@ -411,16 +411,16 @@ Both leaves are represented by the same type, \`Coordinates\`, and \`mark\` is o
           newDefinitions: ['OpenPartialHomeomorph.refl', 'chartedSpaceSelf'],
         },
         {
-          title: 'Only the do-nothing map',
+          title: 'One map in the reference atlas',
           theoremName: 'self_atlas_only_identity',
           signature: `{Coordinates : Type u}
     [coordinateTopology : TopologicalSpace Coordinates]
     (chart : OpenPartialHomeomorph Coordinates Coordinates) :
     chart ∈ atlas Coordinates Coordinates ↔
       chart = OpenPartialHomeomorph.refl Coordinates`,
-          introduction: `Ada checks the atlas for the reference leaf. There is only one chart in it: the leaf matched with itself.
+          introduction: `Ada checks the small atlas that came with the reference grid. It has one chart: the grid matched with itself.
 
-The formal \`chart\` is any candidate leaf-to-itself map. Mathlib's ${mathlibDoc('chartedSpaceSelf_atlas', MATHLIB_DOCS.chartedSpace)} says that it belongs to \`atlas Coordinates Coordinates\` exactly when it is the identity chart. The goal is an \`↔\`, so Lean expects one proof in each direction.
+The formal \`chart\` is any candidate map from the grid to itself. For Mathlib's canonical self-charted instance, ${mathlibDoc('chartedSpaceSelf_atlas', MATHLIB_DOCS.chartedSpace)} says that \`chart\` belongs to \`atlas Coordinates Coordinates\` exactly when it is the identity chart. The goal is an \`↔\`, so Lean expects one proof in each direction.
 
 **Objective:** Show that membership in the self-atlas is equivalent to being the identity chart.`,
           conclusion: `The self-atlas contains one chart, and it is the identity.`,
@@ -447,7 +447,7 @@ The formal \`chart\` is any candidate leaf-to-itself map. Mathlib's ${mathlibDoc
         (chartAt SecondCoordinates position.2)`,
           introduction: `On a torus, Ada records two positions at once: how far she has gone around the hole and how far she has gone around the tube. Each reading has its own local map.
 
-The two entries of \`position : FirstSurface × SecondSurface\` are Ada's two readings. Mathlib combines their coordinate types as \`ModelProd FirstCoordinates SecondCoordinates\`. The theorem ${mathlibDoc('prodChartedSpace_chartAt', MATHLIB_DOCS.chartedSpace)} says that the preferred chart is the product of the two component charts.
+Think first of \`FirstSurface\` and \`SecondSurface\` as two circles whose product is a torus. The two entries of \`position : FirstSurface × SecondSurface\` are Ada's two readings. Mathlib combines their coordinate types as \`ModelProd FirstCoordinates SecondCoordinates\`. The theorem ${mathlibDoc('prodChartedSpace_chartAt', MATHLIB_DOCS.chartedSpace)} says that the preferred chart is the product of the two component charts.
 
 **Objective:** Show that the preferred chart of a paired point is the product of its two component charts.`,
           conclusion: `The torus chart is built by reading its two coordinates side by side.`,
@@ -474,7 +474,7 @@ The two entries of \`position : FirstSurface × SecondSurface\` are Ada's two re
         (firstPosition, secondPosition)).source`,
           introduction: `Ada combines one position from each loop of the torus. The paired point must lie inside the source of the paired chart.
 
-The pair \`(firstPosition, secondPosition)\` records Ada's place in both factors. The earlier theorem ${mathlibDoc('mem_chart_source', MATHLIB_DOCS.chartedSpace)} also applies to the product charted-space instance, which Lean infers from \`ModelProd FirstCoordinates SecondCoordinates\`.
+The pair \`(firstPosition, secondPosition)\` records Ada's place in both factors. The earlier theorem ${mathlibDoc('mem_chart_source', MATHLIB_DOCS.chartedSpace)} also applies to the product charted-space instance, which Lean infers from \`ModelProd FirstCoordinates SecondCoordinates\`. The theorem already has the needed mathematical content; \`simpa only using\` clears the small notational mismatch while keeping simplification tightly restricted.
 
 **Objective:** Show that the paired position lies inside its preferred product chart.`,
           conclusion: `The paired chart contains the paired point, just as each component chart contains its own point.`,
@@ -491,7 +491,7 @@ The pair \`(firstPosition, secondPosition)\` records Ada's place in both factors
 
 Ada's leaves now overlap, so she can compare two coordinate drawings of the same place. Continuity keeps nearby points nearby, but calculus also needs the change between drawings to have controlled derivatives.
 
-${mathlibDoc('ChartedSpace', MATHLIB_DOCS.chartedSpace)} supplies the charts. Mathlib's ${mathlibDoc('IsManifold', MATHLIB_DOCS.isManifold)} adds differentiability conditions to their transition maps. The goals now name the geometric roles directly: \`Surface\`, \`Coordinates\`, \`Vectors\`, \`model\`, and \`order\`. Mathlib papers often abbreviate these as \`M\`, \`H\`, \`E\`, \`I\`, and \`n\`.`,
+${mathlibDoc('ChartedSpace', MATHLIB_DOCS.chartedSpace)} supplies the charts. Mathlib's ${mathlibDoc('IsManifold', MATHLIB_DOCS.isManifold)} adds differentiability conditions to their transition maps. For a first picture, take \`Scalar = ℝ\` and imagine \`Coordinates\` as ordinary Euclidean coordinates. The goals state the same ideas for a general \`Surface\`, \`Coordinates\`, \`Vectors\`, \`model\`, and \`order\`.`,
       ['CanonicalCharts'],
       [
         {
@@ -508,7 +508,7 @@ ${mathlibDoc('ChartedSpace', MATHLIB_DOCS.chartedSpace)} supplies the charts. Ma
     IsManifold model order Coordinates`,
           introduction: `Ada places a model leaf beside the world she is charting. The leaf is already its own coordinate space, so it needs no further change of coordinates to qualify as a manifold.
 
-In the goal, \`Scalar\` supplies the numbers, \`Vectors\` supplies directions, and \`Coordinates\` is the model leaf itself. The ${mathlibDoc('ModelWithCorners', MATHLIB_DOCS.isManifold)} named \`model\` connects those pieces, while \`order : WithTop ℕ∞\` records differentiability. Mathlib registers ${mathlibDoc('instIsManifoldModelSpace', MATHLIB_DOCS.isManifold)} for every order.
+In the goal, \`Scalar\` supplies the numbers, \`Vectors\` supplies directions, and \`Coordinates\` is the model leaf itself. The ${mathlibDoc('ModelWithCorners', MATHLIB_DOCS.isManifold)} named \`model\` connects those pieces. The ordered type \`WithTop ℕ∞\` records differentiability levels; here, read \`0\` as continuity-level regularity and \`∞\` as smoothness at every finite order. Mathlib registers ${mathlibDoc('instIsManifoldModelSpace', MATHLIB_DOCS.isManifold)} for every order.
 
 **Objective:** Establish that \`Coordinates\` carries the manifold structure supplied by \`model\`.`,
           conclusion: `The model space is already a manifold at the requested order.`,
@@ -536,7 +536,7 @@ In the goal, \`Scalar\` supplies the numbers, \`Vectors\` supplies directions, a
     IsManifold model lowerOrder Surface`,
           introduction: `Ada checks her map changes to a demanding standard. If they pass that test, they also pass any test that asks for fewer derivatives.
 
-Lean calls the demanding standard \`higherOrder\` and the weaker one \`lowerOrder\`. The hypothesis \`order_le : lowerOrder ≤ higherOrder\` is the formal reason the stronger atlas is enough. Mathlib packages this step as ${mathlibDoc('IsManifold.of_le', MATHLIB_DOCS.isManifold)}.
+For example, an atlas of class $C^5$ also meets a $C^2$ requirement. Lean calls the demanding standard \`higherOrder\` and the weaker one \`lowerOrder\`. The hypothesis \`order_le : lowerOrder ≤ higherOrder\` is the formal reason the stronger atlas is enough. Mathlib packages this step as ${mathlibDoc('IsManifold.of_le', MATHLIB_DOCS.isManifold)}.
 
 **Objective:** Lower the known differentiability order from \`higherOrder\` to \`lowerOrder\`.`,
           conclusion: `The higher-order manifold instance now works at the requested lower order.`,
@@ -546,7 +546,7 @@ Lean calls the demanding standard \`higherOrder\` and the weaker one \`lowerOrde
           newDefinitions: ['LE.le'],
         },
         {
-          title: 'Smooth maps still keep points close',
+          title: 'The smooth atlas passes the basic check',
           theoremName: 'smooth_manifold_is_topological',
           signature: `{Scalar : Type u}
     [scalarField : NontriviallyNormedField Scalar]
@@ -561,7 +561,7 @@ Lean calls the demanding standard \`higherOrder\` and the weaker one \`lowerOrde
     IsManifold model 0 Surface`,
           introduction: `Ada's smoothest leaf changes never crease or kink. They certainly still preserve the nearby-point structure she needed for her first maps.
 
-The assumption \`IsManifold model ∞ Surface\` says that Ada's chart changes have derivatives of every finite order. Mathlib's ${mathlibDoc('IsManifold', MATHLIB_DOCS.isManifold)} hierarchy registers the implication to \`IsManifold model 0 Surface\`, where order \`0\` retains only the topological requirement.
+The assumption \`IsManifold model ∞ Surface\` says that Ada's chart changes have derivatives of every finite order. Mathlib's ${mathlibDoc('IsManifold', MATHLIB_DOCS.isManifold)} hierarchy registers the implication to \`IsManifold model 0 Surface\`, where order \`0\` retains the basic topological requirement. This \`0\` is a regularity order, not the dimension of \`Surface\`.
 
 **Objective:** Derive the topological manifold structure from the smooth one.`,
           conclusion: `The smooth atlas also gives Ada the topological atlas she started with.`,
@@ -597,7 +597,7 @@ The assumption \`IsManifold model ∞ Surface\` says that Ada's chart changes ha
     IsManifold (firstModel.prod secondModel) order (FirstSurface × SecondSurface)`,
           introduction: `Ada's two circular readings describe the torus together. If each circle has smooth coordinate changes, pairing the readings should preserve that smoothness.
 
-In the torus example, \`FirstSurface\` and \`SecondSurface\` are the two circular factors. The theorem remains general: Mathlib's ${mathlibDoc('IsManifold.prod', MATHLIB_DOCS.isManifold)} combines any two manifold structures with \`firstModel.prod secondModel\` at the same \`order\`.
+Read the final line of the goal first: it asks for a manifold structure on \`FirstSurface × SecondSurface\`. In Ada's torus, those surfaces are circles. The instance lines above provide their two manifold structures, and Mathlib's ${mathlibDoc('IsManifold.prod', MATHLIB_DOCS.isManifold)} combines them with \`firstModel.prod secondModel\` at the same \`order\`.
 
 **Objective:** Build the manifold structure on \`FirstSurface × SecondSurface\` from its two factors.`,
           conclusion: `Two smooth circles now give the torus its smooth manifold structure.`,
@@ -634,7 +634,7 @@ Mathlib assigns a ${mathlibDoc('TangentSpace', MATHLIB_DOCS.isManifold)} to ever
     TangentSpace model place`,
           introduction: `Ada stands still at \`place\`. Even without choosing a direction, staying still is a valid tangent velocity.
 
-Here ${mathlibDoc('TangentSpace', MATHLIB_DOCS.isManifold)} \`model place\` is the space of velocities available at Ada's current location. It inherits an additive group structure from \`Vectors\`, so it contains a zero vector. The expected tangent-space type tells Lean which \`0\` is intended.
+The ${mathlibDoc('TangentSpace', MATHLIB_DOCS.isManifold)} \`TangentSpace model place\` is the intrinsic space of velocities available at Ada's current location. The plane in the 3D scene pictures this tangent space; it is not an arbitrary plane floating beside the surface. The space inherits an additive group structure from \`Vectors\`, so it contains a zero vector. The expected type tells Lean which \`0\` is intended.
 
 **Objective:** Construct the zero tangent vector at \`place\`.`,
           conclusion: `Standing still is now a genuine vector in \`TangentSpace model place\`.`,
@@ -659,7 +659,7 @@ Here ${mathlibDoc('TangentSpace', MATHLIB_DOCS.isManifold)} \`model place\` is t
     TangentBundle model Surface`,
           introduction: `Ada records both where she is and the direction she is moving. A direction without its point would be ambiguous because the available tangent plane changes from place to place.
 
-A point of the ${mathlibDoc('TangentBundle', MATHLIB_DOCS.isManifold)} is a dependent pair \`⟨place, velocity⟩\`. The type \`velocity : TangentSpace model place\` remembers where the velocity belongs, so Lean can recover \`place\` from it.
+A point of the ${mathlibDoc('TangentBundle', MATHLIB_DOCS.isManifold)} is a dependent pair \`⟨place, velocity⟩\`. The tangent space may change with \`place\`, so the type \`velocity : TangentSpace model place\` remembers where that velocity belongs. Lean can therefore recover \`place\` from the pair.
 
 **Objective:** Package \`place\` and \`velocity\` as one tangent-bundle point.`,
           conclusion: `Ada's position and velocity now travel as one bundle point.`,
@@ -683,7 +683,7 @@ A point of the ${mathlibDoc('TangentBundle', MATHLIB_DOCS.isManifold)} is a depe
     (⟨place, velocity⟩ : TangentBundle model Surface).1 = place`,
           introduction: `Ada opens one of her direction records and reads its location tag. The tag gives back the point where that direction belongs.
 
-The ${mathlibDoc('TangentBundle', MATHLIB_DOCS.isManifold)} is represented by a dependent pair. Its first projection \`(⟨place, velocity⟩ : TangentBundle model Surface).1\` reduces by definition to \`place\`.
+The ${mathlibDoc('TangentBundle', MATHLIB_DOCS.isManifold)} is represented by a dependent pair. Its first projection \`(⟨place, velocity⟩ : TangentBundle model Surface).1\` reduces by definition to \`place\`. The second entry has type \`TangentSpace model place\`, which depends on that first entry.
 
 **Objective:** Show that projecting the base point from \`⟨place, velocity⟩\` returns \`place\`.`,
           conclusion: `Reading the bundle point's location tag returns \`place\`.`,
@@ -707,7 +707,7 @@ The ${mathlibDoc('TangentBundle', MATHLIB_DOCS.isManifold)} is represented by a 
     ∃ bundlePoint : TangentBundle model Surface, bundlePoint.1 = place`,
           introduction: `Ada can stand still anywhere on the manifold, not just at one chosen point. The tangent bundle should therefore contain a zero direction record over every location.
 
-The course definition \`tangent_zero model place\` gives the standing-still velocity in \`TangentSpace model place\`. Pairing it with \`place\` produces a point of the ${mathlibDoc('TangentBundle', MATHLIB_DOCS.isManifold)} whose location tag is \`place\`. This is the pointwise content of the zero section.
+The course definition \`tangent_zero model place\` gives the standing-still velocity in \`TangentSpace model place\`. Pairing it with \`place\` produces a point of the ${mathlibDoc('TangentBundle', MATHLIB_DOCS.isManifold)} whose location tag is \`place\`. This constructs the zero bundle point over one arbitrary place; it does not yet define the zero section as a function.
 
 **Objective:** For an arbitrary \`place\`, construct a tangent-bundle point lying over it.`,
           conclusion: `Every point now has a canonical bundle point for standing still.`,

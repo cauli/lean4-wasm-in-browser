@@ -441,7 +441,7 @@ Once Lean knows that `place` is in the source, its coordinates belong to the tar
 
 > **3D MODEL: Sphere with two charts**
 >
-> This interactive scene appears immediately after the lesson introduction. Ada uses the amber leaf near the north and the teal leaf near the south. Both charts work on the overlap, where a transition map translates between their coordinates.
+> This interactive scene appears immediately after the lesson introduction. A chart can take a point to its drawing and back only inside the colored patch where that chart is valid.
 >
 > Asset: [`sphere-charts.glb`](../public/game-assets/manifolds/models/sphere-charts.glb)
 
@@ -509,7 +509,7 @@ The class [`ChartedSpace`](https://leanprover-community.github.io/mathlib4_docs/
 
 Wherever Ada stops, she selects a leaf whose shaded patch contains her current position. A preferred map that missed her would be useless.
 
-The instance `[ChartedSpace Coordinates Surface]` is Ada's whole stack of compatible leaves. Mathlib's [`mem_chart_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#mem_chart_source) says that `chartAt Coordinates place`, the leaf chosen at her current location, contains `place` in its source.
+The instance `[ChartedSpace Coordinates Surface]` is Ada's collection of local leaves. Mathlib's [`mem_chart_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#mem_chart_source) says that `chartAt Coordinates place`, the leaf chosen at her current location, contains `place` in its source. Smooth compatibility between overlapping leaves comes later, with `IsManifold`.
 
 #### Human-readable objective
 
@@ -607,7 +607,7 @@ The leaf chosen at `place` really is one of the leaves in the atlas.
 
 Ada presses her current position through the chosen chart. Its mark lands inside the coordinate patch drawn on the leaf.
 
-The expression `chartAt Coordinates place place` first selects Ada's chart at `place`, then uses it to draw that same place in `Coordinates`. Mathlib packages the target-membership proof as [`mem_chart_target`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#mem_chart_target).
+Read `chartAt Coordinates place place` as `(chartAt Coordinates place) place`. The first `place` selects Ada's chart, and the second is the point drawn in `Coordinates`. Mathlib packages the target-membership proof as [`mem_chart_target`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#mem_chart_target).
 
 #### Human-readable objective
 
@@ -656,7 +656,7 @@ Ada's current position now has coordinates inside the drawn patch.
 
 The chosen leaf covers a patch around Ada's footprint. Throughout that neighborhood, the same coordinates remain valid.
 
-Mathlib writes the neighborhoods of Ada's location as `𝓝 place`; type `\nhds` for `𝓝`. The theorem [`chart_source_mem_nhds`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#chart_source_mem_nhds) says that the source of `chartAt Coordinates place` is one of those neighborhoods.
+Mathlib writes the neighborhood filter at Ada's location as `𝓝 place`; type `\nhds` for `𝓝`. This filter is a collection of sets. Thus `source ∈ 𝓝 place` says that the source contains an open set around `place`, not that a point belongs to a set. The theorem [`chart_source_mem_nhds`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#chart_source_mem_nhds) supplies exactly that fact for `chartAt Coordinates place`.
 
 #### Human-readable objective
 
@@ -703,7 +703,7 @@ The chosen coordinates work throughout a neighborhood of `place`.
 
 > **3D MODEL: Sphere with two charts**
 >
-> This interactive scene appears immediately after the lesson introduction. Ada uses the amber leaf near the north and the teal leaf near the south. Both charts work on the overlap, where a transition map translates between their coordinates.
+> This interactive scene appears immediately after the lesson introduction. The amber and teal chart sources overlap and together cover the sphere, just as an atlas covers a surface with local maps.
 >
 > Asset: [`sphere-charts.glb`](../public/game-assets/manifolds/models/sphere-charts.glb)
 
@@ -757,15 +757,15 @@ Together, Ada's leaves cover the whole space.
 
 ### Charts Lean already knows
 
-Ada pauses over a blank leaf before returning to the curved surface. A flat reference sheet maps to itself. A place with two independent directions needs a pair of maps.
+Ada sets two identical reference grids on top of each other before returning to the curved surface. One maps to the other without moving a mark. A place with two independent readings needs a pair of maps.
 
-Mathlib supplies canonical [`ChartedSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#ChartedSpace) instances for self charts and products. Here the goal names the two torus factors `FirstSurface` and `SecondSurface`, together with their coordinate spaces. The types determine which instance Lean uses, even though the notation `chartAt` stays the same.
+Mathlib supplies canonical [`ChartedSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#ChartedSpace) instances for self charts and products. Here the goal names the two torus factors `FirstSurface` and `SecondSurface`, together with their coordinate spaces. The types determine which instance Lean uses, even though the notation `chartAt` stays the same. The shape gallery below is optional; some objects return in the levels, while others preview later topology.
 
 > **3D MODEL LAB: seven-model explorer**
 >
 > The web course places an interactive model selector on this world overview. It contains every model listed in the [3D model index](#3d-model-index).
 
-### 4.1 A blank leaf maps to itself
+### 4.1 The reference grid stays put
 
 - **Level ID:** `canonicalcharts-1`
 - **Verification:** Lean kernel
@@ -773,9 +773,9 @@ Mathlib supplies canonical [`ChartedSpace`](https://leanprover-community.github.
 
 #### Lesson
 
-Ada lays a blank leaf on top of an identical reference leaf. Every mark already sits in the right place, so the map does nothing.
+Ada lays one reference grid on top of an identical grid. Every mark already sits in the right place, so the map does nothing.
 
-Both leaves are represented by the same type, `Coordinates`, and `mark` is one point on them. The canonical `ChartedSpace Coordinates Coordinates` therefore uses `OpenPartialHomeomorph.refl Coordinates`. Mathlib states this as [`chartAt_self_eq`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#chartAt_self_eq).
+Both grids are represented by the same type, `Coordinates`, and `mark` is one point on them. Mathlib's canonical `ChartedSpace Coordinates Coordinates` instance uses `OpenPartialHomeomorph.refl Coordinates`. The theorem [`chartAt_self_eq`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#chartAt_self_eq) describes this chosen self-chart; it does not say that every atlas on `Coordinates` must use only identity charts.
 
 #### Human-readable objective
 
@@ -813,7 +813,7 @@ by
 
 The reference leaf needs only the identity chart.
 
-### 4.2 Only the do-nothing map
+### 4.2 One map in the reference atlas
 
 - **Level ID:** `canonicalcharts-2`
 - **Verification:** Lean kernel
@@ -821,9 +821,9 @@ The reference leaf needs only the identity chart.
 
 #### Lesson
 
-Ada checks the atlas for the reference leaf. There is only one chart in it: the leaf matched with itself.
+Ada checks the small atlas that came with the reference grid. It has one chart: the grid matched with itself.
 
-The formal `chart` is any candidate leaf-to-itself map. Mathlib's [`chartedSpaceSelf_atlas`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#chartedSpaceSelf_atlas) says that it belongs to `atlas Coordinates Coordinates` exactly when it is the identity chart. The goal is an `↔`, so Lean expects one proof in each direction.
+The formal `chart` is any candidate map from the grid to itself. For Mathlib's canonical self-charted instance, [`chartedSpaceSelf_atlas`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#chartedSpaceSelf_atlas) says that `chart` belongs to `atlas Coordinates Coordinates` exactly when it is the identity chart. The goal is an `↔`, so Lean expects one proof in each direction.
 
 #### Human-readable objective
 
@@ -875,7 +875,7 @@ The self-atlas contains one chart, and it is the identity.
 
 > **3D MODEL: Torus with its two loops**
 >
-> This interactive scene appears immediately after the lesson introduction. Ada can follow either highlighted loop around the torus. Neither loop can be shrunk to a point while staying on the surface.
+> This interactive scene appears immediately after the lesson introduction. The two highlighted loops picture Ada's two circle readings. A product chart combines one local chart from each factor.
 >
 > Asset: [`torus-loops.glb`](../public/game-assets/manifolds/models/torus-loops.glb)
 
@@ -883,7 +883,7 @@ The self-atlas contains one chart, and it is the identity.
 
 On a torus, Ada records two positions at once: how far she has gone around the hole and how far she has gone around the tube. Each reading has its own local map.
 
-The two entries of `position : FirstSurface × SecondSurface` are Ada's two readings. Mathlib combines their coordinate types as `ModelProd FirstCoordinates SecondCoordinates`. The theorem [`prodChartedSpace_chartAt`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#prodChartedSpace_chartAt) says that the preferred chart is the product of the two component charts.
+Think first of `FirstSurface` and `SecondSurface` as two circles whose product is a torus. The two entries of `position : FirstSurface × SecondSurface` are Ada's two readings. Mathlib combines their coordinate types as `ModelProd FirstCoordinates SecondCoordinates`. The theorem [`prodChartedSpace_chartAt`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#prodChartedSpace_chartAt) says that the preferred chart is the product of the two component charts.
 
 #### Human-readable objective
 
@@ -937,7 +937,7 @@ The torus chart is built by reading its two coordinates side by side.
 
 > **3D MODEL: Torus with its two loops**
 >
-> This interactive scene appears immediately after the lesson introduction. Ada can follow either highlighted loop around the torus. Neither loop can be shrunk to a point while staying on the surface.
+> This interactive scene appears immediately after the lesson introduction. A paired position belongs to its product chart because each reading is handled by the corresponding factor chart.
 >
 > Asset: [`torus-loops.glb`](../public/game-assets/manifolds/models/torus-loops.glb)
 
@@ -945,7 +945,7 @@ The torus chart is built by reading its two coordinates side by side.
 
 Ada combines one position from each loop of the torus. The paired point must lie inside the source of the paired chart.
 
-The pair `(firstPosition, secondPosition)` records Ada's place in both factors. The earlier theorem [`mem_chart_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#mem_chart_source) also applies to the product charted-space instance, which Lean infers from `ModelProd FirstCoordinates SecondCoordinates`.
+The pair `(firstPosition, secondPosition)` records Ada's place in both factors. The earlier theorem [`mem_chart_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#mem_chart_source) also applies to the product charted-space instance, which Lean infers from `ModelProd FirstCoordinates SecondCoordinates`. The theorem already has the needed mathematical content; `simpa only using` clears the small notational mismatch while keeping simplification tightly restricted.
 
 #### Human-readable objective
 
@@ -1002,7 +1002,7 @@ The paired chart contains the paired point, just as each component chart contain
 
 Ada's leaves now overlap, so she can compare two coordinate drawings of the same place. Continuity keeps nearby points nearby, but calculus also needs the change between drawings to have controlled derivatives.
 
-[`ChartedSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#ChartedSpace) supplies the charts. Mathlib's [`IsManifold`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold) adds differentiability conditions to their transition maps. The goals now name the geometric roles directly: `Surface`, `Coordinates`, `Vectors`, `model`, and `order`. Mathlib papers often abbreviate these as `M`, `H`, `E`, `I`, and `n`.
+[`ChartedSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#ChartedSpace) supplies the charts. Mathlib's [`IsManifold`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold) adds differentiability conditions to their transition maps. For a first picture, take `Scalar = ℝ` and imagine `Coordinates` as ordinary Euclidean coordinates. The goals state the same ideas for a general `Surface`, `Coordinates`, `Vectors`, `model`, and `order`.
 
 ### 5.1 The reference leaf is ready
 
@@ -1014,7 +1014,7 @@ Ada's leaves now overlap, so she can compare two coordinate drawings of the same
 
 Ada places a model leaf beside the world she is charting. The leaf is already its own coordinate space, so it needs no further change of coordinates to qualify as a manifold.
 
-In the goal, `Scalar` supplies the numbers, `Vectors` supplies directions, and `Coordinates` is the model leaf itself. The [`ModelWithCorners`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#ModelWithCorners) named `model` connects those pieces, while `order : WithTop ℕ∞` records differentiability. Mathlib registers [`instIsManifoldModelSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#instIsManifoldModelSpace) for every order.
+In the goal, `Scalar` supplies the numbers, `Vectors` supplies directions, and `Coordinates` is the model leaf itself. The [`ModelWithCorners`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#ModelWithCorners) named `model` connects those pieces. The ordered type `WithTop ℕ∞` records differentiability levels; here, read `0` as continuity-level regularity and `∞` as smoothness at every finite order. Mathlib registers [`instIsManifoldModelSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#instIsManifoldModelSpace) for every order.
 
 #### Human-readable objective
 
@@ -1068,7 +1068,7 @@ The model space is already a manifold at the requested order.
 
 Ada checks her map changes to a demanding standard. If they pass that test, they also pass any test that asks for fewer derivatives.
 
-Lean calls the demanding standard `higherOrder` and the weaker one `lowerOrder`. The hypothesis `order_le : lowerOrder ≤ higherOrder` is the formal reason the stronger atlas is enough. Mathlib packages this step as [`IsManifold.of_le`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold.of_le).
+For example, an atlas of class $C^5$ also meets a $C^2$ requirement. Lean calls the demanding standard `higherOrder` and the weaker one `lowerOrder`. The hypothesis `order_le : lowerOrder ≤ higherOrder` is the formal reason the stronger atlas is enough. Mathlib packages this step as [`IsManifold.of_le`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold.of_le).
 
 #### Human-readable objective
 
@@ -1115,7 +1115,7 @@ by
 
 The higher-order manifold instance now works at the requested lower order.
 
-### 5.3 Smooth maps still keep points close
+### 5.3 The smooth atlas passes the basic check
 
 - **Level ID:** `smoothmanifolds-3`
 - **Verification:** Lean kernel
@@ -1125,7 +1125,7 @@ The higher-order manifold instance now works at the requested lower order.
 
 Ada's smoothest leaf changes never crease or kink. They certainly still preserve the nearby-point structure she needed for her first maps.
 
-The assumption `IsManifold model ∞ Surface` says that Ada's chart changes have derivatives of every finite order. Mathlib's [`IsManifold`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold) hierarchy registers the implication to `IsManifold model 0 Surface`, where order `0` retains only the topological requirement.
+The assumption `IsManifold model ∞ Surface` says that Ada's chart changes have derivatives of every finite order. Mathlib's [`IsManifold`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold) hierarchy registers the implication to `IsManifold model 0 Surface`, where order `0` retains the basic topological requirement. This `0` is a regularity order, not the dimension of `Surface`.
 
 #### Human-readable objective
 
@@ -1181,7 +1181,7 @@ The smooth atlas also gives Ada the topological atlas she started with.
 
 Ada's two circular readings describe the torus together. If each circle has smooth coordinate changes, pairing the readings should preserve that smoothness.
 
-In the torus example, `FirstSurface` and `SecondSurface` are the two circular factors. The theorem remains general: Mathlib's [`IsManifold.prod`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold.prod) combines any two manifold structures with `firstModel.prod secondModel` at the same `order`.
+Read the final line of the goal first: it asks for a manifold structure on `FirstSurface × SecondSurface`. In Ada's torus, those surfaces are circles. The instance lines above provide their two manifold structures, and Mathlib's [`IsManifold.prod`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold.prod) combines them with `firstModel.prod secondModel` at the same `order`.
 
 #### Human-readable objective
 
@@ -1258,7 +1258,7 @@ Mathlib assigns a [`TangentSpace`](https://leanprover-community.github.io/mathli
 
 > **3D MODEL: Tangent plane at a point**
 >
-> This interactive scene appears immediately after the lesson introduction. The plane contains the velocity vectors Ada could choose at this point. It is the tangent space where local motion becomes linear.
+> This interactive scene appears immediately after the lesson introduction. The attached plane pictures the tangent space at Ada's chosen place. Standing still is its zero vector.
 >
 > Asset: [`tangent-plane.glb`](../public/game-assets/manifolds/models/tangent-plane.glb)
 
@@ -1266,7 +1266,7 @@ Mathlib assigns a [`TangentSpace`](https://leanprover-community.github.io/mathli
 
 Ada stands still at `place`. Even without choosing a direction, staying still is a valid tangent velocity.
 
-Here [`TangentSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentSpace) `model place` is the space of velocities available at Ada's current location. It inherits an additive group structure from `Vectors`, so it contains a zero vector. The expected tangent-space type tells Lean which `0` is intended.
+The [`TangentSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentSpace) `TangentSpace model place` is the intrinsic space of velocities available at Ada's current location. The plane in the 3D scene pictures this tangent space; it is not an arbitrary plane floating beside the surface. The space inherits an additive group structure from `Vectors`, so it contains a zero vector. The expected type tells Lean which `0` is intended.
 
 #### Human-readable objective
 
@@ -1319,7 +1319,7 @@ Standing still is now a genuine vector in `TangentSpace model place`.
 
 > **3D MODEL: Tangent plane at a point**
 >
-> This interactive scene appears immediately after the lesson introduction. The plane contains the velocity vectors Ada could choose at this point. It is the tangent space where local motion becomes linear.
+> This interactive scene appears immediately after the lesson introduction. A tangent-bundle point keeps the location on the surface together with a velocity from the tangent space attached there.
 >
 > Asset: [`tangent-plane.glb`](../public/game-assets/manifolds/models/tangent-plane.glb)
 
@@ -1327,7 +1327,7 @@ Standing still is now a genuine vector in `TangentSpace model place`.
 
 Ada records both where she is and the direction she is moving. A direction without its point would be ambiguous because the available tangent plane changes from place to place.
 
-A point of the [`TangentBundle`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentBundle) is a dependent pair `⟨place, velocity⟩`. The type `velocity : TangentSpace model place` remembers where the velocity belongs, so Lean can recover `place` from it.
+A point of the [`TangentBundle`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentBundle) is a dependent pair `⟨place, velocity⟩`. The tangent space may change with `place`, so the type `velocity : TangentSpace model place` remembers where that velocity belongs. Lean can therefore recover `place` from the pair.
 
 #### Human-readable objective
 
@@ -1382,7 +1382,7 @@ Ada's position and velocity now travel as one bundle point.
 
 Ada opens one of her direction records and reads its location tag. The tag gives back the point where that direction belongs.
 
-The [`TangentBundle`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentBundle) is represented by a dependent pair. Its first projection `(⟨place, velocity⟩ : TangentBundle model Surface).1` reduces by definition to `place`.
+The [`TangentBundle`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentBundle) is represented by a dependent pair. Its first projection `(⟨place, velocity⟩ : TangentBundle model Surface).1` reduces by definition to `place`. The second entry has type `TangentSpace model place`, which depends on that first entry.
 
 #### Human-readable objective
 
@@ -1438,7 +1438,7 @@ Reading the bundle point's location tag returns `place`.
 
 Ada can stand still anywhere on the manifold, not just at one chosen point. The tangent bundle should therefore contain a zero direction record over every location.
 
-The course definition `tangent_zero model place` gives the standing-still velocity in `TangentSpace model place`. Pairing it with `place` produces a point of the [`TangentBundle`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentBundle) whose location tag is `place`. This is the pointwise content of the zero section.
+The course definition `tangent_zero model place` gives the standing-still velocity in `TangentSpace model place`. Pairing it with `place` produces a point of the [`TangentBundle`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentBundle) whose location tag is `place`. This constructs the zero bundle point over one arbitrary place; it does not yet define the zero section as a function.
 
 #### Human-readable objective
 
@@ -1580,13 +1580,13 @@ After completing all six worlds, the player has unlocked the following named Mat
 - `ManifoldAdventure.preferred_chart_maps_to_target`: Her place lands on the leaf
 - `ManifoldAdventure.preferred_chart_source_is_neighborhood`: The map works nearby
 - `ManifoldAdventure.preferred_charts_cover`: No place left uncovered
-- `ManifoldAdventure.self_chart_is_identity`: A blank leaf maps to itself
-- `ManifoldAdventure.self_atlas_only_identity`: Only the do-nothing map
+- `ManifoldAdventure.self_chart_is_identity`: The reference grid stays put
+- `ManifoldAdventure.self_atlas_only_identity`: One map in the reference atlas
 - `ManifoldAdventure.product_chart_is_product`: Two readings at once
 - `ManifoldAdventure.product_point_mem_chart_source`: The paired chart contains her place
 - `ManifoldAdventure.model_space_is_manifold`: The reference leaf is ready
 - `ManifoldAdventure.manifold_of_higher_smoothness`: Passing an easier check
-- `ManifoldAdventure.smooth_manifold_is_topological`: Smooth maps still keep points close
+- `ManifoldAdventure.smooth_manifold_is_topological`: The smooth atlas passes the basic check
 - `ManifoldAdventure.product_of_manifolds`: Two circles make a torus
 - `ManifoldAdventure.tangent_zero`: Ada stands still
 - `ManifoldAdventure.tangent_vector_as_bundle_point`: Place and velocity together

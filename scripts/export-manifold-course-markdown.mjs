@@ -53,6 +53,15 @@ const modelByLevel = {
   'tangentspaces-2': 'tangent-plane',
 }
 
+const captionByLevel = {
+  'localcharts-4': 'A chart can take a point to its drawing and back only inside the colored patch where that chart is valid.',
+  'chartedspaces-5': 'The amber and teal chart sources overlap and together cover the sphere, just as an atlas covers a surface with local maps.',
+  'canonicalcharts-3': "The two highlighted loops picture Ada's two circle readings. A product chart combines one local chart from each factor.",
+  'canonicalcharts-4': 'A paired position belongs to its product chart because each reading is handled by the corresponding factor chart.',
+  'tangentspaces-1': "The attached plane pictures the tangent space at Ada's chosen place. Standing still is its zero vector.",
+  'tangentspaces-2': 'A tangent-bundle point keeps the location on the surface together with a velocity from the tangent space attached there.',
+}
+
 function demoteHeadings(markdown, depth) {
   return markdown.replace(/^(#{1,6}) /gm, (_, hashes) => (
     `${'#'.repeat(Math.min(6, hashes.length + depth))} `
@@ -73,12 +82,12 @@ function modelPath(model) {
   return `../public/game-assets/manifolds/models/${model}.glb`
 }
 
-function modelCallout(model, context) {
+function modelCallout(model, context, caption) {
   const info = models[model]
   return [
     `> **3D MODEL: ${info.label}**`,
     '>',
-    `> ${context} ${info.caption}`,
+    `> ${context} ${caption ?? info.caption}`,
     '>',
     `> Asset: [\`${model}.glb\`](${modelPath(model)})`,
   ].join('\n')
@@ -180,7 +189,11 @@ for (const [worldIndex, world] of course.worlds.entries()) {
 
     if (model) {
       lines.push(
-        modelCallout(model, 'This interactive scene appears immediately after the lesson introduction.'),
+        modelCallout(
+          model,
+          'This interactive scene appears immediately after the lesson introduction.',
+          captionByLevel[level.id],
+        ),
         '',
       )
     }

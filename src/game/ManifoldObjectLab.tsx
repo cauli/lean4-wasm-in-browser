@@ -18,7 +18,7 @@ export function ManifoldObjectLab({ initialObject = 'sphere-charts', compact = f
     >
       <div className="manifold-object-lab-copy">
         <div>
-          <p>Explore the shape</p>
+          <p>Optional topology gallery</p>
           <h2 id="manifold-object-lab-title">{topoModels[selected].label}</h2>
         </div>
       </div>

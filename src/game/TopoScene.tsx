@@ -9,6 +9,7 @@ interface Props {
   model: TopoModelId
   compact?: boolean
   showCaption?: boolean
+  caption?: string
   assetBase?: string
 }
 
@@ -23,6 +24,7 @@ export function TopoScene({
   model,
   compact = false,
   showCaption = true,
+  caption,
   assetBase = '/game-assets/manifolds',
 }: Props) {
   const mountRef = useRef<HTMLDivElement>(null)
@@ -162,7 +164,7 @@ export function TopoScene({
     <div className={`topo-scene${compact ? ' topo-scene-compact' : ''}`}>
       <div ref={mountRef} className="manifold-object-canvas" aria-live="polite" />
       <div className="topo-scene-footer">
-        {showCaption && <p className="topo-scene-caption">{topoModels[model].caption}</p>}
+        {showCaption && <p className="topo-scene-caption">{caption ?? topoModels[model].caption}</p>}
         <button
           type="button"
           className="manifold-motion-toggle"

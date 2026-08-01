@@ -85,18 +85,41 @@ function supportLabel(support: VerificationSupport): string {
   return 'Blocked'
 }
 
-const topoModelByLevel: Record<string, TopoModelId> = {
-  'localcharts-4': 'sphere-charts',
-  'chartedspaces-5': 'sphere-charts',
-  'canonicalcharts-3': 'torus-loops',
-  'canonicalcharts-4': 'torus-loops',
-  'tangentspaces-1': 'tangent-plane',
-  'tangentspaces-2': 'tangent-plane',
+interface LevelTopoScene {
+  model: TopoModelId
+  caption: string
 }
 
-function topoModelForLevel(level: GameLevel): TopoModelId | undefined {
+const topoSceneByLevel: Record<string, LevelTopoScene> = {
+  'localcharts-4': {
+    model: 'sphere-charts',
+    caption: 'A chart can take a point to its drawing and back only inside the colored patch where that chart is valid.',
+  },
+  'chartedspaces-5': {
+    model: 'sphere-charts',
+    caption: 'The amber and teal chart sources overlap and together cover the sphere, just as an atlas covers a surface with local maps.',
+  },
+  'canonicalcharts-3': {
+    model: 'torus-loops',
+    caption: 'The two highlighted loops picture Ada\'s two circle readings. A product chart combines one local chart from each factor.',
+  },
+  'canonicalcharts-4': {
+    model: 'torus-loops',
+    caption: 'A paired position belongs to its product chart because each reading is handled by the corresponding factor chart.',
+  },
+  'tangentspaces-1': {
+    model: 'tangent-plane',
+    caption: 'The attached plane pictures the tangent space at Ada\'s chosen place. Standing still is its zero vector.',
+  },
+  'tangentspaces-2': {
+    model: 'tangent-plane',
+    caption: 'A tangent-bundle point keeps the location on the surface together with a velocity from the tangent space attached there.',
+  },
+}
+
+function topoSceneForLevel(level: GameLevel): LevelTopoScene | undefined {
   if (level.gameId !== manifoldGame.id) return undefined
-  return topoModelByLevel[level.id]
+  return topoSceneByLevel[level.id]
 }
 
 function canOpenLevel(level: GameLevel, completed: Set<string>): boolean {
@@ -631,6 +654,7 @@ function LevelWorkspace({
   const statement = useMemo(() => splitStatement(level), [level])
   const following = nextLevel(level)
   const world = getWorld(level.world, game)
+  const topoScene = topoSceneForLevel(level)
   const levelCompleted = progress.completed.includes(level.id)
   const isBusy = status === 'loading' || status === 'checking'
 
@@ -717,9 +741,9 @@ function LevelWorkspace({
 
           <article className="game-prose level-introduction">
             <GameMarkdown assetBase={game.assetBase}>{level.introduction}</GameMarkdown>
-            {topoModelForLevel(level) && (
+            {topoScene && (
               <Suspense fallback={<p>Loading the 3D model...</p>}>
-                <TopoScene model={topoModelForLevel(level)!} compact />
+                <TopoScene model={topoScene.model} caption={topoScene.caption} compact />
               </Suspense>
             )}
           </article>

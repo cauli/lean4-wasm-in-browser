@@ -117,13 +117,13 @@ test('level titles describe moments in Ada\'s story', () => {
       'Her place lands on the leaf',
       'The map works nearby',
       'No place left uncovered',
-      'A blank leaf maps to itself',
-      'Only the do-nothing map',
+      'The reference grid stays put',
+      'One map in the reference atlas',
       'Two readings at once',
       'The paired chart contains her place',
       'The reference leaf is ready',
       'Passing an easier check',
-      'Smooth maps still keep points close',
+      'The smooth atlas passes the basic check',
       'Two circles make a torus',
       'Ada stands still',
       'Place and velocity together',
@@ -185,6 +185,18 @@ test('every lesson moves from Ada to Mathlib, with its objective beside the form
   ].join('\n')
 
   assert.doesNotMatch(courseProse, /[—–]/)
+})
+
+test('the course explains the main undergraduate notation traps', () => {
+  const byTheorem = Object.fromEntries(levels.map((level) => [level.theoremName, level]))
+
+  assert.doesNotMatch(byTheorem.point_mem_preferred_chart.introduction, /compatible leaves/)
+  assert.match(byTheorem.point_mem_preferred_chart.introduction, /Smooth compatibility.*comes later/)
+  assert.match(byTheorem.preferred_chart_maps_to_target.introduction, /\(chartAt Coordinates place\) place/)
+  assert.match(byTheorem.preferred_chart_source_is_neighborhood.introduction, /filter is a collection of sets/)
+  assert.match(byTheorem.preferred_chart_source_is_neighborhood.introduction, /contains an open set around/)
+  assert.match(byTheorem.smooth_manifold_is_topological.introduction, /not the dimension/)
+  assert.match(byTheorem.tangent_bundle_has_zero.introduction, /does not yet define the zero section as a function/)
 })
 
 test('the unlock ladder exposes real Mathlib declarations and Lean tactics', () => {
