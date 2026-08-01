@@ -10,6 +10,10 @@ const loader = fs.readFileSync(
   new URL('../src/game/useLeanGameVerifier.ts', import.meta.url),
   'utf8',
 )
+const packager = fs.readFileSync(
+  new URL('../scripts/package-real-analysis-layer.mjs', import.meta.url),
+  'utf8',
+)
 
 test('the first manifold level imports only its homeomorphism world', () => {
   const first = verifier.levels['homeomorphisms-1']
@@ -34,4 +38,9 @@ test('the manifold loader does not stage the Real Analysis course', () => {
   assert.doesNotMatch(manifoldLoader, /real-analysis/)
   assert.match(manifoldLoader, /manifold-course-layer-index/)
   assert.match(manifoldLoader, /slice\(0, targetIndex \+ 1\)/)
+})
+
+test('course layers do not duplicate Init after runtime initialization', () => {
+  assert.match(packager, /providedByRuntimeInitialization/)
+  assert.match(packager, /runtimeProvidedModules: \['Init'\]/)
 })

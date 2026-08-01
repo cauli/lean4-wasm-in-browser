@@ -220,6 +220,11 @@ function moduleForArtifact(relativePath) {
     .join('.')
 }
 
+function providedByRuntimeInitialization(relativePath) {
+  const moduleName = moduleForArtifact(relativePath)
+  return moduleName === 'Init' || moduleName.startsWith('Init.')
+}
+
 function readOleanIdentity(filePath) {
   const header = fs.readFileSync(filePath).subarray(0, 96)
   if (header.length < 48 || header.subarray(0, 5).toString('ascii') !== 'olean') {
@@ -262,6 +267,7 @@ for (const libraryRoot of packageLibraryRoots()) {
 const sources = new Map(
   [...allSources].filter(([relativePath]) => (
     neededModules.has(moduleForArtifact(relativePath))
+    && !providedByRuntimeInitialization(relativePath)
     && !baseFiles.has(relativePath)
   )),
 )
@@ -280,6 +286,7 @@ for (const oleanPath of coreOleans) {
     oleanPath.replace(/\.olean$/, '.ir'),
     oleanPath.replace(/\.olean$/, '.ir.sig'),
   ]) {
+    if (providedByRuntimeInitialization(relativePath)) continue
     if (baseFiles.has(relativePath)) continue
     if (
       hasExactCoreSources
@@ -380,6 +387,7 @@ const manifest = {
     ? gitCommit(path.resolve('.'))
     : null,
   baseModules: seedModules,
+  runtimeProvidedModules: ['Init'],
   extends: baseManifests.length > 0
     ? {
         manifests: baseManifests.map(({ path: manifestFile }) => path.basename(manifestFile)),
