@@ -28,6 +28,13 @@ export interface LeanArtifactPack {
   }>;
 }
 
+export interface LeanArtifactPackTiming {
+  compressedBytes: number;
+  downloadMs: number;
+  inflateMs: number;
+  elapsedMs: number;
+}
+
 let manifest: Manifest | null = null;
 let manifestPromise: Promise<Manifest> | null = null;
 
@@ -277,12 +284,23 @@ function isValidOlean(data: Uint8Array): boolean {
 export async function fetchLeanArtifactPack(
   pack: LeanArtifactPack,
   libraryRoot = 'real-analysis-lib',
+  onTiming?: (timing: LeanArtifactPackTiming) => void,
 ): Promise<Map<string, Uint8Array<ArrayBuffer>>> {
+  const started = performance.now()
   const response = await fetch(`${LEAN_WASM_BASE}/${libraryRoot}/${pack.file}`)
   if (!response.ok) {
     throw new Error(`Lean artifact pack ${pack.file} returned ${response.status}.`)
   }
-  const data = await inflateGzip(await response.arrayBuffer())
+  const compressed = await response.arrayBuffer()
+  const downloadedAt = performance.now()
+  const data = await inflateGzip(compressed)
+  const inflatedAt = performance.now()
+  onTiming?.({
+    compressedBytes: compressed.byteLength,
+    downloadMs: downloadedAt - started,
+    inflateMs: inflatedAt - downloadedAt,
+    elapsedMs: inflatedAt - started,
+  })
   if (data.byteLength !== pack.bytes) {
     throw new Error(
       `Lean artifact pack ${pack.file} has ${data.byteLength} bytes; expected ${pack.bytes}.`,

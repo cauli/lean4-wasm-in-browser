@@ -32,13 +32,13 @@ test('opens the Mathlib-native course and kernel-checks its first proof locally'
   await resetManifoldGame(page)
 
   await expect(page.getByRole('heading', {
-    name: 'Learn the structures Lean geometers actually use',
+    name: 'The Manifold Adventure',
   })).toBeVisible()
   await expect(page.locator('.course-world-card')).toHaveCount(6)
   await expect(page.locator('.course-level-dots a')).toHaveCount(25)
   await expect(page.getByText('6 worlds · 25 levels')).toBeVisible()
   await expect(page.locator('.game-header').getByLabel('Work in progress')).toBeVisible()
-  await expect(page.getByText(/Mathlib's real manifold API/).first()).toBeVisible()
+  await expect(page.getByText(/Mathlib's manifold API/).first()).toBeVisible()
   await expect(page.locator('.course-world-card').first()).toHaveClass(/unlocked/)
   await expect(page.locator('.course-world-card').nth(1)).toHaveClass(/locked/)
 

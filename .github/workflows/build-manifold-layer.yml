@@ -214,7 +214,10 @@ jobs:
           if (first.files.includes("Mathlib/Geometry/Manifold/IsManifold/Basic.olean")) {
             throw new Error("the first world still packages the smooth-manifold closure");
           }
-          if (first.compressedBytes >= 200 * 1024 * 1024) {
+          if (!first.files.includes("Init.olean") || !first.files.some((file) => file.startsWith("Init/"))) {
+            throw new Error("the first world is missing Init files required by module resolution");
+          }
+          if (first.compressedBytes >= 240 * 1024 * 1024) {
             throw new Error("the first world does not materially reduce the current cold transfer");
           }
           index.browserMathlibClosure = {

@@ -237,6 +237,13 @@ npm install
 npm run dev        # http://localhost:5173 (COOP/COEP set by Vite)
 ```
 
+For the bounded Manifold Adventure pack-staging experiment, open a level with
+`?artifactWorkers=3`. The normal path is `?artifactWorkers=0`. Both paths keep
+one Lean worker; the experimental helpers only fetch and decompress up to three
+artifact packs ahead. Compare `window.__leanGameLayerTimings` in fresh tabs.
+This does not parallelize Lean's environment import, which remains owned by the
+single persistent runtime.
+
 `scripts/lean-wasm-node.cjs` runs any artifact's Lean under plain Node with
 real-filesystem access — used for snapshot baking and quick probes.
 

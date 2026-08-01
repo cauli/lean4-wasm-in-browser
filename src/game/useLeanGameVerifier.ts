@@ -28,6 +28,11 @@ import {
   buildManifoldChallengeSource,
   buildManifoldGoalInspectionSource,
 } from './manifold-verification-source'
+import {
+  ArtifactPackStagerPool,
+  requestedArtifactPackWorkers,
+  type StagedArtifactPack,
+} from './artifact-pack-stager'
 
 export type CheckerStatus = 'idle' | 'loading' | 'ready' | 'checking' | 'error'
 
@@ -81,6 +86,26 @@ interface ManifoldWorldLayer {
 interface ManifoldLayerIndex {
   kind: 'manifold-course-layer-index'
   layers: ManifoldWorldLayer[]
+}
+
+interface LayerTiming {
+  label: string
+  mode: 'main-thread' | 'worker-pool'
+  workers: number
+  packs: number
+  files: number
+  manifestMs: number
+  downloadWorkMs: number
+  inflateWorkMs: number
+  stageWorkMs: number
+  transferMs: number
+  totalMs: number
+}
+
+declare global {
+  interface Window {
+    __leanGameLayerTimings?: LayerTiming[]
+  }
 }
 
 interface JsonDiagnostic {
@@ -356,6 +381,7 @@ export function useLeanGameVerifier() {
     label: string
     readyMessage: string
   }) => {
+      const layerStarted = performance.now()
       const worker = workerRef.current
       if (!worker) throw new Error('Lean worker is unavailable.')
       if (LEAN_VARIANT === 'slim') {
@@ -371,6 +397,7 @@ export function useLeanGameVerifier() {
         packs?: LeanArtifactPack[]
       }
       const paths = manifest.files || []
+      const manifestReadyAt = performance.now()
       if (paths.length === 0) {
         throw new Error(`The local ${label} Lean package is empty.`)
       }
@@ -396,22 +423,91 @@ export function useLeanGameVerifier() {
 
       const packs = manifest.packs || []
       if (packs.length > 0) {
+        const workerCount = requestedArtifactPackWorkers()
+        const stager = workerCount > 0
+          ? new ArtifactPackStagerPool(Math.min(workerCount, packs.length))
+          : null
+        const pending = new Map<number, Promise<StagedArtifactPack>>()
+        let downloadWorkMs = 0
+        let inflateWorkMs = 0
+        let stageWorkMs = 0
+        let transferMs = 0
         let loaded = 0
-        for (let index = 0; index < packs.length; index += 1) {
+        const stagePack = (index: number): Promise<StagedArtifactPack> => {
           const pack = packs[index]
-          setProgress(
-            `Loading ${label}: pack ${index + 1} / ${packs.length}`,
-          )
-          const files = await fetchLeanArtifactPack(pack, libraryRoot)
-          const expectedPaths = new Set(pack.entries.map((entry) => entry.path))
-          const missing = [...expectedPaths].filter((file) => !files.has(file))
-          if (missing.length > 0) {
-            throw new Error(`The local ${label} package is incomplete (${missing.length} files missing).`)
+          if (stager) {
+            const url = new URL(
+              `${LEAN_WASM_BASE}/${libraryRoot}/${pack.file}`,
+              window.location.origin,
+            ).href
+            return stager.stage(pack, url)
           }
-          await addFilesToWorker(files)
-          loaded += files.size
-          setProgress(`Loading ${label}: ${loaded} / ${paths.length} files`)
+          return (async () => {
+            const started = performance.now()
+            let downloadMs = 0
+            let inflateMs = 0
+            const files = await fetchLeanArtifactPack(pack, libraryRoot, (timing) => {
+              downloadMs = timing.downloadMs
+              inflateMs = timing.inflateMs
+            })
+            return {
+              files,
+              compressedBytes: pack.compressedBytes,
+              downloadMs,
+              inflateMs,
+              elapsedMs: performance.now() - started,
+            }
+          })()
         }
+        const schedule = (index: number) => {
+          if (index < packs.length) pending.set(index, stagePack(index))
+        }
+        const lookahead = stager ? Math.min(workerCount, packs.length) : 1
+        for (let index = 0; index < lookahead; index += 1) schedule(index)
+
+        try {
+          for (let index = 0; index < packs.length; index += 1) {
+            setProgress(
+              `Loading ${label}: pack ${index + 1} / ${packs.length}`,
+            )
+            const staged = await pending.get(index)!
+            pending.delete(index)
+            schedule(index + lookahead)
+            downloadWorkMs += staged.downloadMs
+            inflateWorkMs += staged.inflateMs
+            stageWorkMs += staged.elapsedMs
+            const expectedPaths = new Set(packs[index].entries.map((entry) => entry.path))
+            const missing = [...expectedPaths].filter((file) => !staged.files.has(file))
+            if (missing.length > 0) {
+              throw new Error(`The local ${label} package is incomplete (${missing.length} files missing).`)
+            }
+            const transferStarted = performance.now()
+            await addFilesToWorker(staged.files)
+            transferMs += performance.now() - transferStarted
+            loaded += staged.files.size
+            setProgress(`Loading ${label}: ${loaded} / ${paths.length} files`)
+          }
+        } finally {
+          stager?.terminate()
+          await Promise.allSettled(pending.values())
+        }
+
+        const timing: LayerTiming = {
+          label,
+          mode: stager ? 'worker-pool' : 'main-thread',
+          workers: stager ? workerCount : 0,
+          packs: packs.length,
+          files: loaded,
+          manifestMs: manifestReadyAt - layerStarted,
+          downloadWorkMs,
+          inflateWorkMs,
+          stageWorkMs,
+          transferMs,
+          totalMs: performance.now() - layerStarted,
+        }
+        window.__leanGameLayerTimings ??= []
+        window.__leanGameLayerTimings.push(timing)
+        console.info('[LEAN LAYER TIMING]', JSON.stringify(timing))
       } else {
         const batchSize = 80
         for (let offset = 0; offset < paths.length; offset += batchSize) {
@@ -540,8 +636,10 @@ export function useLeanGameVerifier() {
         throw new Error(`Lean WASM was not found at ${LEAN_WASM_BASE}.`)
       }
       await ensureWorker()
-      const loadedSnapshot = await trySnapshot()
-      if (!loadedSnapshot) await addInitFiles()
+      await trySnapshot()
+      // A restored environment does not replace the module resolver's files:
+      // later Mathlib imports still traverse Init's .olean dependency tree.
+      await addInitFiles()
       setProgress('Warming the local kernel...')
       const warm = await compileCode('')
       if (!warm.result.success) throw new Error(warm.result.error || 'Lean warmup failed.')

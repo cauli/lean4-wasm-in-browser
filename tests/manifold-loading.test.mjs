@@ -14,6 +14,10 @@ const packager = fs.readFileSync(
   new URL('../scripts/package-real-analysis-layer.mjs', import.meta.url),
   'utf8',
 )
+const stagingPool = fs.readFileSync(
+  new URL('../src/game/artifact-pack-stager.ts', import.meta.url),
+  'utf8',
+)
 
 test('the first manifold level imports only its homeomorphism world', () => {
   const first = verifier.levels['homeomorphisms-1']
@@ -40,7 +44,15 @@ test('the manifold loader does not stage the Real Analysis course', () => {
   assert.match(manifoldLoader, /slice\(0, targetIndex \+ 1\)/)
 })
 
-test('course layers do not duplicate Init after runtime initialization', () => {
-  assert.match(packager, /providedByRuntimeInitialization/)
-  assert.match(packager, /runtimeProvidedModules: \['Init'\]/)
+test('the first course layer retains Init files needed by Lean module resolution', () => {
+  assert.doesNotMatch(packager, /providedByRuntimeInitialization/)
+  assert.doesNotMatch(packager, /runtimeProvidedModules/)
+  assert.match(loader, /await trySnapshot\(\)[\s\S]*await addInitFiles\(\)/)
+})
+
+test('the artifact staging experiment keeps one Lean worker and bounds helper workers', () => {
+  assert.match(stagingPool, /Math\.min\(3, requested\)/)
+  assert.match(loader, /new ArtifactPackStagerPool\(Math\.min\(workerCount, packs\.length\)\)/)
+  assert.match(loader, /const lookahead = stager \? Math\.min\(workerCount, packs\.length\) : 1/)
+  assert.match(loader, /window\.__leanGameLayerTimings\.push\(timing\)/)
 })
