@@ -2,7 +2,6 @@
 
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
 import { gunzipSync } from 'node:zlib'
 
@@ -87,7 +86,8 @@ if (!Array.isArray(manifest.files) || !Array.isArray(manifest.packs) || manifest
   throw new Error('Closure manifest has no files or packs')
 }
 
-const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'browser-library-closure-'))
+fs.mkdirSync(path.dirname(outputRoot), { recursive: true })
+const temporaryRoot = fs.mkdtempSync(`${outputRoot}.unpack-`)
 const extractedFiles = new Set()
 
 try {
@@ -145,7 +145,6 @@ try {
   }
 
   fs.rmSync(outputRoot, { force: true, recursive: true })
-  fs.mkdirSync(path.dirname(outputRoot), { recursive: true })
   fs.renameSync(temporaryRoot, outputRoot)
 } catch (error) {
   fs.rmSync(temporaryRoot, { force: true, recursive: true })
