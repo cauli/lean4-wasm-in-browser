@@ -9,7 +9,7 @@
   },
   "title": "The Manifold Adventure",
   "introduction": "# The Manifold Adventure\n\nAda is an ant, so she can only inspect her world from the inside. Manifold theory takes the same point of view: understand the whole space through local coordinates.\n\nThe course uses [Mathlib's manifold API](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html) from the start. First come [`Homeomorph`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html#Homeomorph) and [`OpenPartialHomeomorph`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph). Then you build a [`ChartedSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#ChartedSpace) from an [`atlas`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#atlas) and [`chartAt`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#chartAt). The last worlds introduce [`ModelWithCorners`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#ModelWithCorners), [`IsManifold`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold), [`TangentSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentSpace), and [`TangentBundle`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentBundle).",
-  "information": "The formal source is `lean/ManifoldAdventure/BrowserBase.lean`. It imports `Mathlib.Geometry.Manifold.IsManifold.Basic` at pinned Mathlib commit `de3a9cf33016bbb6d15880d7680643f7ca2d25ba`.\n\nFor the mathematics, continue with Loring Tu's *An Introduction to Manifolds*, John Lee's *Introduction to Smooth Manifolds*, or John Milnor's *Topology from the Differentiable Viewpoint*.",
+  "information": "The formal sources are in `lean/ManifoldAdventure/`. Each world imports the smallest Mathlib area it needs, from homeomorphisms through smooth manifolds, at pinned Mathlib commit `de3a9cf33016bbb6d15880d7680643f7ca2d25ba`.\n\nFor the mathematics, continue with Loring Tu's *An Introduction to Manifolds*, John Lee's *Introduction to Smooth Manifolds*, or John Milnor's *Topology from the Differentiable Viewpoint*.",
   "caption": "A kernel-checked course on Mathlib homeomorphisms, local charts, atlases, smooth manifolds, products, and tangent bundles.",
   "coverImage": "images/cover.svg",
   "worlds": [
@@ -51,7 +51,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/Homeomorphisms.lean",
           "verification": "kernel"
         },
         {
@@ -81,7 +81,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/Homeomorphisms.lean",
           "verification": "kernel"
         },
         {
@@ -111,7 +111,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/Homeomorphisms.lean",
           "verification": "kernel"
         },
         {
@@ -141,7 +141,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/Homeomorphisms.lean",
           "verification": "kernel"
         }
       ]
@@ -183,7 +183,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/LocalCharts.lean",
           "verification": "kernel"
         },
         {
@@ -212,7 +212,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/LocalCharts.lean",
           "verification": "kernel"
         },
         {
@@ -245,7 +245,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/LocalCharts.lean",
           "verification": "kernel"
         },
         {
@@ -274,7 +274,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/LocalCharts.lean",
           "verification": "kernel"
         }
       ]
@@ -315,7 +315,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/ChartedSpaces.lean",
           "verification": "kernel"
         },
         {
@@ -344,7 +344,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/ChartedSpaces.lean",
           "verification": "kernel"
         },
         {
@@ -371,7 +371,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/ChartedSpaces.lean",
           "verification": "kernel"
         },
         {
@@ -401,7 +401,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/ChartedSpaces.lean",
           "verification": "kernel"
         },
         {
@@ -431,7 +431,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/ChartedSpaces.lean",
           "verification": "kernel"
         }
       ]
@@ -472,7 +472,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/CanonicalCharts.lean",
           "verification": "kernel"
         },
         {
@@ -505,7 +505,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/CanonicalCharts.lean",
           "verification": "kernel"
         },
         {
@@ -538,7 +538,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/CanonicalCharts.lean",
           "verification": "kernel"
         },
         {
@@ -566,7 +566,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/CanonicalCharts.lean",
           "verification": "kernel"
         }
       ]
@@ -612,7 +612,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/SmoothManifolds.lean",
           "verification": "kernel"
         },
         {
@@ -641,7 +641,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/SmoothManifolds.lean",
           "verification": "kernel"
         },
         {
@@ -667,7 +667,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/SmoothManifolds.lean",
           "verification": "kernel"
         },
         {
@@ -698,7 +698,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/SmoothManifolds.lean",
           "verification": "kernel"
         }
       ]
@@ -738,7 +738,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/TangentSpaces.lean",
           "verification": "kernel"
         },
         {
@@ -767,7 +767,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/TangentSpaces.lean",
           "verification": "kernel"
         },
         {
@@ -797,7 +797,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/TangentSpaces.lean",
           "verification": "kernel"
         },
         {
@@ -827,7 +827,7 @@
           "disabledTactics": [],
           "disabledTheorems": [],
           "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/BrowserBase.lean",
+          "sourcePath": "lean/ManifoldAdventure/TangentSpaces.lean",
           "verification": "kernel"
         }
       ]

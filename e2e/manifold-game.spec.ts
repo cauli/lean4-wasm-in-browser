@@ -23,6 +23,12 @@ async function setEditor(page: Page, value: string) {
 }
 
 test('opens the Mathlib-native course and kernel-checks its first proof locally', async ({ page }) => {
+  const realAnalysisRequests: string[] = []
+  page.on('request', (request) => {
+    if (/real-analysis(?:-layer\.json|-lib|\.snap)/.test(request.url())) {
+      realAnalysisRequests.push(request.url())
+    }
+  })
   await resetManifoldGame(page)
 
   await expect(page.getByRole('heading', {
@@ -37,8 +43,8 @@ test('opens the Mathlib-native course and kernel-checks its first proof locally'
   await expect(page.locator('.course-world-card').nth(1)).toHaveClass(/locked/)
 
   await page.goto('/games/manifold-adventure/homeomorphisms/1')
-  await expect(page.getByRole('heading', { name: 'Continuity is bundled' })).toBeVisible()
-  await expect(page.locator('.goal-target')).toContainText('Continuous e')
+  await expect(page.getByRole('heading', { name: 'The drawing matches the trail' })).toBeVisible()
+  await expect(page.locator('.goal-target')).toContainText('Continuous trailMap')
 
   const rewards = page.getByLabel('Level unlocks')
   await expect(rewards).toContainText('exact')
@@ -47,7 +53,7 @@ test('opens the Mathlib-native course and kernel-checks its first proof locally'
   await expect(rewards).toContainText('Prove this course declaration')
   await expect(rewards).toContainText('homeomorph_continuous')
 
-  await setEditor(page, 'exact e.continuous_symm')
+  await setEditor(page, 'exact trailMap.continuous_symm')
   await expect(page.locator('.proof-feedback .live-goal-error')).toContainText(
     /not unlocked.*continuous_symm/i,
     { timeout: 180_000 },
@@ -56,7 +62,7 @@ test('opens the Mathlib-native course and kernel-checks its first proof locally'
   await page.getByRole('button', { name: 'View solution' }).click()
   await expect(page.getByText('reference answer')).toBeVisible()
   await page.getByRole('button', { name: 'Use in editor' }).click()
-  await expect(page.locator('.game-editor')).toContainText('exact e.continuous')
+  await expect(page.locator('.game-editor')).toContainText('exact trailMap.continuous')
   await expect(page.locator('.proof-feedback').getByText('No goals remain', { exact: true })).toBeVisible({
     timeout: 180_000,
   })
@@ -69,7 +75,8 @@ test('opens the Mathlib-native course and kernel-checks its first proof locally'
   await expect(rewards).toContainText('Level rewards earned')
   await expect(rewards).toContainText('Course declaration earned')
   await expect(page.locator('.game-header-complete')).toContainText('Completed')
-  await expect(page.getByRole('link', { name: 'Next: The inverse is continuous too' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Next: The drawing leads Ada back' })).toBeVisible()
+  expect(realAnalysisRequests).toEqual([])
 })
 
 test('catalog presents the manifold course as local Mathlib', async ({ page }) => {

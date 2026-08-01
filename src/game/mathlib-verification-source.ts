@@ -271,7 +271,7 @@ export function createMathlibVerificationSource(
     const namespaceClosers = metadata.namespaces.slice().reverse().map((name) => `end ${name}`)
     const proofLines = proof.split('\n')
     const header = [
-      `import ${verifierData.baseModule}`,
+      `import ${metadata.contextModule}`,
       '',
       ...(enforceInventory
         ? [buildInventoryPolicyPrelude(mathlibPolicy(game, verifierData, level)), '']
@@ -332,8 +332,7 @@ export function createMathlibVerificationSource(
       return buildSource(level, proof, true, enforceInventory) as GoalInspectionSource
     },
     contextModule(level: GameLevel): string {
-      verifierLevel(level)
-      return verifierData.baseModule
+      return verifierLevel(level).contextModule
     },
   }
 }

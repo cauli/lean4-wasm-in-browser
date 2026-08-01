@@ -77,10 +77,8 @@ cp -L "$REAL_ANALYSIS_MANIFEST" dist/lean-wasm/real-analysis-layer.json
 rsync -aL --delete --include='artifacts-*.pack' --exclude='*' \
   "$REAL_ANALYSIS_PACKS/" dist/lean-wasm/real-analysis-lib/
 
-# Manifold Adventure extends the exact same pinned Mathlib environment with the
-# Geometry.Manifold dependency closure and its generated BrowserBase theorem
-# module. Keeping it as a supplemental layer avoids duplicating the many files
-# already shipped for Real Analysis.
+# Manifold Adventure is a standalone, on-demand Mathlib dependency closure.
+# It deliberately does not load or extend the unrelated Real Analysis course.
 MANIFOLD_MANIFEST=public/lean-wasm/manifold-layer.json
 MANIFOLD_PACKS=public/lean-wasm/manifold-lib
 if [ ! -f "$MANIFOLD_MANIFEST" ] || [ ! -d "$MANIFOLD_PACKS" ]; then
@@ -93,7 +91,10 @@ const fs = require("fs");
 const manifest = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
 const base = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
 if (manifest.leanCommit !== base.leanCommit || manifest.mathlibCommit !== base.mathlibCommit) {
-  throw new Error("Manifold layer does not match the Real Analysis base layer");
+  throw new Error("Manifold and Real Analysis layers use different Lean/Mathlib pins");
+}
+if (manifest.extends !== null) {
+  throw new Error("Manifold layer unexpectedly extends another course layer");
 }
 if (!Array.isArray(manifest.packs) || manifest.packs.length === 0) {
   throw new Error("Manifold manifest contains no packs");

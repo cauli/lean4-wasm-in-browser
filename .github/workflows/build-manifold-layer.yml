@@ -1,6 +1,6 @@
 name: build Manifold Adventure browser layer
 
-# Builds the course module and supplemental browser package from the pinned
+# Builds the course modules and standalone browser package from the pinned
 # Mathlib manifold closure produced by the Lean fork. The native i386 toolchain
 # compiles only the course source here. i386 is intentional: `.olean` files
 # embed pointer-sized data, so ordinary x86_64 Mathlib caches cannot be loaded
@@ -164,17 +164,17 @@ jobs:
             "${{ inputs.lean_commit }}" \
             "${{ inputs.mathlib_commit }}"
 
-      - name: Regenerate and compile the course theorem base
+      - name: Regenerate and compile the course world modules
         run: |
           node scripts/create-manifold-game.mjs
           git diff --exit-code -- \
-            lean/ManifoldAdventure/BrowserBase.lean \
+            lean/ManifoldAdventure \
             src/game/manifolds.generated.json \
             src/game/manifolds-verifier.generated.json
           bash scripts/build-manifold-course.sh "$PWD/mathlib4"
           MATHLIB_ROOT="$PWD/mathlib4" node scripts/verify-manifold-references.mjs
 
-      - name: Package only artifacts missing from the shared Mathlib layer
+      - name: Package the standalone Manifold Adventure closure
         run: |
           node scripts/package-real-analysis-layer.mjs \
             "$PWD/mathlib4" \
@@ -185,8 +185,7 @@ jobs:
             "$PWD/public/lean-wasm/lean-lib-files.json" \
             "$PWD/lean4-source/src" \
             "$PWD/lean" \
-            ManifoldAdventure.BrowserBase \
-            "$PWD/public/lean-wasm/real-analysis-layer.json"
+            ManifoldAdventure.BrowserBase
 
       - name: Validate package pins and contents
         run: |
@@ -203,8 +202,19 @@ jobs:
           if (!m.files.includes("ManifoldAdventure/BrowserBase.olean")) {
             throw new Error("course BrowserBase.olean is missing");
           }
+          for (const world of [
+            "Homeomorphisms", "LocalCharts", "ChartedSpaces",
+            "CanonicalCharts", "SmoothManifolds", "TangentSpaces",
+          ]) {
+            if (!m.files.includes(`ManifoldAdventure/${world}.olean`)) {
+              throw new Error(`course ${world}.olean is missing`);
+            }
+          }
           if (!m.files.some(f => f.startsWith("Mathlib/Geometry/Manifold/"))) {
             throw new Error("Mathlib manifold modules are missing");
+          }
+          if (m.extends !== null) {
+            throw new Error("Manifold Adventure must not extend the Real Analysis layer");
           }
           m.browserMathlibClosure = {
             repository: process.argv[4],
@@ -215,7 +225,7 @@ jobs:
             roots: source.mathlib.roots,
           };
           fs.writeFileSync("public/lean-wasm/manifold-layer.json", `${JSON.stringify(m, null, 2)}\n`);
-          console.log(`${m.modules} supplemental modules, ${m.packs.length} packs`);
+          console.log(`${m.modules} standalone modules, ${m.packs.length} packs`);
           ' \
             "${{ inputs.lean_commit }}" \
             "${{ inputs.mathlib_commit }}" \

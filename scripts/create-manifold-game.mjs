@@ -4,13 +4,45 @@ import fs from 'node:fs'
 
 const gameOutputUrl = new URL('../src/game/manifolds.generated.json', import.meta.url)
 const verifierOutputUrl = new URL('../src/game/manifolds-verifier.generated.json', import.meta.url)
-const leanOutputUrl = new URL('../lean/ManifoldAdventure/BrowserBase.lean', import.meta.url)
+const leanOutputRootUrl = new URL('../lean/', import.meta.url)
 
 const LEAN_COMMIT = '62b6a2291302d4bbeace37642a066b7510d0145c'
 const LEAN_UPSTREAM_COMMIT = 'ecf55de08b9d855e749f80c491c6f294dd307e60'
 const MATHLIB_COMMIT = 'de3a9cf33016bbb6d15880d7680643f7ca2d25ba'
 const BASE_MODULE = 'ManifoldAdventure.BrowserBase'
 const NAMESPACE = 'ManifoldAdventure'
+const WORLD_MODULES = {
+  Homeomorphisms: {
+    module: 'ManifoldAdventure.Homeomorphisms',
+    mathlibImport: 'Mathlib.Topology.Homeomorph.Defs',
+    openCommands: ['open scoped Topology', 'open Filter'],
+  },
+  LocalCharts: {
+    module: 'ManifoldAdventure.LocalCharts',
+    mathlibImport: 'Mathlib.Topology.OpenPartialHomeomorph.Defs',
+    openCommands: ['open scoped Topology', 'open Filter'],
+  },
+  ChartedSpaces: {
+    module: 'ManifoldAdventure.ChartedSpaces',
+    mathlibImport: 'Mathlib.Geometry.Manifold.ChartedSpace',
+    openCommands: ['open scoped Topology', 'open Filter'],
+  },
+  CanonicalCharts: {
+    module: 'ManifoldAdventure.CanonicalCharts',
+    mathlibImport: 'Mathlib.Geometry.Manifold.ChartedSpace',
+    openCommands: ['open scoped Topology', 'open Filter'],
+  },
+  SmoothManifolds: {
+    module: 'ManifoldAdventure.SmoothManifolds',
+    mathlibImport: 'Mathlib.Geometry.Manifold.IsManifold.Basic',
+    openCommands: ['open scoped Topology ContDiff', 'open Filter ENat'],
+  },
+  TangentSpaces: {
+    module: 'ManifoldAdventure.TangentSpaces',
+    mathlibImport: 'Mathlib.Geometry.Manifold.IsManifold.Basic',
+    openCommands: ['open scoped Topology ContDiff', 'open Filter ENat'],
+  },
+}
 const MATHLIB_DOCS = {
   homeomorph: 'https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html',
   openPartialHomeomorph: 'https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html',
@@ -38,6 +70,8 @@ function lessonText(introduction, statementText) {
 
 function makeLevel(world, number, level) {
   const lesson = lessonText(level.introduction, level.statementText)
+  const worldModule = WORLD_MODULES[world]
+  if (!worldModule) throw new Error(`No Lean module configured for ${world}.`)
 
   return {
     id: `${world.toLowerCase()}-${number}`,
@@ -59,7 +93,7 @@ function makeLevel(world, number, level) {
     disabledTactics: [],
     disabledTheorems: [],
     disabledDefinitions: [],
-    sourcePath: `lean/ManifoldAdventure/BrowserBase.lean`,
+    sourcePath: `lean/${worldModule.module.replaceAll('.', '/')}.lean`,
     verification: 'kernel',
   }
 }
@@ -90,7 +124,7 @@ const game = {
 Ada is an ant, so she can only inspect her world from the inside. Manifold theory takes the same point of view: understand the whole space through local coordinates.
 
 The course uses [Mathlib's manifold API](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html) from the start. First come [\`Homeomorph\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html#Homeomorph) and [\`OpenPartialHomeomorph\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph). Then you build a [\`ChartedSpace\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#ChartedSpace) from an [\`atlas\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#atlas) and [\`chartAt\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#chartAt). The last worlds introduce [\`ModelWithCorners\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#ModelWithCorners), [\`IsManifold\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold), [\`TangentSpace\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentSpace), and [\`TangentBundle\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentBundle).`,
-  information: `The formal source is \`lean/ManifoldAdventure/BrowserBase.lean\`. It imports \`Mathlib.Geometry.Manifold.IsManifold.Basic\` at pinned Mathlib commit \`${MATHLIB_COMMIT}\`.
+  information: `The formal sources are in \`lean/ManifoldAdventure/\`. Each world imports the smallest Mathlib area it needs, from homeomorphisms through smooth manifolds, at pinned Mathlib commit \`${MATHLIB_COMMIT}\`.
 
 For the mathematics, continue with Loring Tu's *An Introduction to Manifolds*, John Lee's *Introduction to Smooth Manifolds*, or John Milnor's *Topology from the Differentiable Viewpoint*.`,
   caption: 'A kernel-checked course on Mathlib homeomorphisms, local charts, atlases, smooth manifolds, products, and tangent bundles.',
@@ -731,13 +765,10 @@ const verifier = {
     level.id,
     {
       sourcePath: level.sourcePath,
-      fullModule: BASE_MODULE,
-      contextModule: BASE_MODULE,
+      fullModule: WORLD_MODULES[level.world].module,
+      contextModule: WORLD_MODULES[level.world].module,
       namespaces: [NAMESPACE],
-      openCommands: [
-        'open scoped Topology ContDiff',
-        'open Filter ENat',
-      ],
+      openCommands: WORLD_MODULES[level.world].openCommands,
       declaration: level.statement,
       declarationKind: level.declarationKind,
       referenceTheorem: `${NAMESPACE}.${level.theoremName}`,
@@ -745,14 +776,16 @@ const verifier = {
   ])),
 }
 
-const leanHeader = `module
+function leanHeader(world) {
+  const config = WORLD_MODULES[world.id]
+  return `module
 
-public import Mathlib.Geometry.Manifold.IsManifold.Basic
+public import ${config.mathlibImport}
 
 @[expose] public section
 
 /-!
-# Manifold Adventure: browser theorem base
+# Manifold Adventure: ${world.title}
 
 Generated by \`scripts/create-manifold-game.mjs\`.
 
@@ -764,23 +797,51 @@ namespace ${NAMESPACE}
 
 universe u v w u' v'
 
-open scoped Topology ContDiff
-open Filter ENat
+${config.openCommands.join('\n')}
 `
+}
 
-const leanDeclarations = levels.map((level) => {
-  const body = level.solution.split('\n').map((line) => `  ${line}`).join('\n')
-  return `${level.declarationKind} ${level.statement} := by\n${body}`
-}).join('\n\n')
+function leanDeclarations(levelsForWorld) {
+  return levelsForWorld.map((level) => {
+    const body = level.solution.split('\n').map((line) => `  ${line}`).join('\n')
+    return `${level.declarationKind} ${level.statement} := by\n${body}`
+  }).join('\n\n')
+}
 
-const leanSource = `${leanHeader}\n${leanDeclarations}\n\nend ${NAMESPACE}\n`
+function leanOutputUrl(moduleName) {
+  return new URL(`${moduleName.replaceAll('.', '/')}.lean`, leanOutputRootUrl)
+}
 
-fs.mkdirSync(new URL('.', leanOutputUrl), { recursive: true })
 fs.writeFileSync(gameOutputUrl, `${JSON.stringify(game, null, 2)}\n`)
 fs.writeFileSync(verifierOutputUrl, `${JSON.stringify(verifier, null, 2)}\n`)
-fs.writeFileSync(leanOutputUrl, leanSource)
+for (const world of game.worlds) {
+  const moduleName = WORLD_MODULES[world.id].module
+  const outputUrl = leanOutputUrl(moduleName)
+  const source = `${leanHeader(world)}\n${leanDeclarations(world.levels)}\n\nend ${NAMESPACE}\n`
+  fs.mkdirSync(new URL('.', outputUrl), { recursive: true })
+  fs.writeFileSync(outputUrl, source)
+}
+
+const browserBaseUrl = leanOutputUrl(BASE_MODULE)
+const browserBaseImports = Object.values(WORLD_MODULES)
+  .map(({ module }) => `public import ${module}`)
+  .join('\n')
+fs.writeFileSync(browserBaseUrl, `module
+
+${browserBaseImports}
+
+@[expose] public section
+
+/-!
+# Manifold Adventure: complete browser theorem base
+
+Generated by \`scripts/create-manifold-game.mjs\`. Browser verification imports
+the narrower world modules above; this umbrella is retained for full-course
+validation and review.
+-/
+`)
 
 console.log(`Generated ${game.worlds.length} worlds and ${levels.length} Mathlib-backed levels.`)
-console.log(`Lean: ${leanOutputUrl.pathname}`)
+console.log(`Lean: ${new URL('ManifoldAdventure/', leanOutputRootUrl).pathname}`)
 console.log(`Game: ${gameOutputUrl.pathname}`)
 console.log(`Verifier: ${verifierOutputUrl.pathname}`)

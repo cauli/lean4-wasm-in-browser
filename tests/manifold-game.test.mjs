@@ -265,7 +265,7 @@ test('each level creates a reusable course declaration without placeholders', ()
   assert.match(finalLevel.solution, /\btangent_zero model place\b/)
 })
 
-test('the generated verifier maps every challenge to the pinned browser module', () => {
+test('the generated verifier maps every challenge to its narrow world module', () => {
   assert.equal(verifier.baseModule, 'ManifoldAdventure.BrowserBase')
   assert.equal(game.source.mathlibCommit, verifier.mathlibCommit)
   assert.equal(verifier.leanCommit, '62b6a2291302d4bbeace37642a066b7510d0145c')
@@ -275,30 +275,48 @@ test('the generated verifier maps every challenge to the pinned browser module',
   for (const level of levels) {
     const metadata = verifier.levels[level.id]
     assert.equal(metadata.declaration, level.statement)
-    assert.equal(metadata.fullModule, verifier.baseModule)
-    assert.equal(metadata.contextModule, verifier.baseModule)
+    assert.equal(metadata.fullModule, metadata.contextModule)
+    assert.equal(
+      metadata.sourcePath,
+      `lean/${metadata.contextModule.replaceAll('.', '/')}.lean`,
+    )
     assert.deepEqual(metadata.namespaces, ['ManifoldAdventure'])
     assert.equal(metadata.referenceTheorem, `ManifoldAdventure.${level.theoremName}`)
   }
 })
 
-test('one generated Lean module is the source of truth for all reference proofs', () => {
-  assert.match(browserBase, /public import Mathlib\.Geometry\.Manifold\.IsManifold\.Basic/)
-  assert.match(browserBase, /namespace ManifoldAdventure/)
+test('generated world modules are the source of truth for all reference proofs', () => {
+  const contextModules = [...new Set(
+    levels.map((level) => verifier.levels[level.id].contextModule),
+  )]
+  assert.equal(contextModules.length, game.worlds.length)
+  for (const moduleName of contextModules) {
+    assert.match(browserBase, new RegExp(`public import ${moduleName.replaceAll('.', '\\.')}`))
+  }
+
+  const worldSources = new Map(contextModules.map((moduleName) => [
+    moduleName,
+    fs.readFileSync(
+      new URL(`../lean/${moduleName.replaceAll('.', '/')}.lean`, import.meta.url),
+      'utf8',
+    ),
+  ]))
+  const allSources = [...worldSources.values()].join('\n')
   assert.equal(
-    [...browserBase.matchAll(/^(?:theorem|(?:noncomputable )?def) /gm)].length,
+    [...allSources.matchAll(/^(?:theorem|(?:noncomputable )?def) /gm)].length,
     levels.length,
   )
-  assert.equal([...browserBase.matchAll(/^(?:noncomputable )?def /gm)].length, 2)
-  assert.doesNotMatch(browserBase, /\b(sorry|admit|axiom|unsafe)\b/)
+  assert.equal([...allSources.matchAll(/^(?:noncomputable )?def /gm)].length, 2)
+  assert.doesNotMatch(allSources, /\b(sorry|admit|axiom|unsafe)\b/)
 
   for (const level of levels) {
+    const source = worldSources.get(verifier.levels[level.id].contextModule)
     assert.match(
-      browserBase,
+      source,
       new RegExp(`^${level.declarationKind} ${level.theoremName}\\b`, 'm'),
     )
     for (const line of level.solution.split('\n')) {
-      assert.ok(browserBase.includes(`  ${line}`), `${level.id} reference proof drifted`)
+      assert.ok(source.includes(`  ${line}`), `${level.id} reference proof drifted`)
     }
   }
 })

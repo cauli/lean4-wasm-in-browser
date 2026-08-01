@@ -444,14 +444,11 @@ export function useLeanGameVerifier() {
   const ensureManifoldLayer = useCallback(async () => {
     if (manifoldLayerPromiseRef.current) return manifoldLayerPromiseRef.current
     const promise = (async () => {
-      // The manifold package is a small, pinned extension of the existing
-      // Mathlib/Real Analysis package, so load its base artifacts first.
-      await ensureRealAnalysisLayer()
       await loadArtifactLayer({
         manifestFile: 'manifold-layer.json',
         libraryRoot: 'manifold-lib',
-        label: 'Mathlib manifold modules',
-        readyMessage: 'Mathlib and the Manifold Adventure are ready.',
+        label: 'Mathlib for the Manifold Adventure',
+        readyMessage: 'The Manifold Adventure library is ready.',
       })
     })().catch((error) => {
       manifoldLayerPromiseRef.current = null
@@ -459,7 +456,7 @@ export function useLeanGameVerifier() {
     })
     manifoldLayerPromiseRef.current = promise
     return promise
-  }, [ensureRealAnalysisLayer, loadArtifactLayer])
+  }, [loadArtifactLayer])
 
   const trySnapshot = useCallback(async (): Promise<boolean> => {
     const suffix = LEAN_ASSET_VERSION ? `?v=${encodeURIComponent(LEAN_ASSET_VERSION)}` : ''
@@ -571,6 +568,7 @@ export function useLeanGameVerifier() {
         })
     try {
       await initializeForLevel(level)
+      setProgress(`Opening the ${level.world} world and reading its Lean definitions...`)
       const started = performance.now()
       const compiled = await compileCode(source.code)
       const elapsedMs = compiled.result.elapsed ?? performance.now() - started
@@ -675,7 +673,7 @@ export function useLeanGameVerifier() {
     try {
       await initializeForLevel(level)
       updateStatus('checking')
-      setProgress('Elaborating and checking your proof locally...')
+      setProgress(`Checking your proof in the ${level.world} world...`)
       const started = performance.now()
       const compiled = await compileCode(challenge.code)
       const elapsedMs = compiled.result.elapsed ?? performance.now() - started
