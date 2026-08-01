@@ -151,6 +151,7 @@ test('every imported Real Analysis prose formula renders without a KaTeX error',
       world.introduction,
       ...world.levels.flatMap((level) => [
         level.introduction,
+        level.statementText,
         ...level.hints,
         level.conclusion,
       ]),

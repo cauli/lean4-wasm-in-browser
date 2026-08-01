@@ -16,31 +16,31 @@ const course = JSON.parse(fs.readFileSync(coursePath, 'utf8'))
 const models = {
   'sphere-charts': {
     label: 'Sphere with two charts',
-    caption: 'Two translucent chart regions cover the sphere. The amber chart comes from the north, the teal chart comes from the south, and their transition map is defined on the overlap.',
+    caption: 'Ada uses the amber leaf near the north and the teal leaf near the south. Both charts work on the overlap, where a transition map translates between their coordinates.',
   },
   'torus-loops': {
     label: 'Torus with its two loops',
-    caption: 'Neither highlighted loop can be shrunk to a point while staying on the surface. The two loops are the standard generators for paths around a torus.',
+    caption: 'Ada can follow either highlighted loop around the torus. Neither loop can be shrunk to a point while staying on the surface.',
   },
   'mobius-band': {
     label: 'Möbius band',
-    caption: 'Follow the arrows around the band once and they return flipped. The band has one boundary curve and no consistent choice of "up".',
+    caption: 'Ada carries an arrow once around the band and finds it flipped on her return. There is no consistent choice of "up" across the whole surface.',
   },
   'trefoil-circle': {
     label: 'Circle and trefoil embeddings',
-    caption: 'Both tubes are copies of the same one-manifold, the circle. They differ only in how they are embedded in three-dimensional space.',
+    caption: 'From inside either tube, Ada experiences the same one-manifold: a circle. The knot belongs to the way one circle sits in three-dimensional space.',
   },
   'sphere-triangle': {
     label: 'A triangle with three right angles',
-    caption: 'This geodesic triangle on the sphere has three right angles. Its angles total 270°, and the 90° excess measures curvature from within the surface.',
+    caption: 'Ada walks three geodesic edges and turns through a right angle at every corner. The 270° angle total reveals curvature from within the sphere.',
   },
   'figure-eight': {
     label: 'Figure-eight crossing',
-    caption: 'Every point except the red crossing has a neighborhood like an interval. Removing the crossing leaves four arms instead of two, so that point fails the local interval test.',
+    caption: 'Ada tests the red crossing as a possible point on a one-manifold. Removing it leaves four nearby arms instead of the two she would find on an interval.',
   },
   'tangent-plane': {
     label: 'Tangent plane at a point',
-    caption: 'The plane contains the possible velocity vectors at Ada\'s point. It is the tangent space where calculus on the surface takes place.',
+    caption: 'The plane contains the velocity vectors Ada could choose at this point. It is the tangent space where local motion becomes linear.',
   },
 }
 
@@ -189,6 +189,10 @@ for (const [worldIndex, world] of course.worlds.entries()) {
       '#### Lesson',
       '',
       level.introduction,
+      '',
+      '#### Human-readable objective',
+      '',
+      level.statementText,
       '',
       '#### Goal',
       '',

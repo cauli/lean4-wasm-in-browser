@@ -20,141 +20,261 @@ universe u v w u' v'
 open scoped Topology ContDiff
 open Filter ENat
 
-theorem homeomorph_continuous {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
-    (e : X ≃ₜ Y) : Continuous e := by
-  exact e.continuous
+theorem homeomorph_continuous {Trail : Type u} {Drawing : Type v}
+    [trailTopology : TopologicalSpace Trail]
+    [drawingTopology : TopologicalSpace Drawing]
+    (trailMap : Trail ≃ₜ Drawing) : Continuous trailMap := by
+  exact trailMap.continuous
 
-theorem homeomorph_inverse_continuous {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
-    (e : X ≃ₜ Y) : Continuous e.symm := by
-  exact e.continuous_symm
+theorem homeomorph_inverse_continuous {Trail : Type u} {Drawing : Type v}
+    [trailTopology : TopologicalSpace Trail]
+    [drawingTopology : TopologicalSpace Drawing]
+    (trailMap : Trail ≃ₜ Drawing) : Continuous trailMap.symm := by
+  exact trailMap.continuous_symm
 
-theorem homeomorph_round_trip {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
-    (e : X ≃ₜ Y) (x : X) : e.symm (e x) = x := by
-  exact e.symm_apply_apply x
+theorem homeomorph_round_trip {Trail : Type u} {Drawing : Type v}
+    [trailTopology : TopologicalSpace Trail]
+    [drawingTopology : TopologicalSpace Drawing]
+    (trailMap : Trail ≃ₜ Drawing) (place : Trail) :
+    trailMap.symm (trailMap place) = place := by
+  exact trailMap.symm_apply_apply place
 
-theorem homeomorph_composition_apply {X : Type u} {Y : Type v} {Z : Type w}
-    [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
-    (e : X ≃ₜ Y) (f : Y ≃ₜ Z) (x : X) : e.trans f x = f (e x) := by
-  exact Homeomorph.trans_apply e f x
+theorem homeomorph_composition_apply {Trail : Type u} {Drawing : Type v} {RouteBook : Type w}
+    [trailTopology : TopologicalSpace Trail]
+    [drawingTopology : TopologicalSpace Drawing]
+    [routeBookTopology : TopologicalSpace RouteBook]
+    (trailMap : Trail ≃ₜ Drawing) (bookMap : Drawing ≃ₜ RouteBook)
+    (place : Trail) :
+    trailMap.trans bookMap place = bookMap (trailMap place) := by
+  exact Homeomorph.trans_apply trailMap bookMap place
 
-theorem local_chart_source_open {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
-    (e : OpenPartialHomeomorph X Y) : IsOpen e.source := by
-  exact e.open_source
+theorem local_chart_source_open {Stone : Type u} {Drawing : Type v}
+    [stoneTopology : TopologicalSpace Stone]
+    [drawingTopology : TopologicalSpace Drawing]
+    (chart : OpenPartialHomeomorph Stone Drawing) : IsOpen chart.source := by
+  exact chart.open_source
 
-theorem local_chart_continuous {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
-    (e : OpenPartialHomeomorph X Y) : ContinuousOn e e.source := by
-  exact e.continuousOn
+theorem local_chart_continuous {Stone : Type u} {Drawing : Type v}
+    [stoneTopology : TopologicalSpace Stone]
+    [drawingTopology : TopologicalSpace Drawing]
+    (chart : OpenPartialHomeomorph Stone Drawing) :
+    ContinuousOn chart chart.source := by
+  exact chart.continuousOn
 
-theorem local_chart_maps_source {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
-    (e : OpenPartialHomeomorph X Y) (x : X) (hx : x ∈ e.source) : e x ∈ e.target := by
-  apply e.map_source
-  exact hx
+theorem local_chart_maps_source {Stone : Type u} {Drawing : Type v}
+    [stoneTopology : TopologicalSpace Stone]
+    [drawingTopology : TopologicalSpace Drawing]
+    (chart : OpenPartialHomeomorph Stone Drawing)
+    (place : Stone) (inPatch : place ∈ chart.source) :
+    chart place ∈ chart.target := by
+  apply chart.map_source
+  exact inPatch
 
-theorem local_chart_round_trip {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
-    (e : OpenPartialHomeomorph X Y) (x : X) (hx : x ∈ e.source) : e.symm (e x) = x := by
-  exact e.left_inv hx
+theorem local_chart_round_trip {Stone : Type u} {Drawing : Type v}
+    [stoneTopology : TopologicalSpace Stone]
+    [drawingTopology : TopologicalSpace Drawing]
+    (chart : OpenPartialHomeomorph Stone Drawing)
+    (place : Stone) (inPatch : place ∈ chart.source) :
+    chart.symm (chart place) = place := by
+  exact chart.left_inv inPatch
 
-theorem point_mem_preferred_chart {H : Type u} {M : Type v} [TopologicalSpace H] [TopologicalSpace M]
-    [ChartedSpace H M] (x : M) : x ∈ (chartAt H x).source := by
-  exact mem_chart_source H x
+theorem point_mem_preferred_chart {Coordinates : Type u} {Surface : Type v}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface] (place : Surface) :
+    place ∈ (chartAt Coordinates place).source := by
+  exact mem_chart_source Coordinates place
 
-theorem preferred_chart_mem_atlas {H : Type u} {M : Type v} [TopologicalSpace H] [TopologicalSpace M]
-    [ChartedSpace H M] (x : M) : chartAt H x ∈ atlas H M := by
-  exact chart_mem_atlas H x
+theorem preferred_chart_mem_atlas {Coordinates : Type u} {Surface : Type v}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface] (place : Surface) :
+    chartAt Coordinates place ∈ atlas Coordinates Surface := by
+  exact chart_mem_atlas Coordinates place
 
-theorem preferred_chart_maps_to_target {H : Type u} {M : Type v} [TopologicalSpace H] [TopologicalSpace M]
-    [ChartedSpace H M] (x : M) : chartAt H x x ∈ (chartAt H x).target := by
-  exact mem_chart_target H x
+theorem preferred_chart_maps_to_target {Coordinates : Type u} {Surface : Type v}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface] (place : Surface) :
+    chartAt Coordinates place place ∈ (chartAt Coordinates place).target := by
+  exact mem_chart_target Coordinates place
 
-theorem preferred_chart_source_is_neighborhood {H : Type u} {M : Type v} [TopologicalSpace H] [TopologicalSpace M]
-    [ChartedSpace H M] (x : M) : (chartAt H x).source ∈ 𝓝 x := by
-  exact chart_source_mem_nhds H x
+theorem preferred_chart_source_is_neighborhood {Coordinates : Type u} {Surface : Type v}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface] (place : Surface) :
+    (chartAt Coordinates place).source ∈ 𝓝 place := by
+  exact chart_source_mem_nhds Coordinates place
 
-theorem preferred_charts_cover {H : Type u} {M : Type v} [TopologicalSpace H] [TopologicalSpace M]
-    [ChartedSpace H M] : (⋃ x : M, (chartAt H x).source) = (Set.univ : Set M) := by
-  exact iUnion_source_chartAt H M
+theorem preferred_charts_cover {Coordinates : Type u} {Surface : Type v}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface] :
+    (⋃ place : Surface, (chartAt Coordinates place).source) =
+      (Set.univ : Set Surface) := by
+  exact iUnion_source_chartAt Coordinates Surface
 
-theorem self_chart_is_identity {H : Type u} [TopologicalSpace H] (x : H) :
-    chartAt H x = OpenPartialHomeomorph.refl H := by
+theorem self_chart_is_identity {Coordinates : Type u}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    (mark : Coordinates) :
+    chartAt Coordinates mark = OpenPartialHomeomorph.refl Coordinates := by
   exact chartAt_self_eq
 
-theorem self_atlas_only_identity {H : Type u} [TopologicalSpace H] (e : OpenPartialHomeomorph H H) :
-    e ∈ atlas H H ↔ e = OpenPartialHomeomorph.refl H := by
+theorem self_atlas_only_identity {Coordinates : Type u}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    (chart : OpenPartialHomeomorph Coordinates Coordinates) :
+    chart ∈ atlas Coordinates Coordinates ↔
+      chart = OpenPartialHomeomorph.refl Coordinates := by
   constructor
   · intro h
     exact chartedSpaceSelf_atlas.mp h
   · intro h
     exact chartedSpaceSelf_atlas.mpr h
 
-theorem product_chart_is_product {H : Type u} {H' : Type u'} {M : Type v} {M' : Type v'}
-    [TopologicalSpace H] [TopologicalSpace H'] [TopologicalSpace M] [TopologicalSpace M']
-    [ChartedSpace H M] [ChartedSpace H' M'] (x : M × M') :
-    chartAt (ModelProd H H') x = (chartAt H x.1).prod (chartAt H' x.2) := by
+theorem product_chart_is_product {FirstCoordinates : Type u} {SecondCoordinates : Type u'}
+    {FirstSurface : Type v} {SecondSurface : Type v'}
+    [firstCoordinateTopology : TopologicalSpace FirstCoordinates]
+    [secondCoordinateTopology : TopologicalSpace SecondCoordinates]
+    [firstSurfaceTopology : TopologicalSpace FirstSurface]
+    [secondSurfaceTopology : TopologicalSpace SecondSurface]
+    [firstSurfaceCharts : ChartedSpace FirstCoordinates FirstSurface]
+    [secondSurfaceCharts : ChartedSpace SecondCoordinates SecondSurface]
+    (position : FirstSurface × SecondSurface) :
+    chartAt (ModelProd FirstCoordinates SecondCoordinates) position =
+      (chartAt FirstCoordinates position.1).prod
+        (chartAt SecondCoordinates position.2) := by
   rw [prodChartedSpace_chartAt]
 
-theorem product_point_mem_chart_source {H : Type u} {H' : Type u'} {M : Type v} {M' : Type v'}
-    [TopologicalSpace H] [TopologicalSpace H'] [TopologicalSpace M] [TopologicalSpace M']
-    [ChartedSpace H M] [ChartedSpace H' M'] (x : M) (y : M') :
-    (x, y) ∈ (chartAt (ModelProd H H') (x, y)).source := by
-  simpa only using (mem_chart_source (ModelProd H H') (x, y))
+theorem product_point_mem_chart_source {FirstCoordinates : Type u} {SecondCoordinates : Type u'}
+    {FirstSurface : Type v} {SecondSurface : Type v'}
+    [firstCoordinateTopology : TopologicalSpace FirstCoordinates]
+    [secondCoordinateTopology : TopologicalSpace SecondCoordinates]
+    [firstSurfaceTopology : TopologicalSpace FirstSurface]
+    [secondSurfaceTopology : TopologicalSpace SecondSurface]
+    [firstSurfaceCharts : ChartedSpace FirstCoordinates FirstSurface]
+    [secondSurfaceCharts : ChartedSpace SecondCoordinates SecondSurface]
+    (firstPosition : FirstSurface) (secondPosition : SecondSurface) :
+    (firstPosition, secondPosition) ∈
+      (chartAt (ModelProd FirstCoordinates SecondCoordinates)
+        (firstPosition, secondPosition)).source := by
+  simpa only using
+    (mem_chart_source (ModelProd FirstCoordinates SecondCoordinates)
+      (firstPosition, secondPosition))
 
-theorem model_space_is_manifold {𝕜 : Type u} [NontriviallyNormedField 𝕜]
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {H : Type w} [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H) (n : WithTop ℕ∞) :
-    IsManifold I n H := by
+theorem model_space_is_manifold {Scalar : Type u}
+    [scalarField : NontriviallyNormedField Scalar]
+    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
+    [vectorSpace : NormedSpace Scalar Vectors]
+    {Coordinates : Type w}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    (model : ModelWithCorners Scalar Vectors Coordinates)
+    (order : WithTop ℕ∞) :
+    IsManifold model order Coordinates := by
   infer_instance
 
-theorem manifold_of_higher_smoothness {𝕜 : Type u} [NontriviallyNormedField 𝕜]
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {H : Type w} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-    {M : Type u'} [TopologicalSpace M] [ChartedSpace H M]
-    {m n : WithTop ℕ∞} [IsManifold I n M] (hmn : m ≤ n) : IsManifold I m M := by
-  exact IsManifold.of_le hmn
+theorem manifold_of_higher_smoothness {Scalar : Type u}
+    [scalarField : NontriviallyNormedField Scalar]
+    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
+    [vectorSpace : NormedSpace Scalar Vectors]
+    {Coordinates : Type w}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    {model : ModelWithCorners Scalar Vectors Coordinates}
+    {Surface : Type u'} [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface]
+    {lowerOrder higherOrder : WithTop ℕ∞}
+    [higherSmoothness : IsManifold model higherOrder Surface]
+    (order_le : lowerOrder ≤ higherOrder) :
+    IsManifold model lowerOrder Surface := by
+  exact IsManifold.of_le order_le
 
-theorem smooth_manifold_is_topological {𝕜 : Type u} [NontriviallyNormedField 𝕜]
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {H : Type w} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-    {M : Type u'} [TopologicalSpace M] [ChartedSpace H M]
-    [IsManifold I ∞ M] : IsManifold I 0 M := by
+theorem smooth_manifold_is_topological {Scalar : Type u}
+    [scalarField : NontriviallyNormedField Scalar]
+    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
+    [vectorSpace : NormedSpace Scalar Vectors]
+    {Coordinates : Type w}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    {model : ModelWithCorners Scalar Vectors Coordinates}
+    {Surface : Type u'} [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface]
+    [smoothSurface : IsManifold model ∞ Surface] :
+    IsManifold model 0 Surface := by
   infer_instance
 
-theorem product_of_manifolds {𝕜 : Type u} [NontriviallyNormedField 𝕜]
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {E' : Type v'} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
-    {H : Type w} [TopologicalSpace H] {H' : Type*} [TopologicalSpace H']
-    {I : ModelWithCorners 𝕜 E H} {I' : ModelWithCorners 𝕜 E' H'}
-    {M : Type u'} [TopologicalSpace M] [ChartedSpace H M]
-    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
-    (n : WithTop ℕ∞) [IsManifold I n M] [IsManifold I' n M'] :
-    IsManifold (I.prod I') n (M × M') := by
-  exact IsManifold.prod M M'
+theorem product_of_manifolds {Scalar : Type u}
+    [scalarField : NontriviallyNormedField Scalar]
+    {FirstVectors : Type v}
+    [firstVectorGroup : NormedAddCommGroup FirstVectors]
+    [firstVectorSpace : NormedSpace Scalar FirstVectors]
+    {SecondVectors : Type v'}
+    [secondVectorGroup : NormedAddCommGroup SecondVectors]
+    [secondVectorSpace : NormedSpace Scalar SecondVectors]
+    {FirstCoordinates : Type w}
+    [firstCoordinateTopology : TopologicalSpace FirstCoordinates]
+    {SecondCoordinates : Type*}
+    [secondCoordinateTopology : TopologicalSpace SecondCoordinates]
+    {firstModel : ModelWithCorners Scalar FirstVectors FirstCoordinates}
+    {secondModel : ModelWithCorners Scalar SecondVectors SecondCoordinates}
+    {FirstSurface : Type u'}
+    [firstSurfaceTopology : TopologicalSpace FirstSurface]
+    [firstSurfaceCharts : ChartedSpace FirstCoordinates FirstSurface]
+    {SecondSurface : Type*}
+    [secondSurfaceTopology : TopologicalSpace SecondSurface]
+    [secondSurfaceCharts : ChartedSpace SecondCoordinates SecondSurface]
+    (order : WithTop ℕ∞)
+    [firstSmoothness : IsManifold firstModel order FirstSurface]
+    [secondSmoothness : IsManifold secondModel order SecondSurface] :
+    IsManifold (firstModel.prod secondModel) order (FirstSurface × SecondSurface) := by
+  exact IsManifold.prod FirstSurface SecondSurface
 
-noncomputable def tangent_zero {𝕜 : Type u} [NontriviallyNormedField 𝕜]
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {H : Type w} [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H)
-    {M : Type u'} [TopologicalSpace M] [ChartedSpace H M] (x : M) : TangentSpace I x := by
+noncomputable def tangent_zero {Scalar : Type u}
+    [scalarField : NontriviallyNormedField Scalar]
+    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
+    [vectorSpace : NormedSpace Scalar Vectors]
+    {Coordinates : Type w}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    (model : ModelWithCorners Scalar Vectors Coordinates)
+    {Surface : Type u'} [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface] (place : Surface) :
+    TangentSpace model place := by
   exact 0
 
-def tangent_vector_as_bundle_point {𝕜 : Type u} [NontriviallyNormedField 𝕜]
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {H : Type w} [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H)
-    {M : Type u'} [TopologicalSpace M] [ChartedSpace H M]
-    {x : M} (v : TangentSpace I x) : TangentBundle I M := by
-  exact ⟨x, v⟩
+def tangent_vector_as_bundle_point {Scalar : Type u}
+    [scalarField : NontriviallyNormedField Scalar]
+    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
+    [vectorSpace : NormedSpace Scalar Vectors]
+    {Coordinates : Type w}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    (model : ModelWithCorners Scalar Vectors Coordinates)
+    {Surface : Type u'} [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface]
+    {place : Surface} (velocity : TangentSpace model place) :
+    TangentBundle model Surface := by
+  exact ⟨place, velocity⟩
 
-theorem tangent_bundle_base {𝕜 : Type u} [NontriviallyNormedField 𝕜]
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {H : Type w} [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H)
-    {M : Type u'} [TopologicalSpace M] [ChartedSpace H M]
-    {x : M} (v : TangentSpace I x) : (⟨x, v⟩ : TangentBundle I M).1 = x := by
+theorem tangent_bundle_base {Scalar : Type u}
+    [scalarField : NontriviallyNormedField Scalar]
+    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
+    [vectorSpace : NormedSpace Scalar Vectors]
+    {Coordinates : Type w}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    (model : ModelWithCorners Scalar Vectors Coordinates)
+    {Surface : Type u'} [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface]
+    {place : Surface} (velocity : TangentSpace model place) :
+    (⟨place, velocity⟩ : TangentBundle model Surface).1 = place := by
   rfl
 
-theorem tangent_bundle_has_zero {𝕜 : Type u} [NontriviallyNormedField 𝕜]
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {H : Type w} [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H)
-    {M : Type u'} [TopologicalSpace M] [ChartedSpace H M] (x : M) :
-    ∃ p : TangentBundle I M, p.1 = x := by
-  refine ⟨⟨x, tangent_zero I x⟩, ?_⟩
+theorem tangent_bundle_has_zero {Scalar : Type u}
+    [scalarField : NontriviallyNormedField Scalar]
+    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
+    [vectorSpace : NormedSpace Scalar Vectors]
+    {Coordinates : Type w}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    (model : ModelWithCorners Scalar Vectors Coordinates)
+    {Surface : Type u'} [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface] (place : Surface) :
+    ∃ bundlePoint : TangentBundle model Surface, bundlePoint.1 = place := by
+  refine ⟨⟨place, tangent_zero model place⟩, ?_⟩
   rfl
 
 end ManifoldAdventure

@@ -11,16 +11,42 @@ const LEAN_UPSTREAM_COMMIT = 'ecf55de08b9d855e749f80c491c6f294dd307e60'
 const MATHLIB_COMMIT = 'de3a9cf33016bbb6d15880d7680643f7ca2d25ba'
 const BASE_MODULE = 'ManifoldAdventure.BrowserBase'
 const NAMESPACE = 'ManifoldAdventure'
+const MATHLIB_DOCS = {
+  homeomorph: 'https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html',
+  openPartialHomeomorph: 'https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html',
+  chartedSpace: 'https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html',
+  isManifold: 'https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html',
+}
+
+function mathlibDoc(name, page, anchor = name) {
+  return `[\`${name}\`](${page}#${anchor})`
+}
+
+function lessonText(introduction, statementText) {
+  const paragraphs = introduction.trim().split(/\n\n+/)
+  const objective = paragraphs.at(-1)
+
+  if (!objective?.startsWith('**Objective:**')) {
+    throw new Error('Every Manifold Adventure level must end with an **Objective:** paragraph.')
+  }
+
+  return {
+    introduction: paragraphs.slice(0, -1).join('\n\n'),
+    statementText: statementText?.trim() || objective,
+  }
+}
 
 function makeLevel(world, number, level) {
+  const lesson = lessonText(level.introduction, level.statementText)
+
   return {
     id: `${world.toLowerCase()}-${number}`,
     world,
     number,
     title: level.title,
-    introduction: level.introduction.trim(),
+    introduction: lesson.introduction,
     conclusion: level.conclusion.trim(),
-    statementText: level.statementText?.trim(),
+    statementText: lesson.statementText,
     statement: `${level.theoremName} ${level.signature}`,
     theoremName: level.theoremName,
     declarationKind: level.declarationKind || 'theorem',
@@ -61,9 +87,9 @@ const game = {
   title: 'The Manifold Adventure',
   introduction: `# The Manifold Adventure
 
-Ada is an ant who can only inspect her world from the inside. Manifold theory works the same way: it studies a global space through local coordinate patches.
+Ada is an ant, so she can only inspect her world from the inside. Manifold theory takes the same point of view: understand the whole space through local coordinates.
 
-The course uses [Mathlib's manifold API](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html) from the first level. You begin with a [\`Homeomorph\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html#Homeomorph), then work with [\`OpenPartialHomeomorph\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph), [\`ChartedSpace\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#ChartedSpace), [\`atlas\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#atlas), [\`chartAt\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#chartAt), [\`ModelWithCorners\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#ModelWithCorners), [\`IsManifold\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold), [\`TangentSpace\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentSpace), and [\`TangentBundle\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentBundle).`,
+The course uses [Mathlib's manifold API](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html) from the start. First come [\`Homeomorph\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html#Homeomorph) and [\`OpenPartialHomeomorph\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph). Then you build a [\`ChartedSpace\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#ChartedSpace) from an [\`atlas\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#atlas) and [\`chartAt\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#chartAt). The last worlds introduce [\`ModelWithCorners\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#ModelWithCorners), [\`IsManifold\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold), [\`TangentSpace\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentSpace), and [\`TangentBundle\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentBundle).`,
   information: `The formal source is \`lean/ManifoldAdventure/BrowserBase.lean\`. It imports \`Mathlib.Geometry.Manifold.IsManifold.Basic\` at pinned Mathlib commit \`${MATHLIB_COMMIT}\`.
 
 For the mathematics, continue with Loring Tu's *An Introduction to Manifolds*, John Lee's *Introduction to Smooth Manifolds*, or John Milnor's *Topology from the Differentiable Viewpoint*.`,
@@ -73,68 +99,87 @@ For the mathematics, continue with Loring Tu's *An Introduction to Manifolds*, J
     makeWorld(
       'Homeomorphisms',
       'Homeomorphisms',
-      `# Same topology, different labels
+      `# One path, two descriptions
 
-A Mathlib homeomorphism is a bundled structure. \`Homeomorph X Y\` contains an equivalence and continuity proofs for both directions.
+Ada begins on a single trail. She can copy the whole route onto one leaf, matching every place on the trail with one place in the drawing.
 
-In this world, you will read fields from that structure, use its inverse laws, and compose two homeomorphisms.`,
+A ${mathlibDoc('Homeomorph', MATHLIB_DOCS.homeomorph)} is Mathlib's bundled version of such a correspondence. In the goals, \`Trail\` is the actual path, \`Drawing\` is the inked route rather than the whole leaf, and \`trailMap\` connects them. The structure contains an equivalence and continuity proofs in both directions.`,
       [],
       [
         {
-          title: 'Continuity is bundled',
+          title: 'The drawing matches the trail',
           theoremName: 'homeomorph_continuous',
-          signature: `{X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
-    (e : X ≃ₜ Y) : Continuous e`,
-          introduction: `The notation \`X ≃ₜ Y\` means a homeomorphism from \`X\` to \`Y\`. The hypothesis \`e : X ≃ₜ Y\` already contains a proof that its forward function is continuous. Mathlib exposes the field as \`Homeomorph.continuous\`. With dot notation, it becomes \`e.continuous\`.
+          signature: `{Trail : Type u} {Drawing : Type v}
+    [trailTopology : TopologicalSpace Trail]
+    [drawingTopology : TopologicalSpace Drawing]
+    (trailMap : Trail ≃ₜ Drawing) : Continuous trailMap`,
+          introduction: `Ada stands midway along a path. North leads back to the nest; south leads to a patch of berries. She copies the path onto a leaf. As she moves a little along the trail, her mark should move only a little on the drawing. There can be no sudden jump.
 
-Use \`exact\` to give Lean that proof.`,
-          conclusion: `The proof came directly from the continuity field of Mathlib's bundled \`Homeomorph\`.`,
-          solution: 'exact e.continuous',
-          hints: ['The homeomorphism `e` has a theorem named `e.continuous`.', 'Enter `exact e.continuous`.'],
+Here \`Trail\` is the actual path and \`Drawing\` is the line Ada drew. The objects \`trailTopology\` and \`drawingTopology\` tell Lean what it means for points to be nearby in each space. Then \`trailMap : Trail ≃ₜ Drawing\` matches their points homeomorphically. It already contains a proof that its forward function is continuous, exposed as ${mathlibDoc('Homeomorph.continuous', MATHLIB_DOCS.homeomorph)} or \`trailMap.continuous\`.
+
+**Objective:** Prove that the map from the actual trail to Ada's drawing is continuous.`,
+          conclusion: `Ada's drawing now moves continuously with the trail.`,
+          solution: 'exact trailMap.continuous',
+          hints: ['The forward continuity proof is a field of `trailMap`.', 'Close the goal with `exact trailMap.continuous`.'],
           newTactics: ['exact'],
           newTheorems: ['Homeomorph.continuous'],
           newDefinitions: ['TopologicalSpace', 'Homeomorph', 'Continuous'],
         },
         {
-          title: 'The inverse is continuous too',
+          title: 'The drawing leads Ada back',
           theoremName: 'homeomorph_inverse_continuous',
-          signature: `{X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
-    (e : X ≃ₜ Y) : Continuous e.symm`,
-          introduction: `A continuous bijection needs a continuous inverse to qualify as a homeomorphism. Mathlib records the inverse proof separately as \`Homeomorph.continuous_symm\`.
+          signature: `{Trail : Type u} {Drawing : Type v}
+    [trailTopology : TopologicalSpace Trail]
+    [drawingTopology : TopologicalSpace Drawing]
+    (trailMap : Trail ≃ₜ Drawing) : Continuous trailMap.symm`,
+          introduction: `Ada also needs the leaf to guide her home. A small move across the drawing should send her to a nearby place on the trail, not somewhere far away.
 
-Here, Lean coerces the inverse homeomorphism \`e.symm\` to its underlying function.`,
-          conclusion: `A homeomorphism carries continuity proofs in both directions.`,
-          solution: 'exact e.continuous_symm',
-          hints: ['Look for the inverse counterpart of `e.continuous`.', 'Use `exact e.continuous_symm`.'],
+The inverse homeomorphism is \`trailMap.symm\`: it reads a mark on \`Drawing\` as a place on \`Trail\`. Its continuity proof is ${mathlibDoc('Homeomorph.continuous_symm', MATHLIB_DOCS.homeomorph)}, available through dot notation as \`trailMap.continuous_symm\`.
+
+**Objective:** Prove that reading the leaf back onto the trail is continuous.`,
+          conclusion: `Ada can read the same map in either direction without a jump.`,
+          solution: 'exact trailMap.continuous_symm',
+          hints: ['The inverse field sits next to `trailMap.continuous`.', 'Try `exact trailMap.continuous_symm`.'],
           newTheorems: ['Homeomorph.continuous_symm'],
           newDefinitions: ['Homeomorph.symm'],
         },
         {
-          title: 'There and back',
+          title: 'Back where she started',
           theoremName: 'homeomorph_round_trip',
-          signature: `{X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
-    (e : X ≃ₜ Y) (x : X) : e.symm (e x) = x`,
-          introduction: `A coordinate change needs a reliable round trip. The homeomorphism sends \`x\` to \`Y\`, and its inverse sends the result back to \`x\`.
+          signature: `{Trail : Type u} {Drawing : Type v}
+    [trailTopology : TopologicalSpace Trail]
+    [drawingTopology : TopologicalSpace Drawing]
+    (trailMap : Trail ≃ₜ Drawing) (place : Trail) :
+    trailMap.symm (trailMap place) = place`,
+          introduction: `Ada marks her position on the leaf, then reads that mark back onto the trail. She should land at the exact place where she started.
 
-The equivalence inside the homeomorphism supplies this inverse law as \`Homeomorph.symm_apply_apply\`.`,
-          conclusion: `The round-trip equation says that changing coordinates and returning leaves the point unchanged.`,
-          solution: 'exact e.symm_apply_apply x',
-          hints: ['The theorem is unlocked as `Homeomorph.symm_apply_apply`.', 'With dot notation: `exact e.symm_apply_apply x`.'],
+The equation \`trailMap.symm (trailMap place) = place\` is the round-trip law for a homeomorphism. Mathlib stores it as ${mathlibDoc('Homeomorph.symm_apply_apply', MATHLIB_DOCS.homeomorph)}.
+
+**Objective:** Show that mapping \`place\` to the drawing and back returns the same place.`,
+          conclusion: `The mark on the leaf still names exactly one place on the trail.`,
+          solution: 'exact trailMap.symm_apply_apply place',
+          hints: ['The unlocked theorem is `Homeomorph.symm_apply_apply`.', 'In dot notation, write `exact trailMap.symm_apply_apply place`.'],
           newTheorems: ['Homeomorph.symm_apply_apply'],
           newDefinitions: ['Eq'],
         },
         {
-          title: 'Compose coordinate changes',
+          title: 'Into the route book',
           theoremName: 'homeomorph_composition_apply',
-          signature: `{X : Type u} {Y : Type v} {Z : Type w}
-    [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
-    (e : X ≃ₜ Y) (f : Y ≃ₜ Z) (x : X) : e.trans f x = f (e x)`,
-          introduction: `Mathlib composes homeomorphisms with \`e.trans f\`: first \`e\`, then \`f\`. The theorem \`Homeomorph.trans_apply\` tells Lean how that bundled composition acts on a point.
+          signature: `{Trail : Type u} {Drawing : Type v} {RouteBook : Type w}
+    [trailTopology : TopologicalSpace Trail]
+    [drawingTopology : TopologicalSpace Drawing]
+    [routeBookTopology : TopologicalSpace RouteBook]
+    (trailMap : Trail ≃ₜ Drawing) (bookMap : Drawing ≃ₜ RouteBook)
+    (place : Trail) :
+    trailMap.trans bookMap place = bookMap (trailMap place)`,
+          introduction: `Ada copies the trail onto a leaf, then copies the leaf into the nest's larger route book. Her position passes through the first map and then the second.
 
-Apply the named library theorem explicitly so that you can see which part of the API proves the equation.`,
-          conclusion: `You can now use the continuity fields, inverse law, and composition rule for homeomorphisms.`,
-          solution: 'exact Homeomorph.trans_apply e f x',
-          hints: ['Use the fully qualified theorem name.', 'Enter `exact Homeomorph.trans_apply e f x`.'],
+Here \`trailMap\` goes from the actual \`Trail\` to the \`Drawing\`, while \`bookMap\` transfers that drawing into the \`RouteBook\`. Mathlib composes them with \`trailMap.trans bookMap\`. The pointwise rule is ${mathlibDoc('Homeomorph.trans_apply', MATHLIB_DOCS.homeomorph)}.
+
+**Objective:** Show that the composed map sends \`place\` first through \`trailMap\` and then through \`bookMap\`.`,
+          conclusion: `The two drawings now behave like one map from the trail to the route book.`,
+          solution: 'exact Homeomorph.trans_apply trailMap bookMap place',
+          hints: ['This step uses the fully qualified theorem name.', 'Try `exact Homeomorph.trans_apply trailMap bookMap place`.'],
           newTheorems: ['Homeomorph.trans_apply'],
           newDefinitions: ['Homeomorph.trans'],
         },
@@ -143,67 +188,88 @@ Apply the named library theorem explicitly so that you can see which part of the
     makeWorld(
       'LocalCharts',
       'Open partial homeomorphisms',
-      `# A chart is partial
+      `# A chart only sees a patch
 
-A globe cannot be flattened by one global homeomorphism. A chart instead maps an open patch of the manifold to an open patch of a model space.
+The trail soon climbs onto a rounded stone. Ada cannot press the whole curved surface onto one leaf without distortion, so she draws only the patch around her.
 
-Mathlib represents a chart as \`OpenPartialHomeomorph X Y\`. The structure has a \`source\`, a \`target\`, local continuity, and inverse laws. To use those laws, you must prove that the point lies in the relevant patch.`,
+Mathlib represents one local chart by ${mathlibDoc('OpenPartialHomeomorph', MATHLIB_DOCS.openPartialHomeomorph)}. In these goals, \`Stone\` is the curved surface, \`Drawing\` is Ada's coordinate picture, and \`chart\` connects only the part she has drawn. It has a \`source\` on the stone, a \`target\` in the drawing, and inverse laws that apply inside the patch.`,
       ['Homeomorphisms'],
       [
         {
-          title: 'The source is open',
+          title: 'Room around every place',
           theoremName: 'local_chart_source_open',
-          signature: `{X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
-    (e : OpenPartialHomeomorph X Y) : IsOpen e.source`,
-          introduction: `A local chart has an open domain. \`OpenPartialHomeomorph\` stores the proof as \`open_source : IsOpen e.source\`.
+          signature: `{Stone : Type u} {Drawing : Type v}
+    [stoneTopology : TopologicalSpace Stone]
+    [drawingTopology : TopologicalSpace Drawing]
+    (chart : OpenPartialHomeomorph Stone Drawing) : IsOpen chart.source`,
+          introduction: `Ada shades the usable part of the stone on her leaf. Every included spot needs a little room around it, so the drawing does not stop at Ada's feet.
 
-Read the goal first: Lean wants a proof that the source is open. The bundled chart already has a field of that type.`,
-          conclusion: `The source of an open partial homeomorphism is an open set.`,
-          solution: 'exact e.open_source',
-          hints: ['The relevant structure projection is `e.open_source`.'],
+In Lean, \`chart.source\` is the shaded part of \`Stone\`. Requiring that patch to be open formalizes the room around each included point. An ${mathlibDoc('OpenPartialHomeomorph', MATHLIB_DOCS.openPartialHomeomorph)} stores the proof as \`chart.open_source\`.
+
+**Objective:** Prove that the chart's source is an open set.`,
+          conclusion: `The shaded patch is open, so every point in it has some room around it.`,
+          solution: 'exact chart.open_source',
+          hints: ['The openness proof is the structure projection `chart.open_source`.'],
           newTheorems: ['OpenPartialHomeomorph.open_source'],
           newDefinitions: ['OpenPartialHomeomorph', 'OpenPartialHomeomorph.source', 'IsOpen'],
         },
         {
-          title: 'Continuity on the patch',
+          title: 'No jumps inside the patch',
           theoremName: 'local_chart_continuous',
-          signature: `{X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
-    (e : OpenPartialHomeomorph X Y) : ContinuousOn e e.source`,
-          introduction: `A partial chart only needs to be continuous on its source. Mathlib expresses that condition as \`ContinuousOn e e.source\`.
+          signature: `{Stone : Type u} {Drawing : Type v}
+    [stoneTopology : TopologicalSpace Stone]
+    [drawingTopology : TopologicalSpace Drawing]
+    (chart : OpenPartialHomeomorph Stone Drawing) :
+    ContinuousOn chart chart.source`,
+          introduction: `Ada walks inside the shaded patch while her mark moves across the leaf. Within that patch, neither motion should jump.
 
-Project \`OpenPartialHomeomorph.continuousOn\` from \`e\`.`,
-          conclusion: `The type records continuity on the chart domain rather than on the whole space.`,
-          solution: 'exact e.continuousOn',
-          hints: ['Use the theorem `e.continuousOn`.'],
+Because \`chart\` covers only part of \`Stone\`, Mathlib asks for \`ContinuousOn chart chart.source\` rather than continuity everywhere. The bundled proof is ${mathlibDoc('OpenPartialHomeomorph.continuousOn', MATHLIB_DOCS.openPartialHomeomorph)}.
+
+**Objective:** Prove that the chart is continuous wherever its local coordinates are valid.`,
+          conclusion: `The chart only promises continuity inside the patch where it is valid.`,
+          solution: 'exact chart.continuousOn',
+          hints: ['The needed field is `chart.continuousOn`.'],
           newTheorems: ['OpenPartialHomeomorph.continuousOn'],
           newDefinitions: ['ContinuousOn'],
         },
         {
-          title: 'A source point reaches the target',
+          title: 'Her mark lands in the drawing',
           theoremName: 'local_chart_maps_source',
-          signature: `{X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
-    (e : OpenPartialHomeomorph X Y) (x : X) (hx : x ∈ e.source) : e x ∈ e.target`,
-          introduction: `Lean writes set membership as \`x ∈ s\`; type \`\\in\` to enter \`∈\`. It treats the chart as a total function, but its geometric guarantees require \`hx : x ∈ e.source\`.
+          signature: `{Stone : Type u} {Drawing : Type v}
+    [stoneTopology : TopologicalSpace Stone]
+    [drawingTopology : TopologicalSpace Drawing]
+    (chart : OpenPartialHomeomorph Stone Drawing)
+    (place : Stone) (inPatch : place ∈ chart.source) :
+    chart place ∈ chart.target`,
+          introduction: `Ada chooses a point inside the shaded patch and places its mark on the leaf. Since the point is in the part she mapped, the mark must lie in the drawn coordinate region.
 
-Give that membership proof to \`OpenPartialHomeomorph.map_source\`.`,
-          conclusion: `The source-membership hypothesis is what lets Mathlib conclude that \`e x\` lies in the target.`,
-          solution: 'apply e.map_source\nexact hx',
-          hints: ['Apply `e.map_source` first; its remaining input is the source-membership proof.', 'Then close the new goal with `exact hx`.'],
+Lean names Ada's chosen point \`place\`. The hypothesis \`inPatch : place ∈ chart.source\` says that it lies in the shaded part of the stone. Mathlib's ${mathlibDoc('OpenPartialHomeomorph.map_source', MATHLIB_DOCS.openPartialHomeomorph)} then concludes that \`chart place\` lies in the drawn target. Type \`\\in\` for \`∈\`.
+
+**Objective:** Show that a point in the chart source maps into its coordinate target.`,
+          conclusion: `Once Lean knows that \`place\` is in the source, its coordinates belong to the target.`,
+          solution: 'apply chart.map_source\nexact inPatch',
+          hints: ['Start with `apply chart.map_source`.', 'The remaining goal is the hypothesis `inPatch`.'],
           newTactics: ['apply'],
           newTheorems: ['OpenPartialHomeomorph.map_source'],
           newDefinitions: ['OpenPartialHomeomorph.target', 'Membership.mem'],
         },
         {
-          title: 'A local round trip',
+          title: 'Back to the same spot',
           theoremName: 'local_chart_round_trip',
-          signature: `{X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
-    (e : OpenPartialHomeomorph X Y) (x : X) (hx : x ∈ e.source) : e.symm (e x) = x`,
-          introduction: `The global round-trip theorem from world 1 had no side condition. For a partial homeomorphism, the inverse law only applies to points in the source, so it needs \`hx\`.
+          signature: `{Stone : Type u} {Drawing : Type v}
+    [stoneTopology : TopologicalSpace Stone]
+    [drawingTopology : TopologicalSpace Drawing]
+    (chart : OpenPartialHomeomorph Stone Drawing)
+    (place : Stone) (inPatch : place ∈ chart.source) :
+    chart.symm (chart place) = place`,
+          introduction: `Ada marks a place in her local drawing and traces it back onto the stone. The round trip is reliable only because that place lies inside the patch she drew.
 
-Use the local inverse law \`OpenPartialHomeomorph.left_inv\`.`,
-          conclusion: `On its source, the chart followed by its inverse returns the original point.`,
-          solution: 'exact e.left_inv hx',
-          hints: ['Apply `e.left_inv` to the source-membership proof.'],
+For a partial homeomorphism, the inverse law needs \`inPatch : place ∈ chart.source\`. This is the formal bridge between "Ada drew this place" and the side condition in Mathlib's ${mathlibDoc('OpenPartialHomeomorph.left_inv', MATHLIB_DOCS.openPartialHomeomorph)}.
+
+**Objective:** Show that a source point returns to itself after passing through the chart and its inverse.`,
+          conclusion: `Inside her patch, Ada can move from stone to leaf and back without losing her place.`,
+          solution: 'exact chart.left_inv inPatch',
+          hints: ['Give `chart.left_inv` the source-membership proof `inPatch`.'],
           newTheorems: ['OpenPartialHomeomorph.left_inv'],
           newDefinitions: ['OpenPartialHomeomorph.symm'],
         },
@@ -212,79 +278,105 @@ Use the local inverse law \`OpenPartialHomeomorph.left_inv\`.`,
     makeWorld(
       'ChartedSpaces',
       'Charted spaces and atlases',
-      `# Mathlib's chart data
+      `# A stack of maps
 
-\`ChartedSpace H M\` equips the topological space \`M\` with charts into the model space \`H\`. It contains an \`atlas H M\` and chooses a preferred \`chartAt H x\` at each point.
+The stone is larger than one patch. Ada carries a stack of leaves, each covering a different part, and keeps them together as her atlas.
 
-The class also stores two facts used throughout manifold proofs. Each point lies in the source of its preferred chart, and that chart belongs to the atlas.`,
+The class ${mathlibDoc('ChartedSpace', MATHLIB_DOCS.chartedSpace)} equips a surface with an atlas. The goals call the actual world \`Surface\`, the shared coordinate space \`Coordinates\`, and Ada's location \`place\`. Mathlib often writes the same three objects as \`M\`, \`H\`, and \`x\`.`,
       ['LocalCharts'],
       [
         {
-          title: 'Every point has a chart',
+          title: 'A leaf for where she stands',
           theoremName: 'point_mem_preferred_chart',
-          signature: `{H : Type u} {M : Type v} [TopologicalSpace H] [TopologicalSpace M]
-    [ChartedSpace H M] (x : M) : x ∈ (chartAt H x).source`,
-          introduction: `Mathlib guarantees that the chosen chart \`chartAt H x\` contains \`x\`. The public theorem for this fact is \`mem_chart_source H x\`.
+          signature: `{Coordinates : Type u} {Surface : Type v}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface] (place : Surface) :
+    place ∈ (chartAt Coordinates place).source`,
+          introduction: `Wherever Ada stops, she selects a leaf whose shaded patch contains her current position. A preferred map that missed her would be useless.
 
-The instance argument \`[ChartedSpace H M]\` supplies the atlas even though it does not appear as a named hypothesis.`,
-          conclusion: `Every point lies in the source of the chart that \`ChartedSpace\` chooses for it.`,
-          solution: 'exact mem_chart_source H x',
-          hints: ['Use `mem_chart_source H x`.'],
+The instance \`[ChartedSpace Coordinates Surface]\` is Ada's whole stack of compatible leaves. Mathlib's ${mathlibDoc('mem_chart_source', MATHLIB_DOCS.chartedSpace)} says that \`chartAt Coordinates place\`, the leaf chosen at her current location, contains \`place\` in its source.
+
+**Objective:** Show that \`place\` lies in the source of the chart chosen there.`,
+          conclusion: `Ada can always choose a chart that contains where she stands.`,
+          solution: 'exact mem_chart_source Coordinates place',
+          hints: ['The covering theorem takes `Coordinates` and `place`.'],
           newTheorems: ['mem_chart_source'],
           newDefinitions: ['ChartedSpace', 'chartAt'],
         },
         {
-          title: 'The chosen chart belongs to the atlas',
+          title: 'This leaf is in the atlas',
           theoremName: 'preferred_chart_mem_atlas',
-          signature: `{H : Type u} {M : Type v} [TopologicalSpace H] [TopologicalSpace M]
-    [ChartedSpace H M] (x : M) : chartAt H x ∈ atlas H M`,
-          introduction: `The preferred chart is part of the atlas. The theorem \`chart_mem_atlas H x\` proves that membership.
+          signature: `{Coordinates : Type u} {Surface : Type v}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface] (place : Surface) :
+    chartAt Coordinates place ∈ atlas Coordinates Surface`,
+          introduction: `Ada checks the leaf she chose and files it back with the others. A preferred map must be one of the maps in her atlas.
 
-Later proofs use this theorem to apply compatibility results stated for atlas members.`,
-          conclusion: `The selected chart at a point belongs to the space's atlas.`,
-          solution: 'exact chart_mem_atlas H x',
-          hints: ['The matching library theorem is `chart_mem_atlas`.'],
+In Lean, Ada's stack is \`atlas Coordinates Surface\`, and her chosen leaf is \`chartAt Coordinates place\`. Mathlib's ${mathlibDoc('chart_mem_atlas', MATHLIB_DOCS.chartedSpace)} proves that the chosen chart belongs to that atlas.
+
+**Objective:** Show that the chart chosen at \`place\` belongs to the atlas.`,
+          conclusion: `The leaf chosen at \`place\` really is one of the leaves in the atlas.`,
+          solution: 'exact chart_mem_atlas Coordinates place',
+          hints: ['The matching theorem is `chart_mem_atlas Coordinates place`.'],
           newTheorems: ['chart_mem_atlas'],
           newDefinitions: ['atlas'],
         },
         {
-          title: 'The point reaches coordinate space',
+          title: 'Her place lands on the leaf',
           theoremName: 'preferred_chart_maps_to_target',
-          signature: `{H : Type u} {M : Type v} [TopologicalSpace H] [TopologicalSpace M]
-    [ChartedSpace H M] (x : M) : chartAt H x x ∈ (chartAt H x).target`,
-          introduction: `Since \`x\` lies in the source of its preferred chart, its coordinate value \`chartAt H x x\` lies in that chart's target.
+          signature: `{Coordinates : Type u} {Surface : Type v}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface] (place : Surface) :
+    chartAt Coordinates place place ∈ (chartAt Coordinates place).target`,
+          introduction: `Ada presses her current position through the chosen chart. Its mark lands inside the coordinate patch drawn on the leaf.
 
-Mathlib packages the argument as \`mem_chart_target H x\`, so you do not need to apply \`map_source\` yourself.`,
-          conclusion: `The preferred chart sends its chosen point into coordinate space.`,
-          solution: 'exact mem_chart_target H x',
-          hints: ['Use the newly introduced theorem `mem_chart_target H x`.'],
+The expression \`chartAt Coordinates place place\` first selects Ada's chart at \`place\`, then uses it to draw that same place in \`Coordinates\`. Mathlib packages the target-membership proof as ${mathlibDoc('mem_chart_target', MATHLIB_DOCS.chartedSpace)}.
+
+**Objective:** Show that the coordinates of \`place\` lie inside the chosen chart's target.`,
+          conclusion: `Ada's current position now has coordinates inside the drawn patch.`,
+          solution: 'exact mem_chart_target Coordinates place',
+          hints: ['The target version of the earlier theorem is `mem_chart_target Coordinates place`.'],
           newTheorems: ['mem_chart_target'],
         },
         {
-          title: 'A chart source is a neighborhood',
+          title: 'The map works nearby',
           theoremName: 'preferred_chart_source_is_neighborhood',
-          signature: `{H : Type u} {M : Type v} [TopologicalSpace H] [TopologicalSpace M]
-    [ChartedSpace H M] (x : M) : (chartAt H x).source ∈ 𝓝 x`,
-          introduction: `An open set containing \`x\` is a neighborhood of \`x\`. Mathlib writes the neighborhood filter as \`𝓝 x\`; type \`\\nhds\` to enter \`𝓝\`.
+          signature: `{Coordinates : Type u} {Surface : Type v}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface] (place : Surface) :
+    (chartAt Coordinates place).source ∈ 𝓝 place`,
+          introduction: `The chosen leaf covers a patch around Ada's footprint. Throughout that neighborhood, the same coordinates remain valid.
 
-\`chart_source_mem_nhds H x\` combines the openness of the chart source with \`mem_chart_source\`.`,
-          conclusion: `In filter notation, the preferred chart is valid on a neighborhood of its point.`,
-          solution: 'exact chart_source_mem_nhds H x',
-          hints: ['Use `chart_source_mem_nhds H x`.'],
+Mathlib writes the neighborhoods of Ada's location as \`𝓝 place\`; type \`\\nhds\` for \`𝓝\`. The theorem ${mathlibDoc('chart_source_mem_nhds', MATHLIB_DOCS.chartedSpace)} says that the source of \`chartAt Coordinates place\` is one of those neighborhoods.
+
+**Objective:** Show that the chosen chart is valid on a whole neighborhood of \`place\`.`,
+          conclusion: `The chosen coordinates work throughout a neighborhood of \`place\`.`,
+          solution: 'exact chart_source_mem_nhds Coordinates place',
+          hints: ['The theorem ending in `_mem_nhds` has exactly this conclusion.'],
           newTheorems: ['chart_source_mem_nhds'],
           newDefinitions: ['Filter', 'nhds'],
         },
         {
-          title: 'The preferred charts cover',
+          title: 'No place left uncovered',
           theoremName: 'preferred_charts_cover',
-          signature: `{H : Type u} {M : Type v} [TopologicalSpace H] [TopologicalSpace M]
-    [ChartedSpace H M] : (⋃ x : M, (chartAt H x).source) = (Set.univ : Set M)`,
-          introduction: `The preferred chart sources cover \`M\`. Their union is the whole space.
+          signature: `{Coordinates : Type u} {Surface : Type v}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface] :
+    (⋃ place : Surface, (chartAt Coordinates place).source) =
+      (Set.univ : Set Surface)`,
+          introduction: `Ada spreads every preferred leaf across the stone. No point remains uncovered; wherever she stands, at least one local map is ready.
 
-Mathlib states the result with sets and an indexed union in \`iUnion_source_chartAt H M\`.`,
-          conclusion: `The selected local coordinate patches cover the charted space.`,
-          solution: 'exact iUnion_source_chartAt H M',
-          hints: ['Apply `iUnion_source_chartAt H M`.'],
+The indexed union \`⋃ place : Surface, (chartAt Coordinates place).source\` spreads out the preferred leaf at every possible location. Mathlib proves in ${mathlibDoc('iUnion_source_chartAt', MATHLIB_DOCS.chartedSpace)} that their sources equal all of \`Surface\`.
+
+**Objective:** Show that the preferred chart sources cover every point of \`Surface\`.`,
+          conclusion: `Together, Ada's leaves cover the whole space.`,
+          solution: 'exact iUnion_source_chartAt Coordinates Surface',
+          hints: ['The covering theorem is `iUnion_source_chartAt Coordinates Surface`.'],
           newTheorems: ['iUnion_source_chartAt'],
           newDefinitions: ['Set.iUnion', 'Set.univ'],
         },
@@ -293,72 +385,101 @@ Mathlib states the result with sets and an indexed union in \`iUnion_source_char
     makeWorld(
       'CanonicalCharts',
       'Identity and product charts',
-      `# Instances build geometry for you
+      `# Charts Lean already knows
 
-Mathlib supplies canonical \`ChartedSpace\` instances. Every topological space is charted over itself by the identity chart. Products of charted spaces are charted by products of their component charts.
+Ada pauses over a blank leaf before returning to the curved surface. A flat reference sheet maps to itself. A place with two independent directions needs a pair of maps.
 
-In this world, the types in the goal determine which \`ChartedSpace\` instance Lean uses. The notation \`chartAt\` stays the same even when the underlying instance changes.`,
+Mathlib supplies canonical ${mathlibDoc('ChartedSpace', MATHLIB_DOCS.chartedSpace)} instances for self charts and products. Here the goal names the two torus factors \`FirstSurface\` and \`SecondSurface\`, together with their coordinate spaces. The types determine which instance Lean uses, even though the notation \`chartAt\` stays the same.`,
       ['ChartedSpaces'],
       [
         {
-          title: 'A model charts itself by identity',
+          title: 'A blank leaf maps to itself',
           theoremName: 'self_chart_is_identity',
-          signature: `{H : Type u} [TopologicalSpace H] (x : H) :
-    chartAt H x = OpenPartialHomeomorph.refl H`,
-          introduction: `In the canonical \`ChartedSpace H H\` instance, the preferred chart is the identity open partial homeomorphism.
+          signature: `{Coordinates : Type u}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    (mark : Coordinates) :
+    chartAt Coordinates mark = OpenPartialHomeomorph.refl Coordinates`,
+          introduction: `Ada lays a blank leaf on top of an identical reference leaf. Every mark already sits in the right place, so the map does nothing.
 
-The Mathlib theorem \`chartAt_self_eq\` states this equality.`,
-          conclusion: `A model space charts itself with one global identity chart.`,
+Both leaves are represented by the same type, \`Coordinates\`, and \`mark\` is one point on them. The canonical \`ChartedSpace Coordinates Coordinates\` therefore uses \`OpenPartialHomeomorph.refl Coordinates\`. Mathlib states this as ${mathlibDoc('chartAt_self_eq', MATHLIB_DOCS.chartedSpace)}.
+
+**Objective:** Show that a space used as its own coordinate model has the identity as its preferred chart.`,
+          conclusion: `The reference leaf needs only the identity chart.`,
           solution: 'exact chartAt_self_eq',
-          hints: ['The theorem has all arguments implicit: `exact chartAt_self_eq`.'],
+          hints: ['All arguments to `chartAt_self_eq` are implicit.'],
           newTheorems: ['chartAt_self_eq'],
           newDefinitions: ['OpenPartialHomeomorph.refl', 'chartedSpaceSelf'],
         },
         {
-          title: 'Its atlas contains only identity',
+          title: 'Only the do-nothing map',
           theoremName: 'self_atlas_only_identity',
-          signature: `{H : Type u} [TopologicalSpace H] (e : OpenPartialHomeomorph H H) :
-    e ∈ atlas H H ↔ e = OpenPartialHomeomorph.refl H`,
-          introduction: `The self-charted atlas contains only the identity chart. Mathlib states membership in that atlas as an equivalence.
+          signature: `{Coordinates : Type u}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    (chart : OpenPartialHomeomorph Coordinates Coordinates) :
+    chart ∈ atlas Coordinates Coordinates ↔
+      chart = OpenPartialHomeomorph.refl Coordinates`,
+          introduction: `Ada checks the atlas for the reference leaf. There is only one chart in it: the leaf matched with itself.
 
-Split the \`↔\` with \`constructor\`, then use the forward and backward directions of \`chartedSpaceSelf_atlas\`.`,
-          conclusion: `The canonical self-charted instance uses the identity both as its preferred chart and as the sole member of its atlas.`,
+The formal \`chart\` is any candidate leaf-to-itself map. Mathlib's ${mathlibDoc('chartedSpaceSelf_atlas', MATHLIB_DOCS.chartedSpace)} says that it belongs to \`atlas Coordinates Coordinates\` exactly when it is the identity chart. The goal is an \`↔\`, so Lean expects one proof in each direction.
+
+**Objective:** Show that membership in the self-atlas is equivalent to being the identity chart.`,
+          conclusion: `The self-atlas contains one chart, and it is the identity.`,
           solution: 'constructor\n· intro h\n  exact chartedSpaceSelf_atlas.mp h\n· intro h\n  exact chartedSpaceSelf_atlas.mpr h',
-          hints: ['Use `constructor` to prove the two directions of the equivalence.', 'In each direction, introduce the hypothesis and use `.mp` or `.mpr` from `chartedSpaceSelf_atlas`.'],
+          hints: ['Split the equivalence with `constructor`.', 'After introducing each hypothesis, use `.mp` in one direction and `.mpr` in the other.'],
           newTactics: ['constructor', 'intro'],
           newTheorems: ['chartedSpaceSelf_atlas'],
           newDefinitions: ['Iff'],
         },
         {
-          title: 'A product chart is a product',
+          title: 'Two readings at once',
           theoremName: 'product_chart_is_product',
-          signature: `{H : Type u} {H' : Type u'} {M : Type v} {M' : Type v'}
-    [TopologicalSpace H] [TopologicalSpace H'] [TopologicalSpace M] [TopologicalSpace M']
-    [ChartedSpace H M] [ChartedSpace H' M'] (x : M × M') :
-    chartAt (ModelProd H H') x = (chartAt H x.1).prod (chartAt H' x.2)`,
-          introduction: `A product manifold uses \`ModelProd H H'\` as its model. Its preferred chart pairs the preferred charts of the two factors.
+          signature: `{FirstCoordinates : Type u} {SecondCoordinates : Type u'}
+    {FirstSurface : Type v} {SecondSurface : Type v'}
+    [firstCoordinateTopology : TopologicalSpace FirstCoordinates]
+    [secondCoordinateTopology : TopologicalSpace SecondCoordinates]
+    [firstSurfaceTopology : TopologicalSpace FirstSurface]
+    [secondSurfaceTopology : TopologicalSpace SecondSurface]
+    [firstSurfaceCharts : ChartedSpace FirstCoordinates FirstSurface]
+    [secondSurfaceCharts : ChartedSpace SecondCoordinates SecondSurface]
+    (position : FirstSurface × SecondSurface) :
+    chartAt (ModelProd FirstCoordinates SecondCoordinates) position =
+      (chartAt FirstCoordinates position.1).prod
+        (chartAt SecondCoordinates position.2)`,
+          introduction: `On a torus, Ada records two positions at once: how far she has gone around the hole and how far she has gone around the tube. Each reading has its own local map.
 
-\`prodChartedSpace_chartAt\` is the Mathlib theorem that unfolds this construction.`,
-          conclusion: `The product chart applies the two component charts coordinate by coordinate.`,
+The two entries of \`position : FirstSurface × SecondSurface\` are Ada's two readings. Mathlib combines their coordinate types as \`ModelProd FirstCoordinates SecondCoordinates\`. The theorem ${mathlibDoc('prodChartedSpace_chartAt', MATHLIB_DOCS.chartedSpace)} says that the preferred chart is the product of the two component charts.
+
+**Objective:** Show that the preferred chart of a paired point is the product of its two component charts.`,
+          conclusion: `The torus chart is built by reading its two coordinates side by side.`,
           solution: 'rw [prodChartedSpace_chartAt]',
-          hints: ['Rewrite the left-hand chart with `rw [prodChartedSpace_chartAt]`.'],
+          hints: ['Rewrite the chart with `prodChartedSpace_chartAt`.'],
           newTactics: ['rw'],
           newTheorems: ['prodChartedSpace_chartAt'],
           newDefinitions: ['ModelProd', 'OpenPartialHomeomorph.prod', 'prodChartedSpace'],
         },
         {
-          title: 'The product point is covered',
+          title: 'The paired chart contains her place',
           theoremName: 'product_point_mem_chart_source',
-          signature: `{H : Type u} {H' : Type u'} {M : Type v} {M' : Type v'}
-    [TopologicalSpace H] [TopologicalSpace H'] [TopologicalSpace M] [TopologicalSpace M']
-    [ChartedSpace H M] [ChartedSpace H' M'] (x : M) (y : M') :
-    (x, y) ∈ (chartAt (ModelProd H H') (x, y)).source`,
-          introduction: `The covering theorem \`mem_chart_source\` also applies to the product instance. Lean infers that instance from the model and manifold types in the goal.
+          signature: `{FirstCoordinates : Type u} {SecondCoordinates : Type u'}
+    {FirstSurface : Type v} {SecondSurface : Type v'}
+    [firstCoordinateTopology : TopologicalSpace FirstCoordinates]
+    [secondCoordinateTopology : TopologicalSpace SecondCoordinates]
+    [firstSurfaceTopology : TopologicalSpace FirstSurface]
+    [secondSurfaceTopology : TopologicalSpace SecondSurface]
+    [firstSurfaceCharts : ChartedSpace FirstCoordinates FirstSurface]
+    [secondSurfaceCharts : ChartedSpace SecondCoordinates SecondSurface]
+    (firstPosition : FirstSurface) (secondPosition : SecondSurface) :
+    (firstPosition, secondPosition) ∈
+      (chartAt (ModelProd FirstCoordinates SecondCoordinates)
+        (firstPosition, secondPosition)).source`,
+          introduction: `Ada combines one position from each loop of the torus. The paired point must lie inside the source of the paired chart.
 
-Instantiate the theorem with \`ModelProd H H'\` and the pair \`(x, y)\`.`,
-          conclusion: `The product \`ChartedSpace\` instance puts \`(x, y)\` in the source of its preferred chart.`,
-          solution: 'simpa only using (mem_chart_source (ModelProd H H\') (x, y))',
-          hints: ['Specialize the earlier theorem to the product model and pair.', 'Use `simpa only using (mem_chart_source (ModelProd H H\') (x, y))`.'],
+The pair \`(firstPosition, secondPosition)\` records Ada's place in both factors. The earlier theorem ${mathlibDoc('mem_chart_source', MATHLIB_DOCS.chartedSpace)} also applies to the product charted-space instance, which Lean infers from \`ModelProd FirstCoordinates SecondCoordinates\`.
+
+**Objective:** Show that the paired position lies inside its preferred product chart.`,
+          conclusion: `The paired chart contains the paired point, just as each component chart contains its own point.`,
+          solution: 'simpa only using\n  (mem_chart_source (ModelProd FirstCoordinates SecondCoordinates)\n    (firstPosition, secondPosition))',
+          hints: ['Specialize the earlier covering theorem to the product model.', 'Then use `simpa only` with the paired position.'],
           newTactics: ['simpa'],
         },
       ],
@@ -366,80 +487,122 @@ Instantiate the theorem with \`ModelProd H H'\` and the pair \`(x, y)\`.`,
     makeWorld(
       'SmoothManifolds',
       'Smooth manifolds',
-      `# From charts to compatible calculus
+      `# When chart changes are smooth
 
-\`ChartedSpace\` supplies topological charts. Mathlib's \`IsManifold I n M\` adds the compatibility conditions needed for calculus on those charts.`,
+Ada's leaves now overlap, so she can compare two coordinate drawings of the same place. Continuity keeps nearby points nearby, but calculus also needs the change between drawings to have controlled derivatives.
+
+${mathlibDoc('ChartedSpace', MATHLIB_DOCS.chartedSpace)} supplies the charts. Mathlib's ${mathlibDoc('IsManifold', MATHLIB_DOCS.isManifold)} adds differentiability conditions to their transition maps. The goals now name the geometric roles directly: \`Surface\`, \`Coordinates\`, \`Vectors\`, \`model\`, and \`order\`. Mathlib papers often abbreviate these as \`M\`, \`H\`, \`E\`, \`I\`, and \`n\`.`,
       ['CanonicalCharts'],
       [
         {
-          title: 'The model space is a manifold',
+          title: 'The reference leaf is ready',
           theoremName: 'model_space_is_manifold',
-          signature: `{𝕜 : Type u} [NontriviallyNormedField 𝕜]
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {H : Type w} [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H) (n : WithTop ℕ∞) :
-    IsManifold I n H`,
-          introduction: `The signature introduces a scalar field \`𝕜\`, a normed vector space \`E\`, and a model with corners \`I\`. For real manifolds, the scalar field is written \`ℝ\`. The order \`n : WithTop ℕ∞\` is a Lean value recording how many derivatives are available.
+          signature: `{Scalar : Type u}
+    [scalarField : NontriviallyNormedField Scalar]
+    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
+    [vectorSpace : NormedSpace Scalar Vectors]
+    {Coordinates : Type w}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    (model : ModelWithCorners Scalar Vectors Coordinates)
+    (order : WithTop ℕ∞) :
+    IsManifold model order Coordinates`,
+          introduction: `Ada places a model leaf beside the world she is charting. The leaf is already its own coordinate space, so it needs no further change of coordinates to qualify as a manifold.
 
-Every model with corners is a manifold at every differentiability order. Mathlib registers this fact as an instance, so \`infer_instance\` can synthesize the proof from the types.
+In the goal, \`Scalar\` supplies the numbers, \`Vectors\` supplies directions, and \`Coordinates\` is the model leaf itself. The ${mathlibDoc('ModelWithCorners', MATHLIB_DOCS.isManifold)} named \`model\` connects those pieces, while \`order : WithTop ℕ∞\` records differentiability. Mathlib registers ${mathlibDoc('instIsManifoldModelSpace', MATHLIB_DOCS.isManifold)} for every order.
 
-This level uses the typeclass system to prove the goal.`,
-          conclusion: `The model space carries the canonical manifold structure supplied by its model with corners.`,
+**Objective:** Establish that \`Coordinates\` carries the manifold structure supplied by \`model\`.`,
+          conclusion: `The model space is already a manifold at the requested order.`,
           solution: 'infer_instance',
-          hints: ['The result is a registered instance.', 'Use `infer_instance`.'],
+          hints: ['Mathlib has registered this result as an instance.', 'Ask typeclass inference to find it.'],
           newTactics: ['infer_instance'],
           newTheorems: ['instIsManifoldModelSpace'],
           newDefinitions: ['ModelWithCorners', 'IsManifold', 'WithTop', 'ENat'],
         },
         {
-          title: 'More smoothness implies less',
+          title: 'Passing an easier check',
           theoremName: 'manifold_of_higher_smoothness',
-          signature: `{𝕜 : Type u} [NontriviallyNormedField 𝕜]
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {H : Type w} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-    {M : Type u'} [TopologicalSpace M] [ChartedSpace H M]
-    {m n : WithTop ℕ∞} [IsManifold I n M] (hmn : m ≤ n) : IsManifold I m M`,
-          introduction: `If every transition map is \`C^n\`, then it is \`C^m\` whenever \`m ≤ n\`.
+          signature: `{Scalar : Type u}
+    [scalarField : NontriviallyNormedField Scalar]
+    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
+    [vectorSpace : NormedSpace Scalar Vectors]
+    {Coordinates : Type w}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    {model : ModelWithCorners Scalar Vectors Coordinates}
+    {Surface : Type u'} [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface]
+    {lowerOrder higherOrder : WithTop ℕ∞}
+    [higherSmoothness : IsManifold model higherOrder Surface]
+    (order_le : lowerOrder ≤ higherOrder) :
+    IsManifold model lowerOrder Surface`,
+          introduction: `Ada checks her map changes to a demanding standard. If they pass that test, they also pass any test that asks for fewer derivatives.
 
-Mathlib calls this theorem \`IsManifold.of_le\`. Supply \`hmn\`; Lean finds the existing \`IsManifold I n M\` instance automatically.`,
-          conclusion: `The inequality \`m ≤ n\` lets you lower the differentiability order of a manifold instance.`,
-          solution: 'exact IsManifold.of_le hmn',
-          hints: ['Apply `IsManifold.of_le` to `hmn`.'],
+Lean calls the demanding standard \`higherOrder\` and the weaker one \`lowerOrder\`. The hypothesis \`order_le : lowerOrder ≤ higherOrder\` is the formal reason the stronger atlas is enough. Mathlib packages this step as ${mathlibDoc('IsManifold.of_le', MATHLIB_DOCS.isManifold)}.
+
+**Objective:** Lower the known differentiability order from \`higherOrder\` to \`lowerOrder\`.`,
+          conclusion: `The higher-order manifold instance now works at the requested lower order.`,
+          solution: 'exact IsManifold.of_le order_le',
+          hints: ['Pass the inequality `order_le` to `IsManifold.of_le`.'],
           newTheorems: ['IsManifold.of_le'],
           newDefinitions: ['LE.le'],
         },
         {
-          title: 'Smooth implies topological',
+          title: 'Smooth maps still keep points close',
           theoremName: 'smooth_manifold_is_topological',
-          signature: `{𝕜 : Type u} [NontriviallyNormedField 𝕜]
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {H : Type w} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-    {M : Type u'} [TopologicalSpace M] [ChartedSpace H M]
-    [IsManifold I ∞ M] : IsManifold I 0 M`,
-          introduction: `The order \`∞\` in \`IsManifold I ∞ M\` means smooth: transition maps have derivatives of every finite order. A smooth manifold is also a topological manifold relative to the same model with corners.
+          signature: `{Scalar : Type u}
+    [scalarField : NontriviallyNormedField Scalar]
+    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
+    [vectorSpace : NormedSpace Scalar Vectors]
+    {Coordinates : Type w}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    {model : ModelWithCorners Scalar Vectors Coordinates}
+    {Surface : Type u'} [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface]
+    [smoothSurface : IsManifold model ∞ Surface] :
+    IsManifold model 0 Surface`,
+          introduction: `Ada's smoothest leaf changes never crease or kink. They certainly still preserve the nearby-point structure she needed for her first maps.
 
-Mathlib has an instance for this step in the smoothness hierarchy. Let \`infer_instance\` find it.`,
-          conclusion: `Lean derives the \`C^0\` manifold instance from the \`C^∞\` instance.`,
+The assumption \`IsManifold model ∞ Surface\` says that Ada's chart changes have derivatives of every finite order. Mathlib's ${mathlibDoc('IsManifold', MATHLIB_DOCS.isManifold)} hierarchy registers the implication to \`IsManifold model 0 Surface\`, where order \`0\` retains only the topological requirement.
+
+**Objective:** Derive the topological manifold structure from the smooth one.`,
+          conclusion: `The smooth atlas also gives Ada the topological atlas she started with.`,
           solution: 'infer_instance',
-          hints: ['This implication is registered with typeclass inference.', 'Use `infer_instance`.'],
+          hints: ['Mathlib registers this implication as an instance.', 'Let `infer_instance` find it.'],
         },
         {
-          title: 'Products preserve manifolds',
+          title: 'Two circles make a torus',
           theoremName: 'product_of_manifolds',
-          signature: `{𝕜 : Type u} [NontriviallyNormedField 𝕜]
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {E' : Type v'} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
-    {H : Type w} [TopologicalSpace H] {H' : Type*} [TopologicalSpace H']
-    {I : ModelWithCorners 𝕜 E H} {I' : ModelWithCorners 𝕜 E' H'}
-    {M : Type u'} [TopologicalSpace M] [ChartedSpace H M]
-    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
-    (n : WithTop ℕ∞) [IsManifold I n M] [IsManifold I' n M'] :
-    IsManifold (I.prod I') n (M × M')`,
-          introduction: `The product of two \`C^n\` manifolds is again a \`C^n\` manifold. Mathlib combines the product chart instance from the last world with the product model with corners and the required compatibility proof.
+          signature: `{Scalar : Type u}
+    [scalarField : NontriviallyNormedField Scalar]
+    {FirstVectors : Type v}
+    [firstVectorGroup : NormedAddCommGroup FirstVectors]
+    [firstVectorSpace : NormedSpace Scalar FirstVectors]
+    {SecondVectors : Type v'}
+    [secondVectorGroup : NormedAddCommGroup SecondVectors]
+    [secondVectorSpace : NormedSpace Scalar SecondVectors]
+    {FirstCoordinates : Type w}
+    [firstCoordinateTopology : TopologicalSpace FirstCoordinates]
+    {SecondCoordinates : Type*}
+    [secondCoordinateTopology : TopologicalSpace SecondCoordinates]
+    {firstModel : ModelWithCorners Scalar FirstVectors FirstCoordinates}
+    {secondModel : ModelWithCorners Scalar SecondVectors SecondCoordinates}
+    {FirstSurface : Type u'}
+    [firstSurfaceTopology : TopologicalSpace FirstSurface]
+    [firstSurfaceCharts : ChartedSpace FirstCoordinates FirstSurface]
+    {SecondSurface : Type*}
+    [secondSurfaceTopology : TopologicalSpace SecondSurface]
+    [secondSurfaceCharts : ChartedSpace SecondCoordinates SecondSurface]
+    (order : WithTop ℕ∞)
+    [firstSmoothness : IsManifold firstModel order FirstSurface]
+    [secondSmoothness : IsManifold secondModel order SecondSurface] :
+    IsManifold (firstModel.prod secondModel) order (FirstSurface × SecondSurface)`,
+          introduction: `Ada's two circular readings describe the torus together. If each circle has smooth coordinate changes, pairing the readings should preserve that smoothness.
 
-The instance is named \`IsManifold.prod\`. Apply it to the two manifold types.`,
-          conclusion: `Once the circle instances are available, this construction also handles a torus presented as a product of two circles.`,
-          solution: 'exact IsManifold.prod M M\'',
-          hints: ['The product instance takes the two manifold types explicitly.', 'Use `exact IsManifold.prod M M\'`.'],
+In the torus example, \`FirstSurface\` and \`SecondSurface\` are the two circular factors. The theorem remains general: Mathlib's ${mathlibDoc('IsManifold.prod', MATHLIB_DOCS.isManifold)} combines any two manifold structures with \`firstModel.prod secondModel\` at the same \`order\`.
+
+**Objective:** Build the manifold structure on \`FirstSurface × SecondSurface\` from its two factors.`,
+          conclusion: `Two smooth circles now give the torus its smooth manifold structure.`,
+          solution: 'exact IsManifold.prod FirstSurface SecondSurface',
+          hints: ['The product theorem wants the two surface types.', 'Supply them as `FirstSurface` and `SecondSurface`.'],
           newTheorems: ['IsManifold.prod'],
           newDefinitions: ['ModelWithCorners.prod', 'Prod'],
         },
@@ -448,77 +611,108 @@ The instance is named \`IsManifold.prod\`. Apply it to the two manifold types.`,
     makeWorld(
       'TangentSpaces',
       'Tangent spaces and the tangent bundle',
-      `# Dependent geometry
+      `# A direction at every point
 
-For a manifold modelled on a normed vector space \`E\`, Mathlib defines \`TangentSpace I x\` at each point \`x\`. The total tangent bundle \`TangentBundle I M\` is a dependent pair containing a base point and a tangent vector in that point's fiber.
+Ada's atlas tells her where she is. At one point on the surface, she now asks which directions she could move without leaving it.
 
-The earlier worlds mostly proved propositions about structures. This one asks you to construct values of dependent types.`,
+Mathlib assigns a ${mathlibDoc('TangentSpace', MATHLIB_DOCS.isManifold)} to every point. In the goals, \`Surface\` is Ada's world, \`place\` is her location, \`model\` describes its coordinates, and \`velocity\` is a tangent vector there. The ${mathlibDoc('TangentBundle', MATHLIB_DOCS.isManifold)} collects each place together with one of its possible velocities.`,
       ['SmoothManifolds'],
       [
         {
-          title: 'The zero tangent vector',
+          title: 'Ada stands still',
           theoremName: 'tangent_zero',
           declarationKind: 'noncomputable def',
-          signature: `{𝕜 : Type u} [NontriviallyNormedField 𝕜]
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {H : Type w} [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H)
-    {M : Type u'} [TopologicalSpace M] [ChartedSpace H M] (x : M) : TangentSpace I x`,
-          introduction: `Every tangent space inherits an additive commutative group structure from the model vector space, so it has a zero vector.
+          signature: `{Scalar : Type u}
+    [scalarField : NontriviallyNormedField Scalar]
+    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
+    [vectorSpace : NormedSpace Scalar Vectors]
+    {Coordinates : Type w}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    (model : ModelWithCorners Scalar Vectors Coordinates)
+    {Surface : Type u'} [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface] (place : Surface) :
+    TangentSpace model place`,
+          introduction: `Ada stands still at \`place\`. Even without choosing a direction, staying still is a valid tangent velocity.
 
-The expected type tells Lean which \`0\` you mean. Supply it with \`exact 0\`.`,
-          conclusion: `The result is a value of Mathlib's \`TangentSpace I x\`: its zero vector.`,
+Here ${mathlibDoc('TangentSpace', MATHLIB_DOCS.isManifold)} \`model place\` is the space of velocities available at Ada's current location. It inherits an additive group structure from \`Vectors\`, so it contains a zero vector. The expected tangent-space type tells Lean which \`0\` is intended.
+
+**Objective:** Construct the zero tangent vector at \`place\`.`,
+          conclusion: `Standing still is now a genuine vector in \`TangentSpace model place\`.`,
           solution: 'exact 0',
-          hints: ['The tangent space has a zero instance.', 'Enter `exact 0`.'],
+          hints: ['The tangent space has a zero instance.', 'The expected type is enough for Lean to understand `0`.'],
           newDefinitions: ['TangentSpace', 'Zero.zero'],
         },
         {
-          title: 'Package a tangent vector',
+          title: 'Place and velocity together',
           theoremName: 'tangent_vector_as_bundle_point',
           declarationKind: 'def',
-          signature: `{𝕜 : Type u} [NontriviallyNormedField 𝕜]
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {H : Type w} [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H)
-    {M : Type u'} [TopologicalSpace M] [ChartedSpace H M]
-    {x : M} (v : TangentSpace I x) : TangentBundle I M`,
-          introduction: `A point of the tangent bundle is a dependent pair \`⟨x, v⟩\`. The fiber type of \`v\` depends on the base point \`x\`.
+          signature: `{Scalar : Type u}
+    [scalarField : NontriviallyNormedField Scalar]
+    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
+    [vectorSpace : NormedSpace Scalar Vectors]
+    {Coordinates : Type w}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    (model : ModelWithCorners Scalar Vectors Coordinates)
+    {Surface : Type u'} [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface]
+    {place : Surface} (velocity : TangentSpace model place) :
+    TangentBundle model Surface`,
+          introduction: `Ada records both where she is and the direction she is moving. A direction without its point would be ambiguous because the available tangent plane changes from place to place.
 
-Lean knows \`x\` implicitly from the type of \`v\`, so construct the pair directly.`,
-          conclusion: `An element of the tangent bundle carries its base point together with a tangent vector at that point.`,
-          solution: 'exact ⟨x, v⟩',
-          hints: ['Construct the dependent pair `⟨x, v⟩`.'],
+A point of the ${mathlibDoc('TangentBundle', MATHLIB_DOCS.isManifold)} is a dependent pair \`⟨place, velocity⟩\`. The type \`velocity : TangentSpace model place\` remembers where the velocity belongs, so Lean can recover \`place\` from it.
+
+**Objective:** Package \`place\` and \`velocity\` as one tangent-bundle point.`,
+          conclusion: `Ada's position and velocity now travel as one bundle point.`,
+          solution: 'exact ⟨place, velocity⟩',
+          hints: ['The dependent pair is written `⟨place, velocity⟩`.'],
           newDefinitions: ['TangentBundle', 'Bundle.TotalSpace', 'Sigma'],
         },
         {
-          title: 'Project the base point',
+          title: 'Read the location tag',
           theoremName: 'tangent_bundle_base',
-          signature: `{𝕜 : Type u} [NontriviallyNormedField 𝕜]
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {H : Type w} [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H)
-    {M : Type u'} [TopologicalSpace M] [ChartedSpace H M]
-    {x : M} (v : TangentSpace I x) : (⟨x, v⟩ : TangentBundle I M).1 = x`,
-          introduction: `The first projection of \`⟨x, v⟩\` computes to \`x\`. Definitional reduction proves the equality, so \`rfl\` closes the goal.
+          signature: `{Scalar : Type u}
+    [scalarField : NontriviallyNormedField Scalar]
+    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
+    [vectorSpace : NormedSpace Scalar Vectors]
+    {Coordinates : Type w}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    (model : ModelWithCorners Scalar Vectors Coordinates)
+    {Surface : Type u'} [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface]
+    {place : Surface} (velocity : TangentSpace model place) :
+    (⟨place, velocity⟩ : TangentBundle model Surface).1 = place`,
+          introduction: `Ada opens one of her direction records and reads its location tag. The tag gives back the point where that direction belongs.
 
-\`rfl\` is working here because of the dependent bundle's representation.`,
-          conclusion: `The bundle projection reduces directly to its stored base point.`,
+The ${mathlibDoc('TangentBundle', MATHLIB_DOCS.isManifold)} is represented by a dependent pair. Its first projection \`(⟨place, velocity⟩ : TangentBundle model Surface).1\` reduces by definition to \`place\`.
+
+**Objective:** Show that projecting the base point from \`⟨place, velocity⟩\` returns \`place\`.`,
+          conclusion: `Reading the bundle point's location tag returns \`place\`.`,
           solution: 'rfl',
-          hints: ['The first projection reduces to `x`.', 'Use `rfl`.'],
+          hints: ['The first projection reduces to `place` by definition.', 'A reflexivity proof closes such a goal.'],
           newTactics: ['rfl'],
           newDefinitions: ['Sigma.fst'],
         },
         {
-          title: 'A zero section, point by point',
+          title: 'Standing still anywhere',
           theoremName: 'tangent_bundle_has_zero',
-          signature: `{𝕜 : Type u} [NontriviallyNormedField 𝕜]
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {H : Type w} [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H)
-    {M : Type u'} [TopologicalSpace M] [ChartedSpace H M] (x : M) :
-    ∃ p : TangentBundle I M, p.1 = x`,
-          introduction: `Construct a tangent-bundle point over an arbitrary base point. Use the course theorem \`tangent_zero I x\`, package that vector with \`x\`, and prove that the first projection is \`x\`.
+          signature: `{Scalar : Type u}
+    [scalarField : NontriviallyNormedField Scalar]
+    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
+    [vectorSpace : NormedSpace Scalar Vectors]
+    {Coordinates : Type w}
+    [coordinateTopology : TopologicalSpace Coordinates]
+    (model : ModelWithCorners Scalar Vectors Coordinates)
+    {Surface : Type u'} [surfaceTopology : TopologicalSpace Surface]
+    [surfaceCharts : ChartedSpace Coordinates Surface] (place : Surface) :
+    ∃ bundlePoint : TangentBundle model Surface, bundlePoint.1 = place`,
+          introduction: `Ada can stand still anywhere on the manifold, not just at one chosen point. The tangent bundle should therefore contain a zero direction record over every location.
 
-This gives a pointwise form of the tangent bundle's zero section.`,
-          conclusion: `The course ends with a dependent tangent-bundle value built from the zero vector at an arbitrary point.`,
-          solution: 'refine ⟨⟨x, tangent_zero I x⟩, ?_⟩\nrfl',
-          hints: ['Use `refine` with the witness `⟨x, tangent_zero I x⟩` and leave its base equation as `?_`.', 'The remaining projection equation is `rfl`.'],
+The course definition \`tangent_zero model place\` gives the standing-still velocity in \`TangentSpace model place\`. Pairing it with \`place\` produces a point of the ${mathlibDoc('TangentBundle', MATHLIB_DOCS.isManifold)} whose location tag is \`place\`. This is the pointwise content of the zero section.
+
+**Objective:** For an arbitrary \`place\`, construct a tangent-bundle point lying over it.`,
+          conclusion: `Every point now has a canonical bundle point for standing still.`,
+          solution: 'refine ⟨⟨place, tangent_zero model place⟩, ?_⟩\nrfl',
+          hints: ['Use `⟨place, tangent_zero model place⟩` as the witness.', 'Its base-point equation holds by reflexivity.'],
           newTactics: ['refine'],
           newDefinitions: ['Exists'],
         },

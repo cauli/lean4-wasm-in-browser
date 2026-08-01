@@ -20,6 +20,7 @@ const browserBase = fs.readFileSync(
 )
 
 const levels = game.worlds.flatMap((world) => world.levels)
+const statements = levels.map((level) => level.statement).join('\n')
 
 test('the Mathlib-native Manifold Adventure is a complete linear path', () => {
   assert.equal(game.title, 'The Manifold Adventure')
@@ -48,7 +49,6 @@ test('the Mathlib-native Manifold Adventure is a complete linear path', () => {
 })
 
 test('the goals use actual Mathlib manifold structures instead of local stand-ins', () => {
-  const statements = levels.map((level) => level.statement).join('\n')
   const requiredStructures = [
     ['Homeomorph', /≃ₜ/],
     ['OpenPartialHomeomorph', /\bOpenPartialHomeomorph\b/],
@@ -79,6 +79,112 @@ test('the goals use actual Mathlib manifold structures instead of local stand-in
   assert.doesNotMatch(game.introduction, /Your inventory will contain names from two sources/)
   assert.doesNotMatch(game.introduction, /Reading the notation/)
   assert.doesNotMatch(statements, /\b(manifoldLike|chartCompatible|smoothLike)\b/i)
+})
+
+test('formal goal objects use the names introduced by Ada\'s story', () => {
+  assert.match(statements, /\{Trail : Type u\}/)
+  assert.match(statements, /\{Drawing : Type v\}/)
+  assert.match(statements, /\(trailMap : Trail ≃ₜ Drawing\)/)
+  assert.match(statements, /\(chart : OpenPartialHomeomorph Stone Drawing\)/)
+  assert.match(statements, /\(place : Stone\)/)
+  assert.match(statements, /\[surfaceCharts : ChartedSpace Coordinates Surface\]/)
+  assert.match(statements, /\(velocity : TangentSpace model place\)/)
+
+  assert.doesNotMatch(
+    statements,
+    /[{(]\s*(?:X|Y|Z|H|H'|M|M'|E|E'|I|I'|x|y|e|f|v|m|n|𝕜)\s*:/,
+  )
+  assert.doesNotMatch(
+    statements,
+    /\[\s*(?:TopologicalSpace|ChartedSpace|IsManifold|NormedAddCommGroup|NormedSpace|NontriviallyNormedField)\b/,
+  )
+})
+
+test('level titles describe moments in Ada\'s story', () => {
+  assert.deepEqual(
+    levels.map((level) => level.title),
+    [
+      'The drawing matches the trail',
+      'The drawing leads Ada back',
+      'Back where she started',
+      'Into the route book',
+      'Room around every place',
+      'No jumps inside the patch',
+      'Her mark lands in the drawing',
+      'Back to the same spot',
+      'A leaf for where she stands',
+      'This leaf is in the atlas',
+      'Her place lands on the leaf',
+      'The map works nearby',
+      'No place left uncovered',
+      'A blank leaf maps to itself',
+      'Only the do-nothing map',
+      'Two readings at once',
+      'The paired chart contains her place',
+      'The reference leaf is ready',
+      'Passing an easier check',
+      'Smooth maps still keep points close',
+      'Two circles make a torus',
+      'Ada stands still',
+      'Place and velocity together',
+      'Read the location tag',
+      'Standing still anywhere',
+    ],
+  )
+})
+
+test('every lesson moves from Ada to Mathlib, with its objective beside the formal goal', () => {
+  for (const world of game.worlds) {
+    assert.match(world.introduction, /\bAda\b/, `${world.id} has no story context`)
+    assert.match(
+      world.introduction,
+      /\]\(https:\/\/leanprover-community\.github\.io\/mathlib4_docs\//,
+      `${world.id} does not connect its story to Mathlib`,
+    )
+  }
+
+  for (const level of levels) {
+    const paragraphs = level.introduction.split(/\n\n+/)
+    assert.equal(paragraphs.length, 2, `${level.id} does not have two lesson paragraphs`)
+    assert.match(paragraphs[0], /\bAda\b/, `${level.id} does not begin with Ada`)
+    assert.match(
+      paragraphs[1],
+      /\]\(https:\/\/leanprover-community\.github\.io\/mathlib4_docs\//,
+      `${level.id} does not link its technical concept to Mathlib`,
+    )
+    assert.match(
+      level.statementText,
+      /^\*\*Objective:\*\*/,
+      `${level.id} has no separate human-readable objective`,
+    )
+    assert.doesNotMatch(
+      level.statementText,
+      /\b(?:apply|constructor|exact|infer_instance|refine|rfl|rw|simpa)\b/,
+      `${level.id} objective gives away a Lean tactic`,
+    )
+    assert.doesNotMatch(
+      level.introduction,
+      /\*\*Objective:\*\*/,
+      `${level.id} duplicates its objective in the lesson prose`,
+    )
+  }
+
+  const courseProse = [
+    game.introduction,
+    game.information,
+    game.caption,
+    ...game.worlds.flatMap((world) => [
+      world.introduction,
+      ...world.levels.flatMap((level) => [
+        level.introduction,
+        level.statementText,
+        level.conclusion,
+        ...level.hints,
+      ]),
+    ]),
+  ].join('\n')
+
+  assert.doesNotMatch(courseProse, /[—–]/)
 })
 
 test('the unlock ladder exposes real Mathlib declarations and Lean tactics', () => {
@@ -144,7 +250,7 @@ test('each level creates a reusable course declaration without placeholders', ()
 
   const finalLevel = levels.at(-1)
   assert.equal(finalLevel.theoremName, 'tangent_bundle_has_zero')
-  assert.match(finalLevel.solution, /\btangent_zero I x\b/)
+  assert.match(finalLevel.solution, /\btangent_zero model place\b/)
 })
 
 test('the generated verifier maps every challenge to the pinned browser module', () => {
