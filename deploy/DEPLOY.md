@@ -22,8 +22,8 @@ and upload the release asset and point the workflow at it:
 ```bash
 # First run "build Manifold Adventure browser layer" in Actions. Its defaults
 # select the exact Lean 62b6 native-i386 artifact and the matching, prebuilt
-# browser Mathlib closure. Copy the downloaded manifold-layer.json and
-# manifold-lib/ into public/lean-wasm/.
+# browser Mathlib closure. Copy the downloaded manifold-layer.json, six world
+# manifests, and six world library directories into public/lean-wasm/.
 bash deploy/pack-pages-assets.sh
 gh release create pages-assets-<ver> --title "Pages static assets" \
   --notes "Static Pages assets" /tmp/pages-assets.tar.gz
@@ -70,19 +70,21 @@ authenticates the manifest and all packs.
 This repository's
 [`build-manifold-layer.yml`](../.github/workflows/build-manifold-layer.yml)
 downloads that closure, verifies its checksums and pins, unpacks it, compiles
-`ManifoldAdventure.BrowserBase` with the matching native i386 toolchain, checks
-all reference solutions in Lean's kernel, and packages only files absent from
-the shared Real Analysis layer.
+the six cumulative `ManifoldAdventure` world modules with the matching native
+i386 toolchain, checks all reference solutions in Lean's kernel, and packages
+each world's new dependencies as a separate layer. The first world is
+standalone; it does not depend on the Real Analysis package.
 
 The current compiled course layer comes from
-[web integration run `30697147126`](https://github.com/cauli/lean4-wasm-in-browser/actions/runs/30697147126).
+[web integration run `30722723778`](https://github.com/cauli/lean4-wasm-in-browser/actions/runs/30722723778).
 Its artifact is
 `manifold-layer-62b6a2291302d4bbeace37642a066b7510d0145c` and contains
-`manifold-layer.json`, three `manifold-lib/artifacts-*.pack` files, and the
-kernel conformance record. Download it with:
+`manifold-layer.json`, six world manifests, six world library directories, and
+the kernel conformance record. The Homeomorphisms layer is 218 MiB compressed;
+the six layers together are 330 MiB in 58 packs. Download it with:
 
 ```bash
-gh run download 30697147126 \
+gh run download 30722723778 \
   -R cauli/lean4-wasm-in-browser \
   -n manifold-layer-62b6a2291302d4bbeace37642a066b7510d0145c \
   -D /tmp/manifold-browser-layer
@@ -143,7 +145,18 @@ lean-lib-files.json
 real-analysis-layer.json
 real-analysis-lib/artifacts-000.pack ... artifacts-051.pack
 manifold-layer.json
-manifold-lib/artifacts-000.pack ...
+manifold-homeomorphisms-layer.json
+manifold-homeomorphisms-lib/artifacts-000.pack ...
+manifold-local-charts-layer.json
+manifold-local-charts-lib/artifacts-000.pack ...
+manifold-charted-spaces-layer.json
+manifold-charted-spaces-lib/artifacts-000.pack ...
+manifold-canonical-charts-layer.json
+manifold-canonical-charts-lib/artifacts-000.pack ...
+manifold-smooth-manifolds-layer.json
+manifold-smooth-manifolds-lib/artifacts-000.pack ...
+manifold-tangent-spaces-layer.json
+manifold-tangent-spaces-lib/artifacts-000.pack ...
 ```
 
 The optional `slim/` and `snapshots/` directories are uploaded when present.
@@ -191,5 +204,4 @@ Cross-Origin-Embedder-Policy: require-corp
 
 Finally, verify one NNG proof, one Real Analysis proof, and one Manifold
 Adventure proof in a fresh browser profile. The first manifold proof should
-load the shared Real Analysis/Mathlib layer, then only the supplemental
-manifold packs.
+load the standalone Homeomorphisms layer and make no Real Analysis requests.

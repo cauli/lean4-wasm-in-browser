@@ -200,6 +200,7 @@ Cloudflare, static-first:
 | App shell (React/Vite) | **Pages** (static) |
 | `.olean` + `.ir` trees (core + Batteries) | static Pages assets, fetched per layer, cached in the browser's Cache API **keyed by build githash** |
 | Real Analysis Mathlib/course layer | 52 compressed static Pages packs, fetched only on first Real Analysis verification |
+| Manifold Adventure | 6 cumulative world layers (58 packs in the complete course); the first proof fetches only the Homeomorphisms layer |
 | `lean.js` / `lean.wasm` (both variants) + baked env snapshots | **R2** via `functions/lean-wasm/`, under a **per-build githash prefix** (`<githash>/…`, slim at `<githash>/slim/…`) matching the `?v=` the app requests — builds coexist, deploys never break open sessions |
 | Shared snippets | R2 `snippets/<sha256>` via `functions/api/share/` |
 
@@ -227,8 +228,8 @@ The Manifold Adventure uses the fork's separately reproducible
 It packages only the transitive closure rooted at
 `Mathlib.Geometry.Manifold.IsManifold.Basic`, not full Mathlib. See
 [`deploy/DEPLOY.md`](deploy/DEPLOY.md#browser-mathlib-artifact) for the pinned
-run, artifact name, and download command used by this web project. The compiled
-course layer is available from [web integration run `30697147126`](https://github.com/cauli/lean4-wasm-in-browser/actions/runs/30697147126),
+run, artifact name, and download command used by this web project. The latest
+corrected course artifact is available from [web integration run `30722723778`](https://github.com/cauli/lean4-wasm-in-browser/actions/runs/30722723778),
 and the complete static deployment bundle is the
 [`pages-assets-manifold-b6428ed` release](https://github.com/cauli/lean4-wasm-in-browser/releases/tag/pages-assets-manifold-b6428ed).
 
