@@ -20,9 +20,10 @@ After a Lean artifact swap, run `deploy/upload-r2.sh` (as before), then rebuild
 and upload the release asset and point the workflow at it:
 
 ```bash
-# First run "build manifold Mathlib layer" in Actions. Its defaults select the
-# exact Lean 62b6 native-i386 artifact and pinned Mathlib checkout. Copy the
-# downloaded manifold-layer.json and manifold-lib/ into public/lean-wasm/.
+# First run "build Manifold Adventure browser layer" in Actions. Its defaults
+# select the exact Lean 62b6 native-i386 artifact and the matching, prebuilt
+# browser Mathlib closure. Copy the downloaded manifold-layer.json and
+# manifold-lib/ into public/lean-wasm/.
 bash deploy/pack-pages-assets.sh
 gh release create pages-assets-<ver> --title "Pages static assets" \
   --notes "Static Pages assets" /tmp/pages-assets.tar.gz
@@ -30,6 +31,48 @@ gh release create pages-assets-<ver> --title "Pages static assets" \
 ```
 
 The manual path below still works and stays the fallback.
+
+## Browser Mathlib artifact
+
+The source is the [`cauli/lean4`](https://github.com/cauli/lean4) fork. Its
+canonical browser branch is `reinstate-wasm`; `wasm-resident-imports` is a
+compatibility alias of the same Lean 4.33 tip. The former Lean 4.28 line is
+preserved explicitly as `wasm-resident-imports-4.28-archive` and must not be
+used with this site's Lean 4.33 `.olean` files.
+
+Use the workflow named
+[**Build browser Mathlib manifold closure**](https://github.com/cauli/lean4/actions/workflows/build-browser-mathlib-manifold-closure.yml?query=branch%3Areinstate-wasm).
+Despite the name “Mathlib” in the workflow, its artifact is deliberately not a
+full Mathlib build. It is the dependency closure rooted at
+`Mathlib.Geometry.Manifold.IsManifold.Basic`, compiled with a native i386 Lean
+that has the same pointer width and exact githash as the browser WASM build.
+
+The web project's current compatible build is
+[action run `30693760471`](https://github.com/cauli/lean4/actions/runs/30693760471).
+It consumes toolchain [CI run `29165653896`](https://github.com/cauli/lean4/actions/runs/29165653896),
+whose concrete `Web Assembly` and `Linux 32bit` jobs both succeeded at Lean
+commit `62b6a2291302d4bbeace37642a066b7510d0145c`. The Mathlib pin is
+`de3a9cf33016bbb6d15880d7680643f7ca2d25ba`. Download it with:
+
+```bash
+gh run download 30693760471 \
+  -R cauli/lean4 \
+  -n browser-mathlib-manifold-closure-62b6a22913-de3a9cf330 \
+  -D /tmp/browser-mathlib-manifold-closure
+```
+
+GitHub action artifacts expire. If this exact artifact is no longer available,
+rerun the same workflow on `reinstate-wasm` with `toolchain_run_id=29165653896`.
+The lock file in the Lean fork and the downloaded `manifest.json` retain every
+Lean, Mathlib, Lake-package, root-module, and source-workflow pin. `SHA256SUMS`
+authenticates the manifest and all packs.
+
+This repository's
+[`build-manifold-layer.yml`](../.github/workflows/build-manifold-layer.yml)
+downloads that closure, verifies its checksums and pins, unpacks it, compiles
+`ManifoldAdventure.BrowserBase` with the matching native i386 toolchain, checks
+all reference solutions in Lean's kernel, and packages only files absent from
+the shared Real Analysis layer.
 
 The production deployment is static-first and keeps proof checking in each
 visitor's browser:

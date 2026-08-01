@@ -1,9 +1,10 @@
-name: build manifold Mathlib layer
+name: build Manifold Adventure browser layer
 
-# Builds the supplemental browser package with the native i386 toolchain from
-# the matching Lean WASM fork CI run. i386 is intentional: `.olean` files embed
-# pointer-sized data, so ordinary x86_64 Mathlib caches cannot be loaded by
-# wasm32 Lean.
+# Builds the course module and supplemental browser package from the pinned
+# Mathlib manifold closure produced by the Lean fork. The native i386 toolchain
+# compiles only the course source here. i386 is intentional: `.olean` files
+# embed pointer-sized data, so ordinary x86_64 Mathlib caches cannot be loaded
+# by wasm32 Lean.
 on:
   workflow_dispatch:
     inputs:
@@ -11,6 +12,10 @@ on:
         description: cauli/lean4 CI run containing the exact build-Linux 32bit artifact
         required: true
         default: "29165653896"
+      mathlib_layer_run_id:
+        description: cauli/lean4 action run containing the matching browser Mathlib manifold closure
+        required: true
+        default: "30693760471"
       lean_repository:
         description: Lean fork repository
         required: true
@@ -99,15 +104,65 @@ jobs:
           }
           ' "${{ inputs.lean_commit }}" "${{ inputs.mathlib_commit }}"
 
-      - name: Checkout pinned Mathlib
+      - name: Download exact browser Mathlib manifold closure
+        env:
+          GH_TOKEN: ${{ secrets.LEAN_FORK_TOKEN || github.token }}
         run: |
-          git clone --filter=blob:none https://github.com/leanprover-community/mathlib4.git mathlib4
-          git -C mathlib4 checkout "${{ inputs.mathlib_commit }}"
+          gh run download \
+            "${{ inputs.mathlib_layer_run_id }}" \
+            -R "${{ inputs.lean_repository }}" \
+            -D browser-mathlib-artifact
+          mapfile -t CLOSURE_MANIFESTS < <(find browser-mathlib-artifact -type f -name manifest.json)
+          test "${#CLOSURE_MANIFESTS[@]}" -eq 1
+          CLOSURE_ROOT=$(dirname "${CLOSURE_MANIFESTS[0]}")
+          node -e '
+          const fs = require("fs");
+          const manifest = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+          if (manifest.kind !== "mathlib-dependency-closure" || manifest.fullMathlib !== false) {
+            throw new Error("download is not the manifold dependency closure");
+          }
+          if (manifest.lean.commit !== process.argv[2]) throw new Error("closure Lean pin changed");
+          if (manifest.mathlib.commit !== process.argv[3]) throw new Error("closure Mathlib pin changed");
+          if (String(manifest.lean.toolchainRunId) !== process.argv[4]) {
+            throw new Error("closure was built from a different toolchain run");
+          }
+          if (!manifest.mathlib.roots.includes("Mathlib.Geometry.Manifold.IsManifold.Basic")) {
+            throw new Error("closure does not contain the course root module");
+          }
+          ' \
+            "$CLOSURE_ROOT/manifest.json" \
+            "${{ inputs.lean_commit }}" \
+            "${{ inputs.mathlib_commit }}" \
+            "${{ inputs.lean_run_id }}"
+          echo "CLOSURE_ROOT=$CLOSURE_ROOT" >> "$GITHUB_ENV"
 
-      - name: Build the manifold dependency closure with 32-bit Lean
+      - name: Checkout pinned Mathlib and dependency sources
         run: |
-          cd mathlib4
-          lake build Mathlib.Geometry.Manifold.IsManifold.Basic
+          MATHLIB_REPOSITORY=$(jq -r '.mathlib.repository' "$CLOSURE_ROOT/manifest.json")
+          git init mathlib4
+          git -C mathlib4 remote add origin "$MATHLIB_REPOSITORY"
+          git -C mathlib4 fetch --depth=1 origin "${{ inputs.mathlib_commit }}"
+          git -C mathlib4 checkout --detach FETCH_HEAD
+          test "$(git -C mathlib4 rev-parse HEAD)" = "${{ inputs.mathlib_commit }}"
+
+          mkdir -p mathlib4/.lake/packages
+          while IFS=$'\t' read -r NAME URL REV
+          do
+            TARGET="mathlib4/.lake/packages/$NAME"
+            git init "$TARGET"
+            git -C "$TARGET" remote add origin "$URL"
+            git -C "$TARGET" fetch --depth=1 origin "$REV"
+            git -C "$TARGET" checkout --detach FETCH_HEAD
+            test "$(git -C "$TARGET" rev-parse HEAD)" = "$REV"
+          done < <(jq -r '.mathlib.packages[] | [.name, .url, .rev] | @tsv' "$CLOSURE_ROOT/manifest.json")
+
+      - name: Unpack the checksum-verified browser closure
+        run: |
+          node scripts/unpack-browser-library-closure.mjs \
+            "$CLOSURE_ROOT" \
+            "$PWD/mathlib4/.lake/build/lib/lean" \
+            "${{ inputs.lean_commit }}" \
+            "${{ inputs.mathlib_commit }}"
 
       - name: Regenerate and compile the course theorem base
         run: |
@@ -138,6 +193,7 @@ jobs:
           node -e '
           const fs = require("fs");
           const m = JSON.parse(fs.readFileSync("public/lean-wasm/manifold-layer.json"));
+          const source = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
           const c = JSON.parse(fs.readFileSync("src/game/manifolds.conformance.json"));
           if (m.leanCommit !== process.argv[1]) throw new Error("Lean pin changed");
           if (m.mathlibCommit !== process.argv[2]) throw new Error("Mathlib pin changed");
@@ -150,8 +206,22 @@ jobs:
           if (!m.files.some(f => f.startsWith("Mathlib/Geometry/Manifold/"))) {
             throw new Error("Mathlib manifold modules are missing");
           }
+          m.browserMathlibClosure = {
+            repository: process.argv[4],
+            actionRunId: process.argv[5],
+            workflowCommit: source.lean.workflowCommit,
+            toolchainRunId: source.lean.toolchainRunId,
+            layerId: source.layerId,
+            roots: source.mathlib.roots,
+          };
+          fs.writeFileSync("public/lean-wasm/manifold-layer.json", `${JSON.stringify(m, null, 2)}\n`);
           console.log(`${m.modules} supplemental modules, ${m.packs.length} packs`);
-          ' "${{ inputs.lean_commit }}" "${{ inputs.mathlib_commit }}"
+          ' \
+            "${{ inputs.lean_commit }}" \
+            "${{ inputs.mathlib_commit }}" \
+            "$CLOSURE_ROOT/manifest.json" \
+            "${{ inputs.lean_repository }}" \
+            "${{ inputs.mathlib_layer_run_id }}"
 
       - name: Stage artifact
         run: |
@@ -159,6 +229,8 @@ jobs:
           cp public/lean-wasm/manifold-layer.json manifold-browser-layer/
           cp -R public/lean-wasm/manifold-lib manifold-browser-layer/
           cp src/game/manifolds.conformance.json manifold-browser-layer/
+          cp "$CLOSURE_ROOT/manifest.json" manifold-browser-layer/source-closure-manifest.json
+          cp "$CLOSURE_ROOT/SHA256SUMS" manifold-browser-layer/source-closure-SHA256SUMS
 
       - uses: actions/upload-artifact@v4
         with:

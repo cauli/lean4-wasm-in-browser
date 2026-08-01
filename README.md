@@ -222,6 +222,13 @@ export-list experiments, the CI also uploads a **link kit** — the fork's
 `docker-wasm/relink-local.sh` relinks `lean.js`/`lean.wasm` from it locally in
 minutes, no rebuild.
 
+The Manifold Adventure uses the fork's separately reproducible
+[browser Mathlib manifold-closure workflow](https://github.com/cauli/lean4/actions/workflows/build-browser-mathlib-manifold-closure.yml?query=branch%3Areinstate-wasm).
+It packages only the transitive closure rooted at
+`Mathlib.Geometry.Manifold.IsManifold.Basic`, not full Mathlib. See
+[`deploy/DEPLOY.md`](deploy/DEPLOY.md#browser-mathlib-artifact) for the pinned
+run, artifact name, and download command used by this web project.
+
 ```bash
 npm install
 npm run dev        # http://localhost:5173 (COOP/COEP set by Vite)
