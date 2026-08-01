@@ -5,10 +5,10 @@
 #
 #   lean-lib-files.json
 #   real-analysis-layer.json
-#   manifold-layer.json
+#   manifold-layer.json + six world-layer manifests
 #   lean-lib/**.olean, **.ir, **.ir.sig
 #   real-analysis-lib/artifacts-*.pack
-#   manifold-lib/artifacts-*.pack
+#   manifold-<world>-lib/artifacts-*.pack
 #
 # lean.js / lean.wasm are excluded on purpose: they are R2-served and only
 # change on a Lean artifact swap (deploy/upload-r2.sh).
@@ -29,13 +29,20 @@ trap 'rm -rf "$STAGE"' EXIT
 cp -L public/lean-wasm/lean-lib-files.json "$STAGE/"
 cp -L public/lean-wasm/real-analysis-layer.json "$STAGE/"
 cp -L public/lean-wasm/manifold-layer.json "$STAGE/"
+cp -L public/lean-wasm/manifold-*-layer.json "$STAGE/"
 rsync -aL --prune-empty-dirs --include='*/' \
   --include='*.olean' --include='*.ir' --include='*.ir.sig' --exclude='*' \
   public/lean-wasm/lean-lib/ "$STAGE/lean-lib/"
 rsync -aL --include='artifacts-*.pack' --exclude='*' \
   public/lean-wasm/real-analysis-lib/ "$STAGE/real-analysis-lib/"
-rsync -aL --include='artifacts-*.pack' --exclude='*' \
-  public/lean-wasm/manifold-lib/ "$STAGE/manifold-lib/"
+for SLUG in \
+  homeomorphisms local-charts charted-spaces \
+  canonical-charts smooth-manifolds tangent-spaces
+do
+  rsync -aL --include='artifacts-*.pack' --exclude='*' \
+    "public/lean-wasm/manifold-$SLUG-lib/" \
+    "$STAGE/manifold-$SLUG-lib/"
+done
 
 tar -C "$STAGE" -cf - . | gzip -6 > "$OUT"
 echo "Wrote $OUT ($(du -h "$OUT" | cut -f1)):"

@@ -26,13 +26,15 @@ const manifoldRoot = process.argv[9]
 const seedModules = (process.argv[10]
   ? process.argv[10].split(',').map((name) => name.trim()).filter(Boolean)
   : ['RealAnalysisGame.BrowserBase'])
-const baseManifestPath = process.argv[11]
-  ? path.resolve(process.argv[11])
-  : null
-const baseManifest = baseManifestPath
-  ? JSON.parse(fs.readFileSync(baseManifestPath, 'utf8'))
-  : null
-const baseFiles = new Set(baseManifest?.files || [])
+const baseManifestPaths = process.argv[11]
+  ? process.argv[11].split(',').map((value) => path.resolve(value)).filter(Boolean)
+  : []
+const baseManifests = baseManifestPaths.map((manifestFile) => ({
+  path: manifestFile,
+  value: JSON.parse(fs.readFileSync(manifestFile, 'utf8')),
+}))
+const baseManifest = baseManifests.at(-1)?.value || null
+const baseFiles = new Set(baseManifests.flatMap(({ value }) => value.files || []))
 const hasExactCoreSources = fs.existsSync(path.join(leanSourceRoot, 'Init.lean'))
 
 for (const [label, root] of [
@@ -378,9 +380,9 @@ const manifest = {
     ? gitCommit(path.resolve('.'))
     : null,
   baseModules: seedModules,
-  extends: baseManifestPath
+  extends: baseManifests.length > 0
     ? {
-        manifest: path.basename(baseManifestPath),
+        manifests: baseManifests.map(({ path: manifestFile }) => path.basename(manifestFile)),
         leanCommit: baseManifest.leanCommit,
         mathlibCommit: baseManifest.mathlibCommit,
       }

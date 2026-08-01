@@ -71,6 +71,18 @@ interface WorkerOutput {
   data: string
 }
 
+interface ManifoldWorldLayer {
+  world: string
+  manifestFile: string
+  libraryRoot: string
+  label: string
+}
+
+interface ManifoldLayerIndex {
+  kind: 'manifold-course-layer-index'
+  layers: ManifoldWorldLayer[]
+}
+
 interface JsonDiagnostic {
   severity?: string
   data?: string
@@ -191,7 +203,8 @@ export function useLeanGameVerifier() {
   const initializePromiseRef = useRef<Promise<void> | null>(null)
   const initFilesPromiseRef = useRef<Promise<void> | null>(null)
   const realAnalysisLayerPromiseRef = useRef<Promise<void> | null>(null)
-  const manifoldLayerPromiseRef = useRef<Promise<void> | null>(null)
+  const manifoldLayerIndexPromiseRef = useRef<Promise<ManifoldLayerIndex> | null>(null)
+  const manifoldLayerPromisesRef = useRef<Map<string, Promise<void>>>(new Map())
   const bootPendingRef = useRef<{ resolve: () => void; reject: (error: Error) => void } | null>(null)
   const filesPendingRef = useRef<{ resolve: () => void } | null>(null)
   const snapshotPendingRef = useRef<{ resolve: (result: WorkerResult) => void } | null>(null)
@@ -441,21 +454,44 @@ export function useLeanGameVerifier() {
     return promise
   }, [loadArtifactLayer, loadSnapshot])
 
-  const ensureManifoldLayer = useCallback(async () => {
-    if (manifoldLayerPromiseRef.current) return manifoldLayerPromiseRef.current
-    const promise = (async () => {
-      await loadArtifactLayer({
-        manifestFile: 'manifold-layer.json',
-        libraryRoot: 'manifold-lib',
-        label: 'Mathlib for the Manifold Adventure',
-        readyMessage: 'The Manifold Adventure library is ready.',
+  const ensureManifoldLayer = useCallback(async (level: GameLevel) => {
+    if (!manifoldLayerIndexPromiseRef.current) {
+      const suffix = LEAN_ASSET_VERSION ? `?v=${encodeURIComponent(LEAN_ASSET_VERSION)}` : ''
+      manifoldLayerIndexPromiseRef.current = fetch(
+        `${LEAN_WASM_BASE}/manifold-layer.json${suffix}`,
+      ).then(async (response) => {
+        if (!response.ok) throw new Error('The Manifold Adventure layer index was not found.')
+        const index = await response.json() as ManifoldLayerIndex
+        if (index.kind !== 'manifold-course-layer-index' || !Array.isArray(index.layers)) {
+          throw new Error('The Manifold Adventure layer index is invalid.')
+        }
+        return index
+      }).catch((error) => {
+        manifoldLayerIndexPromiseRef.current = null
+        throw error
       })
-    })().catch((error) => {
-      manifoldLayerPromiseRef.current = null
-      throw error
-    })
-    manifoldLayerPromiseRef.current = promise
-    return promise
+    }
+
+    const index = await manifoldLayerIndexPromiseRef.current
+    const targetIndex = index.layers.findIndex((layer) => layer.world === level.world)
+    if (targetIndex < 0) throw new Error(`No browser layer was generated for ${level.world}.`)
+
+    for (const layer of index.layers.slice(0, targetIndex + 1)) {
+      let promise = manifoldLayerPromisesRef.current.get(layer.world)
+      if (!promise) {
+        promise = loadArtifactLayer({
+          manifestFile: layer.manifestFile,
+          libraryRoot: layer.libraryRoot,
+          label: `Mathlib ${layer.label}`,
+          readyMessage: `The ${layer.label} definitions are ready.`,
+        }).catch((error) => {
+          manifoldLayerPromisesRef.current.delete(layer.world)
+          throw error
+        })
+        manifoldLayerPromisesRef.current.set(layer.world, promise)
+      }
+      await promise
+    }
   }, [loadArtifactLayer])
 
   const trySnapshot = useCallback(async (): Promise<boolean> => {
@@ -530,7 +566,7 @@ export function useLeanGameVerifier() {
       // through Lean's virtual filesystem.
       await ensureRealAnalysisLayer()
     } else if (verifier === 'manifold') {
-      await ensureManifoldLayer()
+      await ensureManifoldLayer(level)
     }
   }, [ensureManifoldLayer, ensureRealAnalysisLayer, initialize])
 

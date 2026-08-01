@@ -32,4 +32,6 @@ test('the manifold loader does not stage the Real Analysis course', () => {
   const manifoldLoader = loader.slice(start, end)
   assert.doesNotMatch(manifoldLoader, /ensureRealAnalysisLayer/)
   assert.doesNotMatch(manifoldLoader, /real-analysis/)
+  assert.match(manifoldLoader, /manifold-course-layer-index/)
+  assert.match(manifoldLoader, /slice\(0, targetIndex \+ 1\)/)
 })

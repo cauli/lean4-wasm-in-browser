@@ -1,6 +1,7 @@
 module
 
 public import Mathlib.Geometry.Manifold.IsManifold.Basic
+public import ManifoldAdventure.SmoothManifolds
 
 @[expose] public section
 

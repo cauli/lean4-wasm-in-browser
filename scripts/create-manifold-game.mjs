@@ -20,26 +20,31 @@ const WORLD_MODULES = {
   LocalCharts: {
     module: 'ManifoldAdventure.LocalCharts',
     mathlibImport: 'Mathlib.Topology.OpenPartialHomeomorph.Defs',
+    courseImport: 'ManifoldAdventure.Homeomorphisms',
     openCommands: ['open scoped Topology', 'open Filter'],
   },
   ChartedSpaces: {
     module: 'ManifoldAdventure.ChartedSpaces',
     mathlibImport: 'Mathlib.Geometry.Manifold.ChartedSpace',
+    courseImport: 'ManifoldAdventure.LocalCharts',
     openCommands: ['open scoped Topology', 'open Filter'],
   },
   CanonicalCharts: {
     module: 'ManifoldAdventure.CanonicalCharts',
     mathlibImport: 'Mathlib.Geometry.Manifold.ChartedSpace',
+    courseImport: 'ManifoldAdventure.ChartedSpaces',
     openCommands: ['open scoped Topology', 'open Filter'],
   },
   SmoothManifolds: {
     module: 'ManifoldAdventure.SmoothManifolds',
     mathlibImport: 'Mathlib.Geometry.Manifold.IsManifold.Basic',
+    courseImport: 'ManifoldAdventure.CanonicalCharts',
     openCommands: ['open scoped Topology ContDiff', 'open Filter ENat'],
   },
   TangentSpaces: {
     module: 'ManifoldAdventure.TangentSpaces',
     mathlibImport: 'Mathlib.Geometry.Manifold.IsManifold.Basic',
+    courseImport: 'ManifoldAdventure.SmoothManifolds',
     openCommands: ['open scoped Topology ContDiff', 'open Filter ENat'],
   },
 }
@@ -781,6 +786,7 @@ function leanHeader(world) {
   return `module
 
 public import ${config.mathlibImport}
+${config.courseImport ? `public import ${config.courseImport}` : ''}
 
 @[expose] public section
 

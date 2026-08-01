@@ -302,6 +302,13 @@ test('generated world modules are the source of truth for all reference proofs',
     ),
   ]))
   const allSources = [...worldSources.values()].join('\n')
+  for (let index = 1; index < contextModules.length; index += 1) {
+    assert.match(
+      worldSources.get(contextModules[index]),
+      new RegExp(`public import ${contextModules[index - 1].replaceAll('.', '\\.')}`),
+      `${contextModules[index]} must retain declarations unlocked in the previous world`,
+    )
+  }
   assert.equal(
     [...allSources.matchAll(/^(?:theorem|(?:noncomputable )?def) /gm)].length,
     levels.length,

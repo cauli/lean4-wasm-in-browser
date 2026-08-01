@@ -174,49 +174,50 @@ jobs:
           bash scripts/build-manifold-course.sh "$PWD/mathlib4"
           MATHLIB_ROOT="$PWD/mathlib4" node scripts/verify-manifold-references.mjs
 
-      - name: Package the standalone Manifold Adventure closure
+      - name: Package incremental Manifold Adventure world layers
         run: |
-          node scripts/package-real-analysis-layer.mjs \
+          bash scripts/package-manifold-layers.sh \
             "$PWD/mathlib4" \
-            "$PWD/lean" \
-            "$PWD/public/lean-wasm/manifold-lib" \
-            "$PWD/public/lean-wasm/manifold-layer.json" \
-            "$PWD/public/lean-wasm/lean-lib" \
-            "$PWD/public/lean-wasm/lean-lib-files.json" \
-            "$PWD/lean4-source/src" \
-            "$PWD/lean" \
-            ManifoldAdventure.BrowserBase
+            "$PWD/lean4-source/src"
 
       - name: Validate package pins and contents
         run: |
           node -e '
           const fs = require("fs");
-          const m = JSON.parse(fs.readFileSync("public/lean-wasm/manifold-layer.json"));
+          const index = JSON.parse(fs.readFileSync("public/lean-wasm/manifold-layer.json"));
           const source = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
           const c = JSON.parse(fs.readFileSync("src/game/manifolds.conformance.json"));
-          if (m.leanCommit !== process.argv[1]) throw new Error("Lean pin changed");
-          if (m.mathlibCommit !== process.argv[2]) throw new Error("Mathlib pin changed");
+          if (index.kind !== "manifold-course-layer-index") throw new Error("layer index is invalid");
+          if (index.leanCommit !== process.argv[1]) throw new Error("Lean pin changed");
+          if (index.mathlibCommit !== process.argv[2]) throw new Error("Mathlib pin changed");
           if (c.validation?.compilerCommit !== process.argv[1]) {
             throw new Error("reference matrix did not use the exact Lean fork compiler");
           }
-          if (!m.files.includes("ManifoldAdventure/BrowserBase.olean")) {
-            throw new Error("course BrowserBase.olean is missing");
-          }
-          for (const world of [
-            "Homeomorphisms", "LocalCharts", "ChartedSpaces",
-            "CanonicalCharts", "SmoothManifolds", "TangentSpaces",
-          ]) {
-            if (!m.files.includes(`ManifoldAdventure/${world}.olean`)) {
-              throw new Error(`course ${world}.olean is missing`);
+          if (index.layers.length !== 6) throw new Error("expected six world layers");
+          const seen = new Set();
+          for (const layer of index.layers) {
+            const m = JSON.parse(fs.readFileSync(`public/lean-wasm/${layer.manifestFile}`));
+            if (m.leanCommit !== process.argv[1] || m.mathlibCommit !== process.argv[2]) {
+              throw new Error(`${layer.world} pins changed`);
+            }
+            if (!m.files.includes(`ManifoldAdventure/${layer.world}.olean`)) {
+              throw new Error(`course ${layer.world}.olean is missing`);
+            }
+            for (const file of m.files) {
+              if (seen.has(file)) throw new Error(`${file} is duplicated across world layers`);
+              seen.add(file);
             }
           }
-          if (!m.files.some(f => f.startsWith("Mathlib/Geometry/Manifold/"))) {
-            throw new Error("Mathlib manifold modules are missing");
+          const first = JSON.parse(fs.readFileSync(
+            `public/lean-wasm/${index.layers[0].manifestFile}`,
+          ));
+          if (first.files.includes("Mathlib/Geometry/Manifold/IsManifold/Basic.olean")) {
+            throw new Error("the first world still packages the smooth-manifold closure");
           }
-          if (m.extends !== null) {
-            throw new Error("Manifold Adventure must not extend the Real Analysis layer");
+          if (first.compressedBytes >= 150 * 1024 * 1024) {
+            throw new Error("the first world is still too large for a practical cold start");
           }
-          m.browserMathlibClosure = {
+          index.browserMathlibClosure = {
             repository: process.argv[4],
             actionRunId: process.argv[5],
             workflowCommit: source.lean.workflowCommit,
@@ -224,8 +225,14 @@ jobs:
             layerId: source.layerId,
             roots: source.mathlib.roots,
           };
-          fs.writeFileSync("public/lean-wasm/manifold-layer.json", `${JSON.stringify(m, null, 2)}\n`);
-          console.log(`${m.modules} standalone modules, ${m.packs.length} packs`);
+          fs.writeFileSync(
+            "public/lean-wasm/manifold-layer.json",
+            `${JSON.stringify(index, null, 2)}\n`,
+          );
+          console.log(
+            `${index.layers.length} incremental layers, ` +
+            `${index.totals.packs} packs in the complete course`,
+          );
           ' \
             "${{ inputs.lean_commit }}" \
             "${{ inputs.mathlib_commit }}" \
@@ -237,7 +244,8 @@ jobs:
         run: |
           mkdir manifold-browser-layer
           cp public/lean-wasm/manifold-layer.json manifold-browser-layer/
-          cp -R public/lean-wasm/manifold-lib manifold-browser-layer/
+          cp public/lean-wasm/manifold-*-layer.json manifold-browser-layer/
+          cp -R public/lean-wasm/manifold-*-lib manifold-browser-layer/
           cp src/game/manifolds.conformance.json manifold-browser-layer/
           cp "$CLOSURE_ROOT/manifest.json" manifold-browser-layer/source-closure-manifest.json
           cp "$CLOSURE_ROOT/SHA256SUMS" manifold-browser-layer/source-closure-SHA256SUMS

@@ -1,6 +1,7 @@
 module
 
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
+public import ManifoldAdventure.Homeomorphisms
 
 @[expose] public section
 

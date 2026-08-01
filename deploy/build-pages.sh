@@ -80,8 +80,7 @@ rsync -aL --delete --include='artifacts-*.pack' --exclude='*' \
 # Manifold Adventure is a standalone, on-demand Mathlib dependency closure.
 # It deliberately does not load or extend the unrelated Real Analysis course.
 MANIFOLD_MANIFEST=public/lean-wasm/manifold-layer.json
-MANIFOLD_PACKS=public/lean-wasm/manifold-lib
-if [ ! -f "$MANIFOLD_MANIFEST" ] || [ ! -d "$MANIFOLD_PACKS" ]; then
+if [ ! -f "$MANIFOLD_MANIFEST" ]; then
   echo "error: Manifold Adventure browser layer is missing." >&2
   echo "run npm run build:manifold-course && npm run package:manifold first." >&2
   exit 1
@@ -90,32 +89,47 @@ node -e '
 const fs = require("fs");
 const manifest = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
 const base = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+if (manifest.kind !== "manifold-course-layer-index" || manifest.layers?.length !== 6) {
+  throw new Error("Manifold layer index is invalid");
+}
 if (manifest.leanCommit !== base.leanCommit || manifest.mathlibCommit !== base.mathlibCommit) {
   throw new Error("Manifold and Real Analysis layers use different Lean/Mathlib pins");
 }
-if (manifest.extends !== null) {
-  throw new Error("Manifold layer unexpectedly extends another course layer");
-}
-if (!Array.isArray(manifest.packs) || manifest.packs.length === 0) {
-  throw new Error("Manifold manifest contains no packs");
-}
-for (const pack of manifest.packs) {
-  const file = `${process.argv[2]}/${pack.file}`;
-  const stat = fs.statSync(file);
-  if (stat.size !== pack.compressedBytes) {
-    throw new Error(`${pack.file} has ${stat.size} bytes; expected ${pack.compressedBytes}`);
+for (const layer of manifest.layers) {
+  const layerManifest = JSON.parse(fs.readFileSync(
+    `public/lean-wasm/${layer.manifestFile}`,
+    "utf8",
+  ));
+  if (!Array.isArray(layerManifest.packs) || layerManifest.packs.length === 0) {
+    throw new Error(`${layer.world} contains no packs`);
+  }
+  for (const pack of layerManifest.packs) {
+    const file = `public/lean-wasm/${layer.libraryRoot}/${pack.file}`;
+    const stat = fs.statSync(file);
+    if (stat.size !== pack.compressedBytes) {
+      throw new Error(`${layer.world}/${pack.file} has ${stat.size} bytes; expected ${pack.compressedBytes}`);
+    }
   }
 }
-' "$MANIFOLD_MANIFEST" "$MANIFOLD_PACKS" "$REAL_ANALYSIS_MANIFEST"
-mkdir -p dist/lean-wasm/manifold-lib
+' "$MANIFOLD_MANIFEST" public/lean-wasm "$REAL_ANALYSIS_MANIFEST"
 cp -L "$MANIFOLD_MANIFEST" dist/lean-wasm/manifold-layer.json
-rsync -aL --delete --include='artifacts-*.pack' --exclude='*' \
-  "$MANIFOLD_PACKS/" dist/lean-wasm/manifold-lib/
+for SLUG in \
+  homeomorphisms local-charts charted-spaces \
+  canonical-charts smooth-manifolds tangent-spaces
+do
+  cp -L \
+    "public/lean-wasm/manifold-$SLUG-layer.json" \
+    "dist/lean-wasm/manifold-$SLUG-layer.json"
+  mkdir -p "dist/lean-wasm/manifold-$SLUG-lib"
+  rsync -aL --delete --include='artifacts-*.pack' --exclude='*' \
+    "public/lean-wasm/manifold-$SLUG-lib/" \
+    "dist/lean-wasm/manifold-$SLUG-lib/"
+done
 
 echo "Pages output ready in dist/ ($(du -shL dist | cut -f1)):"
 echo "  static .olean files: $(find dist/lean-wasm/lean-lib -name '*.olean' | wc -l | tr -d ' ')"
 echo "  static .ir files:    $(find dist/lean-wasm/lean-lib -name '*.ir' | wc -l | tr -d ' ')"
 echo "  static .ir.sig files: $(find dist/lean-wasm/lean-lib -name '*.ir.sig' | wc -l | tr -d ' ')"
 echo "  Real Analysis packs: $(find dist/lean-wasm/real-analysis-lib -name 'artifacts-*.pack' | wc -l | tr -d ' ')"
-echo "  Manifold packs:      $(find dist/lean-wasm/manifold-lib -name 'artifacts-*.pack' | wc -l | tr -d ' ')"
+echo "  Manifold packs:      $(find dist/lean-wasm -path '*/manifold-*-lib/artifacts-*.pack' | wc -l | tr -d ' ')"
 echo "  R2 (upload via deploy/upload-r2.sh): lean.js, lean.wasm, snapshots"
