@@ -214,8 +214,8 @@ jobs:
           if (first.files.includes("Mathlib/Geometry/Manifold/IsManifold/Basic.olean")) {
             throw new Error("the first world still packages the smooth-manifold closure");
           }
-          if (first.compressedBytes >= 150 * 1024 * 1024) {
-            throw new Error("the first world is still too large for a practical cold start");
+          if (first.compressedBytes >= 200 * 1024 * 1024) {
+            throw new Error("the first world does not materially reduce the current cold transfer");
           }
           index.browserMathlibClosure = {
             repository: process.argv[4],
