@@ -74,6 +74,26 @@ downloads that closure, verifies its checksums and pins, unpacks it, compiles
 all reference solutions in Lean's kernel, and packages only files absent from
 the shared Real Analysis layer.
 
+The current compiled course layer comes from
+[web integration run `30697147126`](https://github.com/cauli/lean4-wasm-in-browser/actions/runs/30697147126).
+Its artifact is
+`manifold-layer-62b6a2291302d4bbeace37642a066b7510d0145c` and contains
+`manifold-layer.json`, three `manifold-lib/artifacts-*.pack` files, and the
+kernel conformance record. Download it with:
+
+```bash
+gh run download 30697147126 \
+  -R cauli/lean4-wasm-in-browser \
+  -n manifold-layer-62b6a2291302d4bbeace37642a066b7510d0145c \
+  -D /tmp/manifold-browser-layer
+```
+
+The immutable Pages bundle that combines this supplement with the unchanged
+shared Lean and Real Analysis assets is the
+[`pages-assets-manifold-b6428ed` release](https://github.com/cauli/lean4-wasm-in-browser/releases/tag/pages-assets-manifold-b6428ed).
+Its SHA-256 is
+`a3fd810af68445126b15ecd2e4d0f969b0df11fa437a9cca4365007428ea4719`.
+
 The production deployment is static-first and keeps proof checking in each
 visitor's browser:
 

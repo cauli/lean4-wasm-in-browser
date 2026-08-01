@@ -34,7 +34,7 @@ permissions:
   actions: read
 
 env:
-  PAGES_ASSETS_URL: https://github.com/cauli/lean4-wasm-in-browser/releases/download/pages-assets-4.28/pages-assets.tar.gz
+  PAGES_ASSETS_URL: https://github.com/cauli/lean4-wasm-in-browser/releases/download/pages-assets-manifold-b6428ed/pages-assets-manifold-b6428ed.tar.gz
 
 jobs:
   build:

@@ -227,7 +227,10 @@ The Manifold Adventure uses the fork's separately reproducible
 It packages only the transitive closure rooted at
 `Mathlib.Geometry.Manifold.IsManifold.Basic`, not full Mathlib. See
 [`deploy/DEPLOY.md`](deploy/DEPLOY.md#browser-mathlib-artifact) for the pinned
-run, artifact name, and download command used by this web project.
+run, artifact name, and download command used by this web project. The compiled
+course layer is available from [web integration run `30697147126`](https://github.com/cauli/lean4-wasm-in-browser/actions/runs/30697147126),
+and the complete static deployment bundle is the
+[`pages-assets-manifold-b6428ed` release](https://github.com/cauli/lean4-wasm-in-browser/releases/tag/pages-assets-manifold-b6428ed).
 
 ```bash
 npm install
