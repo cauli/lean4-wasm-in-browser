@@ -1,6 +1,7 @@
 module
 
 public import Mathlib.Geometry.Manifold.ChartedSpace
+public import ManifoldAdventure.BrowserPolicy
 public import ManifoldAdventure.ChartedSpaces
 
 @[expose] public section

@@ -10,6 +10,7 @@ const LEAN_COMMIT = '62b6a2291302d4bbeace37642a066b7510d0145c'
 const LEAN_UPSTREAM_COMMIT = 'ecf55de08b9d855e749f80c491c6f294dd307e60'
 const MATHLIB_COMMIT = 'de3a9cf33016bbb6d15880d7680643f7ca2d25ba'
 const BASE_MODULE = 'ManifoldAdventure.BrowserBase'
+const POLICY_MODULE = 'ManifoldAdventure.BrowserPolicy'
 const NAMESPACE = 'ManifoldAdventure'
 const WORLD_MODULES = {
   Homeomorphisms: {
@@ -786,6 +787,7 @@ function leanHeader(world) {
   return `module
 
 public import ${config.mathlibImport}
+public import ${POLICY_MODULE}
 ${config.courseImport ? `public import ${config.courseImport}` : ''}
 
 @[expose] public section

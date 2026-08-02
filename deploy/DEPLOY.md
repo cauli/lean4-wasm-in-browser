@@ -96,6 +96,14 @@ shared Lean and Real Analysis assets is the
 Its SHA-256 is
 `a3fd810af68445126b15ecd2e4d0f969b0df11fa437a9cca4365007428ea4719`.
 
+Before publishing any replacement binary, snapshot, library tree, or packed
+course layer, run the
+[browser artifact validation gate](../docs/browser-artifact-validation.md).
+The gate must finish a first-world Manifold proof in headless Chromium and show
+that the local Lean kernel accepted it. Node compilation and artifact checksum
+validation remain required, but neither catches browser-only WebAssembly stack
+failures.
+
 The production deployment is static-first and keeps proof checking in each
 visitor's browser:
 

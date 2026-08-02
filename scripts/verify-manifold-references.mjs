@@ -108,6 +108,13 @@ try {
       level.solution,
       true,
     )
+    if (!challenge.code.includes('manifold_browser_user')) {
+      throw new Error(`${level.id} does not invoke the precompiled browser policy tactic`)
+    }
+    if (challenge.code.includes('private meta def')
+        || challenge.code.includes('browserCheckInventory')) {
+      throw new Error(`${level.id} still recompiles the inventory checker per proof`)
+    }
     return nestedChallenge(`Reference_${level.id.replaceAll('-', '_')}`, challenge.code)
   })
   const positiveResult = compileSource('all-references.lean', [
@@ -127,6 +134,20 @@ try {
   }
 
   const first = levels[0]
+  const emptyPreview = verification.buildManifoldGoalInspectionSource(first, '', true)
+  const emptyPreviewResult = compileSource('empty-goal-preview.lean', emptyPreview.code)
+  const emptyPreviewOutput = `${emptyPreviewResult.stdout}${emptyPreviewResult.stderr}`
+  if (emptyPreviewResult.status !== 0
+      || !emptyPreviewOutput.includes(emptyPreview.traceMarker)) {
+    failed.push({
+      id: 'policy:empty-goal-preview',
+      status: emptyPreviewResult.status,
+      output: emptyPreviewOutput.trim(),
+    })
+    console.log('✗ policy:empty-goal-preview')
+  } else {
+    console.log('✓ policy:empty-goal-preview')
+  }
   const negativeChecks = [
     {
       name: 'self-reference',
@@ -177,13 +198,22 @@ const conformance = {
     targetBrowserLeanCommit: verifierJson.leanCommit,
     referenceModule: verifierJson.baseModule,
     semanticInventoryPolicy: true,
+    policyImplementation: 'precompiled-course-module',
+    goalPreviewCheck: 'empty-proof',
     negativePolicyChecks: ['self-reference', 'locked-declaration'],
   },
   summary: { total: levels.length, kernel: passed.length, partial: 0 },
   verifiedReferenceSolutions: passed,
 }
-fs.writeFileSync(
-  path.join(repoRoot, 'src/game/manifolds.conformance.json'),
-  `${JSON.stringify(conformance, null, 2)}\n`,
-)
-console.log('Updated src/game/manifolds.conformance.json')
+if (compilerCommit === verifierJson.leanCommit) {
+  fs.writeFileSync(
+    path.join(repoRoot, 'src/game/manifolds.conformance.json'),
+    `${JSON.stringify(conformance, null, 2)}\n`,
+  )
+  console.log('Updated src/game/manifolds.conformance.json')
+} else {
+  console.log(
+    `Kept the pinned conformance record: local Lean ${compilerCommit.slice(0, 10)} `
+    + `does not match browser Lean ${verifierJson.leanCommit.slice(0, 10)}.`,
+  )
+}

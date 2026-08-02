@@ -245,6 +245,11 @@ artifact packs ahead. Compare `window.__leanGameLayerTimings` in fresh tabs.
 This does not parallelize Lean's environment import, which remains owned by the
 single persistent runtime.
 
+After any browser artifact, snapshot, layer, worker, or generated-proof-source
+change, run the [browser artifact validation gate](docs/browser-artifact-validation.md).
+It checks a real Manifold proof through Chromium and requires local kernel
+acceptance; downloaded packs or a completed module counter are not sufficient.
+
 `scripts/lean-wasm-node.cjs` runs any artifact's Lean under plain Node with
 real-filesystem access — used for snapshot baking and quick probes.
 

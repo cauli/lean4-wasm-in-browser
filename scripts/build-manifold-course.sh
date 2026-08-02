@@ -17,6 +17,7 @@ MATHLIB_ROOT="${1:-/tmp/manifold-mathlib4}"
 COURSE_ROOT="$PWD/lean"
 COURSE_BUILD_ROOT="$PWD/lean/.lake/build/lib/lean"
 COURSE_MODULES=(
+  ManifoldAdventure.BrowserPolicy
   ManifoldAdventure.Homeomorphisms
   ManifoldAdventure.LocalCharts
   ManifoldAdventure.ChartedSpaces

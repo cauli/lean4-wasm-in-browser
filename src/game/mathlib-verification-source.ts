@@ -1,6 +1,5 @@
 import type { GameLevel, LeanGame } from './game-data'
 import {
-  INVENTORY_POLICY_MARKER,
   LIVE_GOAL_TRACE_MARKER,
   type ChallengeSource,
   type GoalInspectionSource,
@@ -64,8 +63,8 @@ function nameVariants(name: string, namespaces: string[] = []): string[] {
   return [...variants]
 }
 
-function leanStringList(values: Iterable<string>): string {
-  return `[${[...new Set(values)].sort().map((value) => JSON.stringify(value)).join(', ')}]`
+function leanPolicyString(values: Iterable<string>): string {
+  return JSON.stringify([...new Set(values)].sort().join('\n'))
 }
 
 function mathlibPolicy(
@@ -124,120 +123,17 @@ function mathlibPolicy(
   }
 }
 
-function buildInventoryPolicyPrelude(policy: MathlibPolicy): string {
-  return `
-private meta def browserAllowedKeywords : List String :=
-  ${leanStringList(ALLOWED_POLICY_KEYWORDS)}
-
-private meta def browserAllowedTactics : List String :=
-  ${leanStringList(policy.allowedTactics)}
-
-private meta def browserKnownTactics : List String :=
-  ${leanStringList(policy.knownTactics)}
-
-private meta def browserDisabledTactics : List String :=
-  ${leanStringList(policy.disabledTactics)}
-
-private meta def browserAllowedDeclarations : List String :=
-  ${leanStringList(policy.allowedDeclarations)}
-
-private meta def browserKnownDeclarations : List String :=
-  ${leanStringList(policy.knownDeclarations)}
-
-private meta def browserDisabledDeclarations : List String :=
-  ${leanStringList(policy.disabledDeclarations)}
-
-private meta def browserSelfDeclarations : List String :=
-  ${leanStringList(policy.selfDeclarations)}
-
-private meta def browserInventoryError (stx : Lean.Syntax) (message : String) :
-    Lean.Elab.Tactic.TacticM Unit :=
-  Lean.logErrorAt stx ("${INVENTORY_POLICY_MARKER} " ++ message)
-
-private meta partial def browserCheckInventory
-    (stx : Lean.Syntax) : Lean.Elab.Tactic.TacticM Unit := do
-  match stx with
-  | .missing => return
-  | .node _ _ args =>
-    for arg in args do
-      browserCheckInventory arg
-  | .atom _ value =>
-    if 0 < value.length
-        && value.toList[0]!.isAlpha
-        && !browserAllowedKeywords.contains value
-        && !browserAllowedTactics.contains value then
-      let message :=
-        if browserDisabledTactics.contains value then
-          s!"The tactic '{value}' is disabled in this level."
-        else if browserKnownTactics.contains value then
-          s!"You have not unlocked the tactic '{value}' yet."
-        else
-          s!"The tactic '{value}' is not available in this game."
-      browserInventoryError stx message
-  | .ident _ _ value _ =>
-    -- A projection's receiver can be local (\`e.continuous_symm\`), so it may
-    -- not resolve globally until after tactic elaboration. Match its name
-    -- components against the tracked short-name inventory as well.
-    for component in value.components do
-      let writtenComponent := component.toString
-      if browserSelfDeclarations.contains writtenComponent then
-        browserInventoryError stx
-          s!"You cannot use the level theorem '{writtenComponent}' to prove itself."
-      else if browserDisabledDeclarations.contains writtenComponent then
-        browserInventoryError stx
-          s!"The theorem or definition '{writtenComponent}' is disabled in this level."
-      else if browserKnownDeclarations.contains writtenComponent
-          && !browserAllowedDeclarations.contains writtenComponent then
-        browserInventoryError stx
-          s!"You have not unlocked the theorem or definition '{writtenComponent}' yet."
-    -- Field notation such as \`e.continuous_symm\` is represented as one
-    -- identifier before elaboration. Resolve both the whole name and each
-    -- component so projections and trailing \`.mp\` / \`.mpr\` calls remain
-    -- subject to the semantic inventory.
-    let names ← (value :: value.components).flatMapM fun candidate =>
-      try Lean.resolveGlobalConst (Lean.mkIdent candidate)
-      catch _ => pure []
-    for name in names do
-      let some info := (← Lean.getEnv).find? name
-        | return
-      let resolved := name.toString
-      let written := value.toString
-      let isTracked :=
-        browserKnownDeclarations.contains resolved
-          || browserKnownDeclarations.contains written
-          || browserDisabledDeclarations.contains resolved
-          || browserDisabledDeclarations.contains written
-          || browserSelfDeclarations.contains resolved
-          || browserSelfDeclarations.contains written
-      let isTheorem :=
-        match info with
-        | .thmInfo .. => true
-        | _ => false
-      if !isTracked && !isTheorem then return
-      if browserSelfDeclarations.contains resolved
-          || browserSelfDeclarations.contains written then
-        browserInventoryError stx
-          s!"You cannot use the level theorem '{resolved}' to prove itself."
-      else if browserDisabledDeclarations.contains resolved
-          || browserDisabledDeclarations.contains written then
-        browserInventoryError stx
-          s!"The theorem or definition '{resolved}' is disabled in this level."
-      else if !browserKnownDeclarations.contains resolved
-          && !browserKnownDeclarations.contains written then
-        browserInventoryError stx
-          s!"The theorem or definition '{resolved}' is not available in this game."
-      else if !browserAllowedDeclarations.contains resolved
-          && !browserAllowedDeclarations.contains written then
-        browserInventoryError stx
-          s!"You have not unlocked the theorem or definition '{resolved}' yet."
-
-local syntax "browser_user" ppLine tacticSeq : tactic
-
-elab_rules : tactic
-  | \`(tactic| browser_user $tactics:tacticSeq) => do
-      browserCheckInventory tactics.raw
-      Lean.Elab.Tactic.evalTactic tactics
-`.trim()
+function buildInventoryPolicyArguments(policy: MathlibPolicy): string[] {
+  return [
+    ALLOWED_POLICY_KEYWORDS,
+    policy.allowedTactics,
+    policy.knownTactics,
+    policy.disabledTactics,
+    policy.allowedDeclarations,
+    policy.knownDeclarations,
+    policy.disabledDeclarations,
+    policy.selfDeclarations,
+  ].map((values) => leanPolicyString(values))
 }
 
 function challengeSignature(level: GameLevel, metadata: MathlibVerifierLevel): string {
@@ -270,12 +166,12 @@ export function createMathlibVerificationSource(
     const namespaceOpeners = metadata.namespaces.map((name) => `namespace ${name}`)
     const namespaceClosers = metadata.namespaces.slice().reverse().map((name) => `end ${name}`)
     const proofLines = proof.split('\n')
+    const policyArguments = enforceInventory
+      ? buildInventoryPolicyArguments(mathlibPolicy(game, verifierData, level))
+      : []
     const header = [
       `import ${metadata.contextModule}`,
       '',
-      ...(enforceInventory
-        ? [buildInventoryPolicyPrelude(mathlibPolicy(game, verifierData, level)), '']
-        : []),
       ...(metadata.openCommands || []),
       ...((metadata.openCommands || []).length > 0 ? [''] : []),
       ...namespaceOpeners,
@@ -284,7 +180,9 @@ export function createMathlibVerificationSource(
         ? ['private axiom browser_preview_close {α : Sort u} : α', '']
         : []),
       `${metadata.declarationKind || 'theorem'} browser_challenge ${challengeSignature(level, metadata)} := by`,
-      ...(enforceInventory ? ['  browser_user'] : []),
+      ...(enforceInventory
+        ? ['  manifold_browser_user', ...policyArguments.map((value) => `    ${value}`)]
+        : []),
     ]
     const body = proofLines.map((line) => `${enforceInventory ? '    ' : '  '}${line}`)
     const inspection = inspectGoals

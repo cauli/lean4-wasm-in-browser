@@ -1,6 +1,7 @@
 module
 
 public import Mathlib.Topology.Homeomorph.Defs
+public import ManifoldAdventure.BrowserPolicy
 
 
 @[expose] public section

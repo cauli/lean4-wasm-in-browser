@@ -47,6 +47,17 @@ for (const [index, layer] of layers.entries()) {
   if (index === 0 && manifest.extends !== null) {
     throw new Error('The first manifold world must be standalone.')
   }
+  if (index === 0) {
+    for (const file of [
+      'ManifoldAdventure/BrowserPolicy.olean',
+      'ManifoldAdventure/BrowserPolicy.ir',
+      'ManifoldAdventure/BrowserPolicy.ir.sig',
+    ]) {
+      if (!manifest.files?.includes(file)) {
+        throw new Error(`The first manifold world is missing precompiled policy file ${file}.`)
+      }
+    }
+  }
   if (index > 0 && manifest.extends?.manifests?.length !== index) {
     throw new Error(`${layer.manifestFile} does not extend every earlier world.`)
   }

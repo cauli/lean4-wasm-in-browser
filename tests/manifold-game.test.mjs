@@ -18,6 +18,10 @@ const browserBase = fs.readFileSync(
   new URL('../lean/ManifoldAdventure/BrowserBase.lean', import.meta.url),
   'utf8',
 )
+const browserPolicy = fs.readFileSync(
+  new URL('../lean/ManifoldAdventure/BrowserPolicy.lean', import.meta.url),
+  'utf8',
+)
 
 const levels = game.worlds.flatMap((world) => world.levels)
 const statements = levels.map((level) => level.statement).join('\n')
@@ -302,6 +306,12 @@ test('generated world modules are the source of truth for all reference proofs',
     ),
   ]))
   const allSources = [...worldSources.values()].join('\n')
+  for (const source of worldSources.values()) {
+    assert.match(source, /public import ManifoldAdventure\.BrowserPolicy/)
+  }
+  assert.match(browserPolicy, /syntax \(name := manifoldBrowserUser\)/)
+  assert.match(browserPolicy, /private meta partial def checkInventory/)
+  assert.match(browserPolicy, /Lean\.Elab\.Tactic\.evalTactic tactics/)
   for (let index = 1; index < contextModules.length; index += 1) {
     assert.match(
       worldSources.get(contextModules[index]),
