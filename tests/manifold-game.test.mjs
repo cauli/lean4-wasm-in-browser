@@ -26,30 +26,38 @@ const browserPolicy = fs.readFileSync(
 const levels = game.worlds.flatMap((world) => world.levels)
 const statements = levels.map((level) => level.statement).join('\n')
 
-test('the Mathlib-native Manifold Adventure is a complete linear path', () => {
+test('the Mathlib-native Manifold Adventure has a core path and optional branches', () => {
   assert.equal(game.title, 'The Manifold Adventure')
   assert.deepEqual(
     game.worlds.map((world) => [world.id, world.levels.length]),
     [
       ['Homeomorphisms', 4],
-      ['LocalCharts', 4],
+      ['LocalCharts', 5],
       ['ChartedSpaces', 5],
-      ['CanonicalCharts', 4],
-      ['SmoothManifolds', 4],
-      ['TangentSpaces', 4],
+      ['CanonicalCharts', 5],
+      ['SmoothManifolds', 5],
+      ['TangentSpaces', 3],
+      ['MapProjections', 5],
+      ['CircleMotion', 4],
+      ['RobotArm', 4],
     ],
   )
-  assert.equal(levels.length, 25)
-  assert.equal(new Set(levels.map((level) => level.id)).size, 25)
+  assert.equal(levels.length, 40)
+  assert.equal(new Set(levels.map((level) => level.id)).size, 40)
   assert.deepEqual(game.worlds[0].prerequisites, [])
 
-  for (let index = 1; index < game.worlds.length; index += 1) {
+  for (let index = 1; index < 6; index += 1) {
     assert.deepEqual(
       game.worlds[index].prerequisites,
       [game.worlds[index - 1].id],
       `${game.worlds[index].id} should follow the previous world`,
     )
   }
+  assert.deepEqual(game.worlds[6].prerequisites, ['LocalCharts'])
+  assert.deepEqual(game.worlds[7].prerequisites, ['SmoothManifolds'])
+  assert.deepEqual(game.worlds[8].prerequisites, ['CircleMotion'])
+  assert.ok(game.worlds.slice(6).every((world) => world.optional))
+  assert.ok(game.worlds.every((world) => world.mapPosition))
 })
 
 test('the goals use actual Mathlib manifold structures instead of local stand-ins', () => {
@@ -91,17 +99,16 @@ test('formal goal objects use the names introduced by Ada\'s story', () => {
   assert.match(statements, /\(trailMap : Trail ≃ₜ Drawing\)/)
   assert.match(statements, /\(chart : OpenPartialHomeomorph Stone Drawing\)/)
   assert.match(statements, /\(place : Stone\)/)
-  assert.match(statements, /\[surfaceCharts : ChartedSpace Coordinates Surface\]/)
+  assert.match(statements, /\[ChartedSpace Coordinates Surface\]/)
   assert.match(statements, /\(velocity : TangentSpace model place\)/)
 
   assert.doesNotMatch(
     statements,
     /[{(]\s*(?:X|Y|Z|H|H'|M|M'|E|E'|I|I'|x|y|e|f|v|m|n|𝕜)\s*:/,
   )
-  assert.doesNotMatch(
-    statements,
-    /\[\s*(?:TopologicalSpace|ChartedSpace|IsManifold|NormedAddCommGroup|NormedSpace|NontriviallyNormedField)\b/,
-  )
+  const afterWorldOne = game.worlds.slice(1).flatMap((world) => world.levels)
+    .map((level) => level.statement).join('\n')
+  assert.doesNotMatch(afterWorldOne, /\[\s*[a-z][A-Za-z0-9_]*\s*:/)
 })
 
 test('level titles describe moments in Ada\'s story', () => {
@@ -116,23 +123,38 @@ test('level titles describe moments in Ada\'s story', () => {
       'No jumps inside the patch',
       'Her mark lands in the drawing',
       'Back to the same spot',
+      'The leaf reads back into the patch',
       'A leaf for where she stands',
       'This leaf is in the atlas',
       'Her place lands on the leaf',
       'The map works nearby',
       'No place left uncovered',
       'The reference grid stays put',
-      'One map in the reference atlas',
+      'The identity is filed in the atlas',
+      'Only the identity is filed there',
       'Two readings at once',
       'The paired chart contains her place',
+      'Two leaves in conversation',
       'The reference leaf is ready',
       'Passing an easier check',
       'The smooth atlas passes the basic check',
       'Two circles make a torus',
       'Ada stands still',
-      'Place and velocity together',
       'Read the location tag',
       'Standing still anywhere',
+      'The pole stays off the leaf',
+      'The far pole lands in the middle',
+      'Every mark has a place on the bead',
+      'Off the pole, onto the leaf',
+      'The second leaf covers the hole',
+      'No turn leaves the pointer home',
+      'Two turns compose',
+      'One full turn changes nothing',
+      'The pointer turns smoothly',
+      'Find the tip of the arm',
+      'Both bars point forward',
+      'A full shoulder turn reaches the same point',
+      'The arm moves without a jump',
     ],
   )
 })
@@ -149,10 +171,10 @@ test('every lesson moves from Ada to Mathlib, with its objective beside the form
 
   for (const level of levels) {
     const paragraphs = level.introduction.split(/\n\n+/)
-    assert.equal(paragraphs.length, 2, `${level.id} does not have two lesson paragraphs`)
+    assert.ok(paragraphs.length >= 2, `${level.id} needs story and technical paragraphs`)
     assert.match(paragraphs[0], /\bAda\b/, `${level.id} does not begin with Ada`)
     assert.match(
-      paragraphs[1],
+      paragraphs.slice(1).join('\n\n'),
       /\]\(https:\/\/leanprover-community\.github\.io\/mathlib4_docs\//,
       `${level.id} does not link its technical concept to Mathlib`,
     )
@@ -163,7 +185,7 @@ test('every lesson moves from Ada to Mathlib, with its objective beside the form
     )
     assert.doesNotMatch(
       level.statementText,
-      /\b(?:apply|constructor|exact|infer_instance|refine|rfl|rw|simpa)\b/,
+      /\b(?:apply|constructor|exact|infer_instance|intro|refine|rfl|rw|simp|simpa|unfold)\b/,
       `${level.id} objective gives away a Lean tactic`,
     )
     assert.doesNotMatch(
@@ -189,6 +211,11 @@ test('every lesson moves from Ada to Mathlib, with its objective beside the form
   ].join('\n')
 
   assert.doesNotMatch(courseProse, /[—–]/)
+
+  for (const level of levels) {
+    assert.equal(level.hints.length, 3, `${level.id} does not have three staged hints`)
+    assert.match(level.hints[2], /^\*\(hidden\)\*/, `${level.id} exposes its solution hint`)
+  }
 })
 
 test('the course explains the main undergraduate notation traps', () => {
@@ -204,17 +231,28 @@ test('the course explains the main undergraduate notation traps', () => {
 })
 
 test('the unlock ladder exposes real Mathlib declarations and Lean tactics', () => {
-  const introducedTactics = [...new Set(levels.flatMap((level) => level.newTactics))]
+  const introducedTactics = [...new Set(levels.flatMap((level) => [
+    ...level.newTactics,
+    ...(level.completionTactics || []),
+  ]))]
   assert.deepEqual(introducedTactics, [
     'exact',
     'apply',
     'constructor',
-    'intro',
+    '·',
     'rw',
     'simpa',
+    'simp',
     'infer_instance',
+    'intro',
     'rfl',
     'refine',
+    'ext',
+    'by_cases',
+    'left',
+    'right',
+    'unfold',
+    'fun_prop',
   ])
 
   const introducedTheorems = levels.flatMap((level) => level.newTheorems)
@@ -227,6 +265,8 @@ test('the unlock ladder exposes real Mathlib declarations and Lean tactics', () 
     'OpenPartialHomeomorph.continuousOn',
     'OpenPartialHomeomorph.map_source',
     'OpenPartialHomeomorph.left_inv',
+    'OpenPartialHomeomorph.map_target',
+    'OpenPartialHomeomorph.right_inv',
     'mem_chart_source',
     'chart_mem_atlas',
     'mem_chart_target',
@@ -235,9 +275,33 @@ test('the unlock ladder exposes real Mathlib declarations and Lean tactics', () 
     'chartAt_self_eq',
     'chartedSpaceSelf_atlas',
     'prodChartedSpace_chartAt',
+    'OpenPartialHomeomorph.trans_source',
+    'OpenPartialHomeomorph.symm_source',
     'instIsManifoldModelSpace',
     'IsManifold.of_le',
     'IsManifold.prod',
+    'stereographic_source',
+    'stereographic_apply_neg',
+    'norm_eq_of_mem_sphere',
+    'surjective_stereographic',
+    'Set.mem_compl_iff',
+    'Set.mem_singleton_iff',
+    'Set.mem_union',
+    'Set.mem_univ',
+    'iff_true',
+    'Eq.symm',
+    'Eq.trans',
+    'Circle.exp_zero',
+    'Circle.exp_add',
+    'Circle.exp_add_two_pi',
+    'contMDiff_circleExp',
+    'continuous_const',
+    'continuous_subtype_val',
+    'continuous_fst',
+    'continuous_snd',
+    'Continuous.comp',
+    'Continuous.mul',
+    'Continuous.add',
   ]
   assert.deepEqual(introducedTheorems, expectedTheorems)
 
@@ -251,6 +315,8 @@ test('the unlock ladder exposes real Mathlib declarations and Lean tactics', () 
     'IsManifold',
     'TangentSpace',
     'TangentBundle',
+    'Circle',
+    'Complex',
   ]) {
     assert.ok(introducedDefinitions.has(name), `${name} is not unlocked explicitly`)
   }
@@ -264,9 +330,13 @@ test('each level creates a reusable course declaration without placeholders', ()
     assert.doesNotMatch(level.solution, /\b(sorry|admit|unsafe)\b/, `${level.id} uses a placeholder`)
   }
 
-  const finalLevel = levels.at(-1)
-  assert.equal(finalLevel.theoremName, 'tangent_bundle_has_zero')
-  assert.match(finalLevel.solution, /\btangent_zero model place\b/)
+  const tangentFinal = levels.find((level) => level.theoremName === 'tangent_bundle_has_zero')
+  assert.match(tangentFinal.solution, /\btangent_zero model place\b/)
+  const robotFinal = levels.at(-1)
+  assert.equal(robotFinal.theoremName, 'robot_arm_tip_continuous')
+  assert.match(robotFinal.solution, /continuous_subtype_val/)
+  assert.deepEqual(robotFinal.completionTactics, ['fun_prop'])
+  assert.doesNotMatch(robotFinal.newTactics.join(' '), /fun_prop/)
 })
 
 test('the generated verifier maps every challenge to its narrow world module', () => {
@@ -312,12 +382,15 @@ test('generated world modules are the source of truth for all reference proofs',
   assert.match(browserPolicy, /syntax \(name := manifoldBrowserUser\)/)
   assert.match(browserPolicy, /private meta partial def checkInventory/)
   assert.match(browserPolicy, /Lean\.Elab\.Tactic\.evalTactic tactics/)
-  for (let index = 1; index < contextModules.length; index += 1) {
-    assert.match(
-      worldSources.get(contextModules[index]),
-      new RegExp(`public import ${contextModules[index - 1].replaceAll('.', '\\.')}`),
-      `${contextModules[index]} must retain declarations unlocked in the previous world`,
-    )
+  for (const world of game.worlds) {
+    const moduleName = verifier.levels[world.levels[0].id].contextModule
+    for (const prerequisite of world.prerequisites) {
+      assert.match(
+        worldSources.get(moduleName),
+        new RegExp(`public import ManifoldAdventure\\.${prerequisite}`),
+        `${moduleName} must retain declarations unlocked in ${prerequisite}`,
+      )
+    }
   }
   assert.equal(
     [...allSources.matchAll(/^(?:theorem|(?:noncomputable )?def) /gm)].length,
@@ -338,20 +411,22 @@ test('generated world modules are the source of truth for all reference proofs',
   }
 })
 
-test('the conformance record covers all pinned reference solutions', () => {
-  assert.equal(conformance.sourceCommit, game.source.commit)
+test('stale exact conformance cannot attach to the revised numeric level ids', () => {
+  assert.notEqual(conformance.sourceCommit, game.source.commit)
   assert.equal(conformance.leanCommit, verifier.leanCommit)
   assert.equal(conformance.leanUpstreamCommit, verifier.leanUpstreamCommit)
   assert.equal(conformance.mathlibCommit, verifier.mathlibCommit)
   assert.equal(conformance.validation.compilerCommit, verifier.leanCommit)
   assert.equal(conformance.validation.targetBrowserLeanCommit, verifier.leanCommit)
-  assert.equal(conformance.summary.total, levels.length)
-  assert.equal(conformance.summary.kernel, levels.length)
+  const verified = new Set(conformance.verifiedReferenceSolutions)
+  assert.equal(conformance.summary.total, verified.size)
+  assert.equal(conformance.summary.kernel, verified.size)
   assert.equal(conformance.summary.partial, 0)
-  assert.deepEqual(
-    new Set(conformance.verifiedReferenceSolutions),
-    new Set(levels.map((level) => level.id)),
-  )
+  assert.ok([...verified].some((id) => !levels.some((level) => level.id === id)))
+
+  const gameData = fs.readFileSync(new URL('../src/game/game-data.ts', import.meta.url), 'utf8')
+  assert.match(gameData, /manifoldConformanceMatchesSource/)
+  assert.match(gameData, /manifoldConformanceMatchesSource\s*\?\s*manifoldConformance\.verifiedReferenceSolutions\s*:\s*\[\]/s)
 })
 
 test('all Blender-built GLB models used by the 3D scenes are bundled', () => {
@@ -365,6 +440,7 @@ test('all Blender-built GLB models used by the 3D scenes are bundled', () => {
     'sphere-triangle.glb',
     'figure-eight.glb',
     'tangent-plane.glb',
+    'robot-arm.glb',
   ]
   for (const model of expected) {
     assert.ok(models.has(model), `missing 3D model ${model}`)

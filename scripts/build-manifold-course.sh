@@ -24,6 +24,9 @@ COURSE_MODULES=(
   ManifoldAdventure.CanonicalCharts
   ManifoldAdventure.SmoothManifolds
   ManifoldAdventure.TangentSpaces
+  ManifoldAdventure.MapProjections
+  ManifoldAdventure.CircleMotion
+  ManifoldAdventure.RobotArm
   ManifoldAdventure.BrowserBase
 )
 

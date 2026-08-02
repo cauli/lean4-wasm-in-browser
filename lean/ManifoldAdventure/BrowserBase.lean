@@ -6,6 +6,9 @@ public import ManifoldAdventure.ChartedSpaces
 public import ManifoldAdventure.CanonicalCharts
 public import ManifoldAdventure.SmoothManifolds
 public import ManifoldAdventure.TangentSpaces
+public import ManifoldAdventure.MapProjections
+public import ManifoldAdventure.CircleMotion
+public import ManifoldAdventure.RobotArm
 
 @[expose] public section
 

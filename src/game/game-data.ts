@@ -23,6 +23,7 @@ export interface GameLevel {
   solution: string
   hints: string[]
   newTactics: string[]
+  completionTactics?: string[]
   hiddenTactics?: string[]
   newTheorems: string[]
   newDefinitions: string[]
@@ -39,6 +40,8 @@ export interface GameWorld {
   title: string
   introduction: string
   prerequisites: string[]
+  optional?: boolean
+  mapPosition?: { x: number; y: number }
   verification: VerificationSupport
   levels: GameLevel[]
 }
@@ -156,7 +159,13 @@ export const realAnalysisGame = enrichGame(
   (level) => realAnalysisKernelVerifiedLevels.has(level.id) ? 'kernel' : 'partial',
 )
 
-const manifoldKernelVerifiedLevels = new Set(manifoldConformance.verifiedReferenceSolutions)
+const manifoldConformanceMatchesSource = manifoldConformance.sourceCommit
+  === (rawManifoldGame as RawGame).source.commit
+const manifoldKernelVerifiedLevels = new Set(
+  manifoldConformanceMatchesSource
+    ? manifoldConformance.verifiedReferenceSolutions
+    : [],
+)
 
 export const manifoldGame = enrichGame(
   rawManifoldGame as RawGame,
@@ -166,7 +175,7 @@ export const manifoldGame = enrichGame(
     symbol: '𝓜',
     developmentStatus: 'work-in-progress',
     basePath: '/games/manifold-adventure',
-    progressKey: 'manifoldAdventureV4MathlibProgress',
+    progressKey: 'manifoldAdventureV5MathlibProgress',
     assetBase: '/game-assets/manifolds',
     verifier: 'manifold',
     creator: 'this project',
@@ -290,6 +299,7 @@ export function allInventory(game: LeanGame = nngGame): LevelInventory {
 
   for (const level of game.worlds.flatMap((world) => world.levels)) {
     level.newTactics.forEach((name) => tactics.add(shortName(name)))
+    level.completionTactics?.forEach((name) => tactics.add(shortName(name)))
     level.newTheorems.forEach((name) => theorems.add(shortName(name)))
     level.newDefinitions.forEach((name) => definitions.add(shortName(name)))
     if (level.theoremName) theorems.add(level.theoremName)
@@ -310,6 +320,9 @@ export function inventoryForLevel(level: GameLevel): LevelInventory {
 
   for (const candidate of available) {
     candidate.newTactics.forEach((name) => tactics.add(shortName(name)))
+    if (candidate.id !== level.id) {
+      candidate.completionTactics?.forEach((name) => tactics.add(shortName(name)))
+    }
     candidate.newTheorems.forEach((name) => theorems.add(shortName(name)))
     candidate.newDefinitions.forEach((name) => definitions.add(shortName(name)))
     if (candidate.theoremName && candidate.id !== level.id) theorems.add(candidate.theoremName)
@@ -337,6 +350,9 @@ export function policyInventoryForLevel(level: GameLevel): LevelPolicyInventory 
 
   for (const candidate of available) {
     candidate.newTactics.forEach((name) => tactics.add(shortName(name)))
+    if (candidate.id !== level.id) {
+      candidate.completionTactics?.forEach((name) => tactics.add(shortName(name)))
+    }
     candidate.hiddenTactics?.forEach((name) => tactics.add(shortName(name)))
     candidate.newTheorems.forEach((name) => {
       theorems.add(name)

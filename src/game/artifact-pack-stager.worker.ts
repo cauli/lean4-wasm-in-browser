@@ -1,10 +1,16 @@
 import type { LeanArtifactPack } from '../lean-loader'
+import {
+  deleteCachedArtifactPack,
+  fetchCachedArtifactPack,
+  type ArtifactPackCacheDescriptor,
+} from '../artifact-pack-cache'
 
 interface StageRequest {
   type: 'stage_pack'
   id: number
   url: string
   pack: LeanArtifactPack
+  cacheDescriptor?: ArtifactPackCacheDescriptor
 }
 
 const OLEAN_MAGIC = [0x6f, 0x6c, 0x65, 0x61]
@@ -24,11 +30,12 @@ self.onmessage = async (event: MessageEvent<StageRequest>) => {
 
   const started = performance.now()
   try {
-    const response = await fetch(message.url)
-    if (!response.ok) {
-      throw new Error(`Lean artifact pack ${message.pack.file} returned ${response.status}.`)
-    }
-    const compressed = await response.arrayBuffer()
+    const fetched = await fetchCachedArtifactPack(
+      message.url,
+      message.pack.compressedBytes,
+      message.cacheDescriptor,
+    )
+    const compressed = fetched.data
     const downloadedAt = performance.now()
     const inflated = await inflateGzip(compressed)
     const inflatedAt = performance.now()
@@ -58,11 +65,13 @@ self.onmessage = async (event: MessageEvent<StageRequest>) => {
       id: message.id,
       files,
       compressedBytes: compressed.byteLength,
+      cacheHit: fetched.cacheHit,
       downloadMs: downloadedAt - started,
       inflateMs: inflatedAt - downloadedAt,
       elapsedMs: inflatedAt - started,
     }, { transfer })
   } catch (error) {
+    await deleteCachedArtifactPack(message.url, message.cacheDescriptor)
     self.postMessage({
       type: 'pack_stage_error',
       id: message.id,

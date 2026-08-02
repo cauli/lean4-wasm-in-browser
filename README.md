@@ -121,17 +121,17 @@ unfinished upstream proofs contain `sorry`, and four large proofs hit the
 browser call-stack limit even in isolated workers. Branch-sensitive `Hint` /
 `Branch` evaluation remains a separate unported GameServer feature.
 
-The original **Manifold Adventure** at `/games/manifold-adventure` is a
-from-scratch conceptual bridge: 6 worlds and 25 short kernel-checked exercises
-move from Ada the ant and Flatland through the local Euclidean test, charts and
-atlases, a cabinet of surfaces, smooth maps and tangent spaces, to metrics and
-curvature. Every world introduces at least one new proof move (contradiction,
-case analysis over an atlas, composing maps). Seven 3D teaching models (sphere
-with overlapping charts, torus with its generator loops, Möbius band with
-orientation arrows, trefoil vs. circle, geodesic triangle, figure eight,
-tangent plane) are built in Blender by
+The **Manifold Adventure** at `/games/manifold-adventure` has 9 worlds and 40
+short kernel-checked exercises. Its main path follows Ada the ant through
+homeomorphisms, local charts, charted spaces, smooth manifolds, and tangent
+spaces using Mathlib's own structures. Optional paths branch into stereographic
+projection, circular motion, and the forward kinematics of a two-joint arm.
+Eight 3D teaching models are built in Blender by
 `scripts/blender/build-topo-models.py` (run it inside Blender, e.g. through a
 BlenderMCP socket) and rendered as lazy-loaded interactive Three.js scenes.
+The robot scene reuses the small Genesis link module from the sibling OpenPong
+project. Set `OPENPONG_LINK_GLB` when that checkout lives elsewhere; the build
+script also has a plain-link fallback.
 Every page explicitly distinguishes the small proposition Lean checks from the
 geometric lesson around it. Its reading path credits the
 [Quanta explainer](https://www.quantamagazine.org/what-is-a-manifold-20251103/),
@@ -198,15 +198,31 @@ Cloudflare, static-first:
 | Piece | Served as |
 |-------|-----------|
 | App shell (React/Vite) | **Pages** (static) |
-| `.olean` + `.ir` trees (core + Batteries) | static Pages assets, fetched per layer, cached in the browser's Cache API **keyed by build githash** |
-| Real Analysis Mathlib/course layer | 52 compressed static Pages packs, fetched only on first Real Analysis verification |
-| Manifold Adventure | 6 cumulative world layers (58 packs in the complete course); the first proof fetches only the Homeomorphisms layer |
+| `.olean` + `.ir` trees (core + Batteries) | static Pages assets, fetched per layer; small-file loads are cached decompressed and packed course layers are cached compressed |
+| Real Analysis Mathlib/course layer | 52 compressed static Pages packs, fetched only on first Real Analysis verification and persisted under its exact Lean + Mathlib + course revision |
+| Manifold Adventure | 6 cumulative world layers (58 packs, 330 MiB compressed for the complete course); the first proof fetches and caches only the 218 MiB Homeomorphisms layer |
 | `lean.js` / `lean.wasm` (both variants) + baked env snapshots | **R2** via `functions/lean-wasm/`, under a **per-build githash prefix** (`<githash>/…`, slim at `<githash>/slim/…`) matching the `?v=` the app requests — builds coexist, deploys never break open sessions |
 | Shared snippets | R2 `snippets/<sha256>` via `functions/api/share/` |
 
 The big files come through the Function **same-origin** (pthread workers can't
 load cross-origin scripts) and it sets COEP on its own responses — `_headers`
 doesn't apply to Function responses.
+
+Course packs use Cache Storage rather than relying on the HTTP cache. A second
+visit reads the compressed packs without a network connection, then inflates
+them for Lean. The cache key includes the exact Lean, Mathlib, and course
+commits, so a new course build cannot reuse stale `.olean` files. Supporting
+browsers are asked to make the storage persistent when the player clicks
+**Verify answer**; browsers may still refuse that request or evict data under
+severe disk pressure.
+
+Lean preparation follows navigation instead of waiting for **Verify answer**.
+The `/games` catalog offers the shared `lean.js` and `lean.wasm` files as
+low-priority browser prefetches unless data-saving mode or a 2G connection is
+reported. Opening a course starts the shared kernel; opening a level stages its
+course layer and imports that exact Lean world while the lesson is being read.
+A progress panel stays visible during preparation, and proof verification is
+disabled until the required context is ready.
 
 ## Local development
 
@@ -291,8 +307,9 @@ bash deploy/upload-r2.sh     # lean.js / lean.wasm / snapshots (+ slim/) → R2 
 npx wrangler pages deploy dist --project-name lean-playground --branch main
 ```
 
-Deploys are self-healing: versioned asset URLs + the githash-keyed olean cache
-mean no cache purges, ever. Use `--branch staging-ir` for a staging preview.
+Deploys are self-healing: versioned binary URLs and commit-keyed Lean library
+caches prevent old and new artifacts from mixing. Use `--branch staging-ir`
+for a staging preview.
 
 ## Repo layout
 

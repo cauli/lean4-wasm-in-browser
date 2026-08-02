@@ -17,43 +17,39 @@ structures and library theorems they use come directly from pinned Mathlib.
 
 namespace ManifoldAdventure
 
-universe u v w u' v'
+universe u v w u' v' w' u''
 
 open scoped Topology
 open Filter
 
 theorem point_mem_preferred_chart {Coordinates : Type u} {Surface : Type v}
-    [coordinateTopology : TopologicalSpace Coordinates]
-    [surfaceTopology : TopologicalSpace Surface]
-    [surfaceCharts : ChartedSpace Coordinates Surface] (place : Surface) :
+    [TopologicalSpace Coordinates] [TopologicalSpace Surface]
+    [ChartedSpace Coordinates Surface] (place : Surface) :
     place ∈ (chartAt Coordinates place).source := by
   exact mem_chart_source Coordinates place
 
 theorem preferred_chart_mem_atlas {Coordinates : Type u} {Surface : Type v}
-    [coordinateTopology : TopologicalSpace Coordinates]
-    [surfaceTopology : TopologicalSpace Surface]
-    [surfaceCharts : ChartedSpace Coordinates Surface] (place : Surface) :
+    [TopologicalSpace Coordinates] [TopologicalSpace Surface]
+    [ChartedSpace Coordinates Surface] (place : Surface) :
     chartAt Coordinates place ∈ atlas Coordinates Surface := by
   exact chart_mem_atlas Coordinates place
 
 theorem preferred_chart_maps_to_target {Coordinates : Type u} {Surface : Type v}
-    [coordinateTopology : TopologicalSpace Coordinates]
-    [surfaceTopology : TopologicalSpace Surface]
-    [surfaceCharts : ChartedSpace Coordinates Surface] (place : Surface) :
+    [TopologicalSpace Coordinates] [TopologicalSpace Surface]
+    [ChartedSpace Coordinates Surface] (place : Surface) :
     chartAt Coordinates place place ∈ (chartAt Coordinates place).target := by
-  exact mem_chart_target Coordinates place
+  apply (chartAt Coordinates place).map_source
+  exact mem_chart_source Coordinates place
 
 theorem preferred_chart_source_is_neighborhood {Coordinates : Type u} {Surface : Type v}
-    [coordinateTopology : TopologicalSpace Coordinates]
-    [surfaceTopology : TopologicalSpace Surface]
-    [surfaceCharts : ChartedSpace Coordinates Surface] (place : Surface) :
+    [TopologicalSpace Coordinates] [TopologicalSpace Surface]
+    [ChartedSpace Coordinates Surface] (place : Surface) :
     (chartAt Coordinates place).source ∈ 𝓝 place := by
   exact chart_source_mem_nhds Coordinates place
 
 theorem preferred_charts_cover {Coordinates : Type u} {Surface : Type v}
-    [coordinateTopology : TopologicalSpace Coordinates]
-    [surfaceTopology : TopologicalSpace Surface]
-    [surfaceCharts : ChartedSpace Coordinates Surface] :
+    [TopologicalSpace Coordinates] [TopologicalSpace Surface]
+    [ChartedSpace Coordinates Surface] :
     (⋃ place : Surface, (chartAt Coordinates place).source) =
       (Set.univ : Set Surface) := by
   exact iUnion_source_chartAt Coordinates Surface

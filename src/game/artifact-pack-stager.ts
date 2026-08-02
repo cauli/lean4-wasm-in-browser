@@ -1,8 +1,10 @@
 import type { LeanArtifactPack } from '../lean-loader'
+import type { ArtifactPackCacheDescriptor } from '../artifact-pack-cache'
 
 export interface StagedArtifactPack {
   files: Map<string, Uint8Array<ArrayBuffer>>
   compressedBytes: number
+  cacheHit: boolean
   downloadMs: number
   inflateMs: number
   elapsedMs: number
@@ -13,6 +15,7 @@ interface PackStagedMessage {
   id: number
   files: Array<{ name: string; data: ArrayBuffer }>
   compressedBytes: number
+  cacheHit: boolean
   downloadMs: number
   inflateMs: number
   elapsedMs: number
@@ -58,6 +61,7 @@ export class ArtifactPackStagerPool {
         request.resolve({
           files: new Map(message.files.map(({ name, data }) => [name, new Uint8Array(data)])),
           compressedBytes: message.compressedBytes,
+          cacheHit: message.cacheHit,
           downloadMs: message.downloadMs,
           inflateMs: message.inflateMs,
           elapsedMs: message.elapsedMs,
@@ -70,14 +74,18 @@ export class ArtifactPackStagerPool {
     })
   }
 
-  stage(pack: LeanArtifactPack, url: string): Promise<StagedArtifactPack> {
+  stage(
+    pack: LeanArtifactPack,
+    url: string,
+    cacheDescriptor?: ArtifactPackCacheDescriptor,
+  ): Promise<StagedArtifactPack> {
     const id = this.nextId
     this.nextId += 1
     const worker = this.workers[this.nextWorker]
     this.nextWorker = (this.nextWorker + 1) % this.workers.length
     return new Promise((resolve, reject) => {
       this.pending.set(id, { resolve, reject })
-      worker.postMessage({ type: 'stage_pack', id, url, pack })
+      worker.postMessage({ type: 'stage_pack', id, url, pack, cacheDescriptor })
     })
   }
 

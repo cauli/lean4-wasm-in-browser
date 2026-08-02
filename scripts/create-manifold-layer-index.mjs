@@ -11,28 +11,33 @@ const verifier = JSON.parse(fs.readFileSync(
 ))
 
 const layers = [
-  ['Homeomorphisms', 'homeomorphisms', 'homeomorphisms'],
-  ['LocalCharts', 'local-charts', 'local charts'],
-  ['ChartedSpaces', 'charted-spaces', 'charted spaces'],
-  ['CanonicalCharts', 'canonical-charts', 'canonical charts'],
-  ['SmoothManifolds', 'smooth-manifolds', 'smooth manifolds'],
-  ['TangentSpaces', 'tangent-spaces', 'tangent spaces'],
-].map(([world, slug, label]) => ({
+  ['Homeomorphisms', 'homeomorphisms', 'homeomorphisms', [], []],
+  ['LocalCharts', 'local-charts', 'local charts', ['Homeomorphisms'], ['homeomorphisms']],
+  ['ChartedSpaces', 'charted-spaces', 'charted spaces', ['LocalCharts'], ['homeomorphisms', 'local-charts']],
+  ['CanonicalCharts', 'canonical-charts', 'canonical charts', ['ChartedSpaces'], ['homeomorphisms', 'local-charts', 'charted-spaces']],
+  ['SmoothManifolds', 'smooth-manifolds', 'smooth manifolds', ['CanonicalCharts'], ['homeomorphisms', 'local-charts', 'charted-spaces', 'canonical-charts']],
+  ['TangentSpaces', 'tangent-spaces', 'tangent spaces', ['SmoothManifolds'], ['homeomorphisms', 'local-charts', 'charted-spaces', 'canonical-charts', 'smooth-manifolds']],
+  ['MapProjections', 'map-projections', 'map projections', ['LocalCharts'], ['homeomorphisms', 'local-charts']],
+  ['CircleMotion', 'circle-motion', 'circular motion', ['SmoothManifolds'], ['homeomorphisms', 'local-charts', 'charted-spaces', 'canonical-charts', 'smooth-manifolds']],
+  ['RobotArm', 'robot-arm', 'robot arm', ['CircleMotion'], ['homeomorphisms', 'local-charts', 'charted-spaces', 'canonical-charts', 'smooth-manifolds', 'circle-motion']],
+].map(([world, slug, label, prerequisites, artifactBases]) => ({
   world,
   module: `ManifoldAdventure.${world}`,
   manifestFile: `manifold-${slug}-layer.json`,
   libraryRoot: `manifold-${slug}-lib`,
   label,
+  prerequisites,
+  artifactBases,
 }))
 
-const seenFiles = new Set()
+const fileOwners = new Map()
 let compressedBytes = 0
 let bytes = 0
 let packs = 0
 let files = 0
 let courseCommit = null
 
-for (const [index, layer] of layers.entries()) {
+for (const layer of layers) {
   const manifestPath = path.join(assetRoot, layer.manifestFile)
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
   if (manifest.leanCommit !== verifier.leanCommit) {
@@ -44,10 +49,15 @@ for (const [index, layer] of layers.entries()) {
   if (!manifest.baseModules?.includes(layer.module)) {
     throw new Error(`${layer.manifestFile} does not package ${layer.module}.`)
   }
-  if (index === 0 && manifest.extends !== null) {
-    throw new Error('The first manifold world must be standalone.')
+  const expectedBases = layer.artifactBases.map((slug) => `manifold-${slug}-layer.json`)
+  const actualBases = manifest.extends?.manifests || []
+  if (JSON.stringify(actualBases) !== JSON.stringify(expectedBases)) {
+    throw new Error(
+      `${layer.manifestFile} extends ${actualBases.join(', ') || 'nothing'}, `
+      + `expected ${expectedBases.join(', ') || 'nothing'}.`,
+    )
   }
-  if (index === 0) {
+  if (layer.world === 'Homeomorphisms') {
     for (const file of [
       'ManifoldAdventure/BrowserPolicy.olean',
       'ManifoldAdventure/BrowserPolicy.ir',
@@ -58,12 +68,15 @@ for (const [index, layer] of layers.entries()) {
       }
     }
   }
-  if (index > 0 && manifest.extends?.manifests?.length !== index) {
-    throw new Error(`${layer.manifestFile} does not extend every earlier world.`)
-  }
   for (const file of manifest.files || []) {
-    if (seenFiles.has(file)) throw new Error(`${file} occurs in more than one world layer.`)
-    seenFiles.add(file)
+    const owners = fileOwners.get(file) || []
+    for (const owner of owners) {
+      if (expectedBases.includes(owner.manifestFile) || owner.expectedBases.includes(layer.manifestFile)) {
+        throw new Error(`${file} is repeated by dependent world layers.`)
+      }
+    }
+    owners.push({ manifestFile: layer.manifestFile, expectedBases })
+    fileOwners.set(file, owners)
   }
   courseCommit ??= manifest.manifoldCourseCommit
   if (manifest.manifoldCourseCommit !== courseCommit) {
@@ -83,7 +96,7 @@ const index = {
   mathlibCommit: verifier.mathlibCommit,
   manifoldCourseCommit: courseCommit,
   generatedAt: new Date().toISOString(),
-  layers,
+  layers: layers.map(({ artifactBases, ...layer }) => layer),
   totals: { files, packs, bytes, compressedBytes },
 }
 

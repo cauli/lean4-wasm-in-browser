@@ -152,6 +152,79 @@ button {
   transition: background 160ms ease;
 }
 
+.game-runtime-status {
+  display: grid;
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 45;
+  width: min(430px, calc(100% - 2rem));
+  gap: 0.7rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(25, 118, 210, 0.35);
+  border-radius: 0.35rem;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 10px 28px rgba(20, 56, 92, 0.2);
+  backdrop-filter: blur(12px);
+}
+
+.game-runtime-status-copy {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.8rem;
+}
+
+.game-runtime-status-copy strong {
+  color: var(--game-accent-dark);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.game-runtime-status-copy span {
+  overflow: hidden;
+  color: var(--game-muted);
+  font: 0.67rem/1.3 ui-monospace, "SFMono-Regular", Menlo, monospace;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-runtime-progress {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dfe8f2;
+}
+
+.game-runtime-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--game-accent);
+  transition: width 220ms ease;
+}
+
+.game-runtime-status-error {
+  border-color: rgba(198, 40, 40, 0.4);
+}
+
+.game-runtime-status-error .game-runtime-status-copy strong {
+  color: var(--game-danger);
+}
+
+.game-runtime-retry {
+  justify-self: end;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--game-danger);
+  border-radius: 0.22rem;
+  background: transparent;
+  color: var(--game-danger);
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
 .game-header-level {
   display: grid;
   min-width: 0;
@@ -1263,6 +1336,14 @@ button {
   padding-top: 0.8rem;
 }
 
+.verify-button-tooltip {
+  display: inline-flex;
+}
+
+.verify-button-tooltip .game-primary-button {
+  width: 100%;
+}
+
 .proof-feedback {
   margin-top: 0.8rem;
 }
@@ -1792,6 +1873,21 @@ button {
 }
 
 @media (max-width: 560px) {
+  .game-runtime-status {
+    right: 0.65rem;
+    bottom: 0.65rem;
+    width: calc(100% - 1.3rem);
+  }
+
+  .game-runtime-status-copy {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+
+  .game-runtime-status-copy span {
+    text-align: left;
+  }
+
   .game-header {
     flex-direction: column;
     gap: 0.8rem;
@@ -2453,6 +2549,11 @@ button {
   margin: 1.5rem auto 5rem;
 }
 
+.course-world-graph {
+  width: min(100%, 880px);
+  min-width: 700px;
+}
+
 .tree-connections line {
   pointer-events: none;
   stroke: #999;
@@ -2491,6 +2592,12 @@ button {
 
 .tree-world.complete .tree-world-hub {
   fill: #118a11;
+}
+
+.tree-world.optional .tree-world-hub {
+  stroke: rgba(255, 255, 255, 0.82);
+  stroke-dasharray: 7 5;
+  stroke-width: 3px;
 }
 
 .tree-level.locked circle {
@@ -2560,6 +2667,19 @@ button {
 
 .tree-world.complete .tree-world-label {
   background: #0e770e;
+}
+
+.course-world-graph .tree-world-label {
+  flex-direction: column;
+  gap: 0.16rem;
+}
+
+.course-world-graph .tree-world-label small {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  opacity: 0.82;
+  text-transform: uppercase;
 }
 
 .tree-rules {
@@ -2801,6 +2921,10 @@ button {
 
   .nng-world-tree {
     min-width: 560px;
+  }
+
+  .course-world-graph {
+    min-width: 650px;
   }
 
   .tree-rules {

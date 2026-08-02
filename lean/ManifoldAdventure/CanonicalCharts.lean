@@ -17,36 +17,37 @@ structures and library theorems they use come directly from pinned Mathlib.
 
 namespace ManifoldAdventure
 
-universe u v w u' v'
+universe u v w u' v' w' u''
 
 open scoped Topology
 open Filter
 
 theorem self_chart_is_identity {Coordinates : Type u}
-    [coordinateTopology : TopologicalSpace Coordinates]
+    [TopologicalSpace Coordinates]
     (mark : Coordinates) :
     chartAt Coordinates mark = OpenPartialHomeomorph.refl Coordinates := by
   exact chartAt_self_eq
 
-theorem self_atlas_only_identity {Coordinates : Type u}
-    [coordinateTopology : TopologicalSpace Coordinates]
-    (chart : OpenPartialHomeomorph Coordinates Coordinates) :
-    chart ∈ atlas Coordinates Coordinates ↔
-      chart = OpenPartialHomeomorph.refl Coordinates := by
-  constructor
-  · intro h
-    exact chartedSpaceSelf_atlas.mp h
-  · intro h
-    exact chartedSpaceSelf_atlas.mpr h
+theorem identity_mem_self_atlas {Coordinates : Type u}
+    [TopologicalSpace Coordinates] :
+    OpenPartialHomeomorph.refl Coordinates ∈ atlas Coordinates Coordinates := by
+  exact chartedSpaceSelf_atlas.mpr rfl
+
+theorem self_atlas_chart_is_identity {Coordinates : Type u}
+    [TopologicalSpace Coordinates]
+    (chart : OpenPartialHomeomorph Coordinates Coordinates)
+    (inAtlas : chart ∈ atlas Coordinates Coordinates) :
+    chart = OpenPartialHomeomorph.refl Coordinates := by
+  exact chartedSpaceSelf_atlas.mp inAtlas
 
 theorem product_chart_is_product {FirstCoordinates : Type u} {SecondCoordinates : Type u'}
     {FirstSurface : Type v} {SecondSurface : Type v'}
-    [firstCoordinateTopology : TopologicalSpace FirstCoordinates]
-    [secondCoordinateTopology : TopologicalSpace SecondCoordinates]
-    [firstSurfaceTopology : TopologicalSpace FirstSurface]
-    [secondSurfaceTopology : TopologicalSpace SecondSurface]
-    [firstSurfaceCharts : ChartedSpace FirstCoordinates FirstSurface]
-    [secondSurfaceCharts : ChartedSpace SecondCoordinates SecondSurface]
+    [TopologicalSpace FirstCoordinates]
+    [TopologicalSpace SecondCoordinates]
+    [TopologicalSpace FirstSurface]
+    [TopologicalSpace SecondSurface]
+    [ChartedSpace FirstCoordinates FirstSurface]
+    [ChartedSpace SecondCoordinates SecondSurface]
     (position : FirstSurface × SecondSurface) :
     chartAt (ModelProd FirstCoordinates SecondCoordinates) position =
       (chartAt FirstCoordinates position.1).prod
@@ -55,12 +56,12 @@ theorem product_chart_is_product {FirstCoordinates : Type u} {SecondCoordinates 
 
 theorem product_point_mem_chart_source {FirstCoordinates : Type u} {SecondCoordinates : Type u'}
     {FirstSurface : Type v} {SecondSurface : Type v'}
-    [firstCoordinateTopology : TopologicalSpace FirstCoordinates]
-    [secondCoordinateTopology : TopologicalSpace SecondCoordinates]
-    [firstSurfaceTopology : TopologicalSpace FirstSurface]
-    [secondSurfaceTopology : TopologicalSpace SecondSurface]
-    [firstSurfaceCharts : ChartedSpace FirstCoordinates FirstSurface]
-    [secondSurfaceCharts : ChartedSpace SecondCoordinates SecondSurface]
+    [TopologicalSpace FirstCoordinates]
+    [TopologicalSpace SecondCoordinates]
+    [TopologicalSpace FirstSurface]
+    [TopologicalSpace SecondSurface]
+    [ChartedSpace FirstCoordinates FirstSurface]
+    [ChartedSpace SecondCoordinates SecondSurface]
     (firstPosition : FirstSurface) (secondPosition : SecondSurface) :
     (firstPosition, secondPosition) ∈
       (chartAt (ModelProd FirstCoordinates SecondCoordinates)

@@ -4,6 +4,11 @@
  */
 
 import { LEAN_WASM_BASE, LEAN_ASSET_VERSION } from './config';
+import {
+  deleteCachedArtifactPack,
+  fetchCachedArtifactPack,
+  type ArtifactPackCacheDescriptor,
+} from './artifact-pack-cache'
 
 interface ModuleInfo {
   path: string;
@@ -30,6 +35,7 @@ export interface LeanArtifactPack {
 
 export interface LeanArtifactPackTiming {
   compressedBytes: number;
+  cacheHit: boolean;
   downloadMs: number;
   inflateMs: number;
   elapsedMs: number;
@@ -285,41 +291,50 @@ export async function fetchLeanArtifactPack(
   pack: LeanArtifactPack,
   libraryRoot = 'real-analysis-lib',
   onTiming?: (timing: LeanArtifactPackTiming) => void,
+  cacheDescriptor?: ArtifactPackCacheDescriptor,
 ): Promise<Map<string, Uint8Array<ArrayBuffer>>> {
   const started = performance.now()
-  const response = await fetch(`${LEAN_WASM_BASE}/${libraryRoot}/${pack.file}`)
-  if (!response.ok) {
-    throw new Error(`Lean artifact pack ${pack.file} returned ${response.status}.`)
-  }
-  const compressed = await response.arrayBuffer()
-  const downloadedAt = performance.now()
-  const data = await inflateGzip(compressed)
-  const inflatedAt = performance.now()
-  onTiming?.({
-    compressedBytes: compressed.byteLength,
-    downloadMs: downloadedAt - started,
-    inflateMs: inflatedAt - downloadedAt,
-    elapsedMs: inflatedAt - started,
-  })
-  if (data.byteLength !== pack.bytes) {
-    throw new Error(
-      `Lean artifact pack ${pack.file} has ${data.byteLength} bytes; expected ${pack.bytes}.`,
+  const url = `${LEAN_WASM_BASE}/${libraryRoot}/${pack.file}`
+  try {
+    const fetched = await fetchCachedArtifactPack(
+      url,
+      pack.compressedBytes,
+      cacheDescriptor,
     )
-  }
+    const compressed = fetched.data
+    const downloadedAt = performance.now()
+    const data = await inflateGzip(compressed)
+    const inflatedAt = performance.now()
+    onTiming?.({
+      compressedBytes: compressed.byteLength,
+      cacheHit: fetched.cacheHit,
+      downloadMs: downloadedAt - started,
+      inflateMs: inflatedAt - downloadedAt,
+      elapsedMs: inflatedAt - started,
+    })
+    if (data.byteLength !== pack.bytes) {
+      throw new Error(
+        `Lean artifact pack ${pack.file} has ${data.byteLength} bytes; expected ${pack.bytes}.`,
+      )
+    }
 
-  const files = new Map<string, Uint8Array<ArrayBuffer>>()
-  for (const entry of pack.entries) {
-    const end = entry.offset + entry.bytes
-    if (entry.offset < 0 || end > data.byteLength) {
-      throw new Error(`Lean artifact ${entry.path} is outside ${pack.file}.`)
+    const files = new Map<string, Uint8Array<ArrayBuffer>>()
+    for (const entry of pack.entries) {
+      const end = entry.offset + entry.bytes
+      if (entry.offset < 0 || end > data.byteLength) {
+        throw new Error(`Lean artifact ${entry.path} is outside ${pack.file}.`)
+      }
+      const artifact = data.slice(entry.offset, end)
+      if (!isValidOlean(artifact)) {
+        throw new Error(`Lean artifact ${entry.path} in ${pack.file} is invalid.`)
+      }
+      files.set(entry.path, artifact)
     }
-    const artifact = data.slice(entry.offset, end)
-    if (!isValidOlean(artifact)) {
-      throw new Error(`Lean artifact ${entry.path} in ${pack.file} is invalid.`)
-    }
-    files.set(entry.path, artifact)
+    return files
+  } catch (error) {
+    await deleteCachedArtifactPack(url, cacheDescriptor)
+    throw error
   }
-  return files
 }
 
 // Fetch specific .olean files, using the persistent cache and gzip transport

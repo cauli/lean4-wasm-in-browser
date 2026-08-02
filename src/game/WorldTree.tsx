@@ -22,7 +22,7 @@ interface Props {
   onRulesChange: (rules: GameRules) => void
 }
 
-const WORLD_POSITIONS: Record<string, Point> = {
+const NNG_WORLD_POSITIONS: Record<string, Point> = {
   Tutorial: { x: 500, y: 110 },
   Addition: { x: 500, y: 340 },
   Multiplication: { x: 290, y: 590 },
@@ -112,31 +112,43 @@ function RulesControl({
 }
 
 function WorldGraph({
+  game,
   completed,
   navigate,
   rules,
-}: Pick<Props, 'completed' | 'navigate' | 'rules'>) {
-  const edges = nngGame.worlds.flatMap((world) => (
+}: Required<Pick<Props, 'game' | 'completed' | 'navigate' | 'rules'>>) {
+  const positionFor = (world: GameWorld): Point | undefined => (
+    world.mapPosition || (game.id === nngGame.id ? NNG_WORLD_POSITIONS[world.id] : undefined)
+  )
+  const positionedWorlds = game.worlds.filter((world) => positionFor(world))
+  const mapHeight = Math.max(500, ...positionedWorlds.map(
+    (world) => positionFor(world)?.y || 0,
+  )) + 180
+  const edges = game.worlds.flatMap((world) => (
     world.prerequisites.map((source) => ({ source, target: world.id }))
   ))
+  const titleId = `${game.id}-tree-title`
+  const descriptionId = `${game.id}-tree-description`
 
   return (
     <svg
-      className="nng-world-tree"
-      viewBox="0 0 1000 1650"
+      className={`nng-world-tree${game.id === nngGame.id ? '' : ' course-world-graph'}`}
+      viewBox={`0 0 1000 ${mapHeight}`}
       role="img"
-      aria-labelledby="nng-tree-title nng-tree-description"
+      aria-labelledby={`${titleId} ${descriptionId}`}
     >
-      <title id="nng-tree-title">Natural Number Game world and level tree</title>
-      <desc id="nng-tree-description">
-        Nine connected worlds containing all seventy-nine Natural Number Game levels.
+      <title id={titleId}>{game.title} world and level tree</title>
+      <desc id={descriptionId}>
+        {game.worlds.length} connected worlds containing{' '}
+        {game.worlds.reduce((sum, world) => sum + world.levels.length, 0)} levels.
       </desc>
 
       <g className="tree-connections" aria-hidden="true">
         {edges.map(({ source, target }) => {
-          const from = WORLD_POSITIONS[source]
-          const to = WORLD_POSITIONS[target]
-          const sourceWorld = getWorld(source, nngGame)
+          const sourceWorld = getWorld(source, game)
+          const targetWorld = getWorld(target, game)
+          const from = sourceWorld ? positionFor(sourceWorld) : undefined
+          const to = targetWorld ? positionFor(targetWorld) : undefined
           if (!from || !to || !sourceWorld) return null
           return (
             <line
@@ -151,11 +163,11 @@ function WorldGraph({
         })}
       </g>
 
-      {nngGame.worlds.map((world) => {
-        const position = WORLD_POSITIONS[world.id]
+      {game.worlds.map((world) => {
+        const position = positionFor(world)
         if (!position) return null
         const shape = geometry(world.levels.length)
-        const unlocked = worldUnlocked(world, nngGame, completed)
+        const unlocked = worldUnlocked(world, game, completed)
         const complete = worldComplete(world, completed)
         const disabled = rules === 'regular' && !unlocked && !complete
         const target = firstIncomplete(world, completed)
@@ -165,7 +177,7 @@ function WorldGraph({
           <g className="tree-world-group" key={world.id}>
             <a
               href={levelPath(target)}
-              className={`tree-world ${complete ? 'complete' : unlocked ? 'unlocked' : 'locked'}${disabled ? ' disabled' : ''}`}
+              className={`tree-world ${complete ? 'complete' : unlocked ? 'unlocked' : 'locked'}${world.optional ? ' optional' : ''}${disabled ? ' disabled' : ''}`}
               aria-disabled={disabled}
               tabIndex={disabled ? -1 : 0}
               onClick={(event) => navigateGraph(event, levelPath(target), disabled, navigate)}
@@ -181,10 +193,13 @@ function WorldGraph({
                 x={position.x - 84}
                 y={labelY}
                 width="168"
-                height="46"
+                height={world.optional ? 58 : 46}
                 className="tree-world-label-wrap"
               >
-                <div className="tree-world-label">{world.title}</div>
+                <div className="tree-world-label">
+                  <span>{world.title}</span>
+                  {world.optional && <small>optional path</small>}
+                </div>
               </foreignObject>
             </a>
 
@@ -296,7 +311,12 @@ export function NaturalNumberWorldTree(props: Props) {
     <section className="game-tree-panel" aria-label="World tree">
       <RulesControl value={props.rules} onChange={props.onRulesChange} />
       <div className="game-tree-scroll">
-        <WorldGraph completed={props.completed} navigate={props.navigate} rules={props.rules} />
+        <WorldGraph
+          game={nngGame}
+          completed={props.completed}
+          navigate={props.navigate}
+          rules={props.rules}
+        />
       </div>
     </section>
   )
@@ -309,6 +329,7 @@ export function CourseWorldTree({
   rules,
   onRulesChange,
 }: Required<Pick<Props, 'game' | 'completed' | 'navigate' | 'rules' | 'onRulesChange'>>) {
+  const hasGraphLayout = game.worlds.every((world) => world.mapPosition)
   return (
     <section className="game-tree-panel course-tree-panel" aria-label={`${game.title} world tree`}>
       <div className="course-tree-toolbar">
@@ -318,8 +339,13 @@ export function CourseWorldTree({
         </div>
         <RulesControl value={rules} onChange={onRulesChange} />
       </div>
-      <div className="course-world-grid">
-        {game.worlds.map((world, index) => {
+      {hasGraphLayout ? (
+        <div className="game-tree-scroll">
+          <WorldGraph game={game} completed={completed} navigate={navigate} rules={rules} />
+        </div>
+      ) : (
+        <div className="course-world-grid">
+          {game.worlds.map((world, index) => {
           const unlocked = worldUnlocked(world, game, completed)
           const complete = worldComplete(world, completed)
           const disabled = rules === 'regular' && !unlocked && !complete
@@ -374,8 +400,9 @@ export function CourseWorldTree({
               </div>
             </article>
           )
-        })}
-      </div>
+          })}
+        </div>
+      )}
     </section>
   )
 }

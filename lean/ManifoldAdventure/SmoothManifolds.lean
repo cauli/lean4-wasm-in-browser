@@ -17,73 +17,80 @@ structures and library theorems they use come directly from pinned Mathlib.
 
 namespace ManifoldAdventure
 
-universe u v w u' v'
+universe u v w u' v' w' u''
 
 open scoped Topology ContDiff
 open Filter ENat
 
+theorem transition_map_source {Stone : Type u} {Drawing : Type v}
+    [TopologicalSpace Stone] [TopologicalSpace Drawing]
+    (chart chart' : OpenPartialHomeomorph Stone Drawing) :
+    (chart.symm.trans chart').source =
+      chart.target ∩ chart.symm ⁻¹' chart'.source := by
+  rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source]
+
 theorem model_space_is_manifold {Scalar : Type u}
-    [scalarField : NontriviallyNormedField Scalar]
-    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
-    [vectorSpace : NormedSpace Scalar Vectors]
+    [NontriviallyNormedField Scalar]
+    {Vectors : Type v} [NormedAddCommGroup Vectors]
+    [NormedSpace Scalar Vectors]
     {Coordinates : Type w}
-    [coordinateTopology : TopologicalSpace Coordinates]
+    [TopologicalSpace Coordinates]
     (model : ModelWithCorners Scalar Vectors Coordinates)
     (order : WithTop ℕ∞) :
     IsManifold model order Coordinates := by
   infer_instance
 
 theorem manifold_of_higher_smoothness {Scalar : Type u}
-    [scalarField : NontriviallyNormedField Scalar]
-    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
-    [vectorSpace : NormedSpace Scalar Vectors]
+    [NontriviallyNormedField Scalar]
+    {Vectors : Type v} [NormedAddCommGroup Vectors]
+    [NormedSpace Scalar Vectors]
     {Coordinates : Type w}
-    [coordinateTopology : TopologicalSpace Coordinates]
+    [TopologicalSpace Coordinates]
     {model : ModelWithCorners Scalar Vectors Coordinates}
-    {Surface : Type u'} [surfaceTopology : TopologicalSpace Surface]
-    [surfaceCharts : ChartedSpace Coordinates Surface]
+    {Surface : Type u'} [TopologicalSpace Surface]
+    [ChartedSpace Coordinates Surface]
     {lowerOrder higherOrder : WithTop ℕ∞}
-    [higherSmoothness : IsManifold model higherOrder Surface]
-    (order_le : lowerOrder ≤ higherOrder) :
-    IsManifold model lowerOrder Surface := by
+    [IsManifold model higherOrder Surface] :
+    lowerOrder ≤ higherOrder → IsManifold model lowerOrder Surface := by
+  intro order_le
   exact IsManifold.of_le order_le
 
 theorem smooth_manifold_is_topological {Scalar : Type u}
-    [scalarField : NontriviallyNormedField Scalar]
-    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
-    [vectorSpace : NormedSpace Scalar Vectors]
+    [NontriviallyNormedField Scalar]
+    {Vectors : Type v} [NormedAddCommGroup Vectors]
+    [NormedSpace Scalar Vectors]
     {Coordinates : Type w}
-    [coordinateTopology : TopologicalSpace Coordinates]
+    [TopologicalSpace Coordinates]
     {model : ModelWithCorners Scalar Vectors Coordinates}
-    {Surface : Type u'} [surfaceTopology : TopologicalSpace Surface]
-    [surfaceCharts : ChartedSpace Coordinates Surface]
-    [smoothSurface : IsManifold model ∞ Surface] :
+    {Surface : Type u'} [TopologicalSpace Surface]
+    [ChartedSpace Coordinates Surface]
+    [IsManifold model ∞ Surface] :
     IsManifold model 0 Surface := by
   infer_instance
 
 theorem product_of_manifolds {Scalar : Type u}
-    [scalarField : NontriviallyNormedField Scalar]
+    [NontriviallyNormedField Scalar]
     {FirstVectors : Type v}
-    [firstVectorGroup : NormedAddCommGroup FirstVectors]
-    [firstVectorSpace : NormedSpace Scalar FirstVectors]
+    [NormedAddCommGroup FirstVectors]
+    [NormedSpace Scalar FirstVectors]
     {SecondVectors : Type v'}
-    [secondVectorGroup : NormedAddCommGroup SecondVectors]
-    [secondVectorSpace : NormedSpace Scalar SecondVectors]
+    [NormedAddCommGroup SecondVectors]
+    [NormedSpace Scalar SecondVectors]
     {FirstCoordinates : Type w}
-    [firstCoordinateTopology : TopologicalSpace FirstCoordinates]
-    {SecondCoordinates : Type*}
-    [secondCoordinateTopology : TopologicalSpace SecondCoordinates]
+    [TopologicalSpace FirstCoordinates]
+    {SecondCoordinates : Type w'}
+    [TopologicalSpace SecondCoordinates]
     {firstModel : ModelWithCorners Scalar FirstVectors FirstCoordinates}
     {secondModel : ModelWithCorners Scalar SecondVectors SecondCoordinates}
     {FirstSurface : Type u'}
-    [firstSurfaceTopology : TopologicalSpace FirstSurface]
-    [firstSurfaceCharts : ChartedSpace FirstCoordinates FirstSurface]
-    {SecondSurface : Type*}
-    [secondSurfaceTopology : TopologicalSpace SecondSurface]
-    [secondSurfaceCharts : ChartedSpace SecondCoordinates SecondSurface]
+    [TopologicalSpace FirstSurface]
+    [ChartedSpace FirstCoordinates FirstSurface]
+    {SecondSurface : Type u''}
+    [TopologicalSpace SecondSurface]
+    [ChartedSpace SecondCoordinates SecondSurface]
     (order : WithTop ℕ∞)
-    [firstSmoothness : IsManifold firstModel order FirstSurface]
-    [secondSmoothness : IsManifold secondModel order SecondSurface] :
+    [IsManifold firstModel order FirstSurface]
+    [IsManifold secondModel order SecondSurface] :
     IsManifold (firstModel.prod secondModel) order (FirstSurface × SecondSurface) := by
   exact IsManifold.prod FirstSurface SecondSurface
 

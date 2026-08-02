@@ -115,7 +115,8 @@ for (const layer of manifest.layers) {
 cp -L "$MANIFOLD_MANIFEST" dist/lean-wasm/manifold-layer.json
 for SLUG in \
   homeomorphisms local-charts charted-spaces \
-  canonical-charts smooth-manifolds tangent-spaces
+  canonical-charts smooth-manifolds tangent-spaces \
+  map-projections circle-motion robot-arm
 do
   cp -L \
     "public/lean-wasm/manifold-$SLUG-layer.json" \

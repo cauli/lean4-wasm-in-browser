@@ -23,16 +23,23 @@ import {
 import {
   buildRealAnalysisChallengeSource,
   buildRealAnalysisGoalInspectionSource,
+  realAnalysisContextModule,
 } from './real-analysis-verification-source'
 import {
   buildManifoldChallengeSource,
   buildManifoldGoalInspectionSource,
+  manifoldContextModule,
 } from './manifold-verification-source'
 import {
   ArtifactPackStagerPool,
   requestedArtifactPackWorkers,
   type StagedArtifactPack,
 } from './artifact-pack-stager'
+import {
+  prepareArtifactPackCache,
+  requestArtifactStoragePersistence,
+  type ArtifactPackCacheDescriptor,
+} from '../artifact-pack-cache'
 
 export type CheckerStatus = 'idle' | 'loading' | 'ready' | 'checking' | 'error'
 
@@ -81,11 +88,58 @@ interface ManifoldWorldLayer {
   manifestFile: string
   libraryRoot: string
   label: string
+  prerequisites?: string[]
 }
 
 interface ManifoldLayerIndex {
   kind: 'manifold-course-layer-index'
   layers: ManifoldWorldLayer[]
+}
+
+function manifoldLayersForWorld(
+  index: ManifoldLayerIndex,
+  targetWorld: string,
+): ManifoldWorldLayer[] {
+  const targetIndex = index.layers.findIndex((layer) => layer.world === targetWorld)
+  if (targetIndex < 0) throw new Error(`No browser layer was generated for ${targetWorld}.`)
+
+  // Older six-world indexes were linear and did not record their edges. Keep
+  // accepting them while deployed clients and cached HTML catch up.
+  if (!index.layers.some((layer) => Array.isArray(layer.prerequisites))) {
+    return index.layers.slice(0, targetIndex + 1)
+  }
+
+  const byWorld = new Map(index.layers.map((layer) => [layer.world, layer]))
+  const visited = new Set<string>()
+  const visiting = new Set<string>()
+  const ordered: ManifoldWorldLayer[] = []
+
+  const visit = (world: string) => {
+    if (visited.has(world)) return
+    if (visiting.has(world)) throw new Error(`The browser layer graph contains a cycle at ${world}.`)
+    const layer = byWorld.get(world)
+    if (!layer) throw new Error(`The browser layer graph refers to missing world ${world}.`)
+
+    visiting.add(world)
+    for (const prerequisite of layer.prerequisites || []) visit(prerequisite)
+    visiting.delete(world)
+    visited.add(world)
+    ordered.push(layer)
+  }
+
+  visit(targetWorld)
+  return ordered
+}
+
+interface ArtifactLayerManifest {
+  files?: string[]
+  packs?: LeanArtifactPack[]
+  version?: string
+  leanCommit?: string
+  mathlibCommit?: string
+  gameCommit?: string | null
+  manifoldCourseCommit?: string | null
+  generatedAt?: string
 }
 
 interface LayerTiming {
@@ -99,7 +153,29 @@ interface LayerTiming {
   inflateWorkMs: number
   stageWorkMs: number
   transferMs: number
+  cacheHits: number
+  cachedCompressedBytes: number
   totalMs: number
+}
+
+function artifactPackCacheDescriptor(
+  libraryRoot: string,
+  manifest: ArtifactLayerManifest,
+): ArtifactPackCacheDescriptor {
+  const family = manifest.manifoldCourseCommit ? 'manifold' : libraryRoot
+  const courseVersion = manifest.manifoldCourseCommit
+    || manifest.gameCommit
+    || manifest.generatedAt
+    || manifest.version
+    || 'development'
+  return {
+    family,
+    version: [
+      manifest.leanCommit || LEAN_ASSET_VERSION || 'lean-development',
+      manifest.mathlibCommit || 'mathlib-development',
+      courseVersion,
+    ].join('-'),
+  }
 }
 
 declare global {
@@ -223,7 +299,9 @@ export function useLeanGameVerifier() {
     statusRef.current = nextStatus
     setStatus(nextStatus)
   }, [])
-  const [progress, setProgress] = useState('Lean starts when you verify an answer.')
+  const [progress, setProgress] = useState('Lean will start in the background.')
+  const [loadPercent, setLoadPercent] = useState(0)
+  const [preparedContextKeys, setPreparedContextKeys] = useState<Set<string>>(() => new Set())
   const workerRef = useRef<Worker | null>(null)
   const initializePromiseRef = useRef<Promise<void> | null>(null)
   const initFilesPromiseRef = useRef<Promise<void> | null>(null)
@@ -236,6 +314,25 @@ export function useLeanGameVerifier() {
   const compilePendingRef = useRef<{ resolve: (result: WorkerResult) => void } | null>(null)
   const outputRef = useRef<WorkerOutput[]>([])
   const compileQueueRef = useRef<Promise<void>>(Promise.resolve())
+  const preparedContextKeysRef = useRef(new Set<string>())
+  const contextPreparationPromisesRef = useRef<Map<string, Promise<void>>>(new Map())
+  const runtimePrefetchStartedRef = useRef(false)
+
+  const advanceLoadPercent = useCallback((next: number) => {
+    setLoadPercent((current) => Math.max(current, Math.min(100, Math.round(next))))
+  }, [])
+
+  const contextKeyForLevel = useCallback((level: GameLevel): string => {
+    const verifier = gameForLevel(level).verifier
+    if (verifier === 'manifold') return `manifold:${level.world}`
+    if (verifier === 'real-analysis') return 'real-analysis'
+    return 'lean-core'
+  }, [])
+
+  const markContextPrepared = useCallback((key: string) => {
+    preparedContextKeysRef.current.add(key)
+    setPreparedContextKeys(new Set(preparedContextKeysRef.current))
+  }, [])
 
   useEffect(() => () => {
     workerRef.current?.terminate()
@@ -245,6 +342,7 @@ export function useLeanGameVerifier() {
   const ensureWorker = useCallback(async () => {
     if (workerRef.current) return
     setProgress('Starting the local Lean runtime...')
+    advanceLoadPercent(3)
     const worker = new Worker(`/lean-worker-persistent.worker.js?${workerAssetQuery}`)
     workerRef.current = worker
 
@@ -271,10 +369,14 @@ export function useLeanGameVerifier() {
       } else if (message.type === 'snapshot_progress') {
         const received = Number(message.received || 0)
         const total = Number(message.total || 0)
+        if (total > 0) advanceLoadPercent(8 + (received / total) * 32)
         setProgress(total > 0
           ? `Loading Lean environment: ${Math.round(received / 1048576)} / ${Math.round(total / 1048576)} MB`
           : `Loading Lean environment: ${Math.round(received / 1048576)} MB`)
       } else if (message.type === 'import_progress') {
+        const loaded = Number(message.loaded || 0)
+        const total = Number(message.total || 0)
+        if (total > 0) advanceLoadPercent(48 + (loaded / total) * 10)
         setProgress(`Importing Lean core: ${message.loaded || 0} / ${message.total || 0} modules`)
       } else if (message.type === 'progress' && message.data) {
         setProgress(String(message.data))
@@ -299,7 +401,7 @@ export function useLeanGameVerifier() {
       }),
       rejectAfter(300000, 'Lean startup timed out.'),
     ])
-  }, [])
+  }, [advanceLoadPercent])
 
   const addInitFiles = useCallback(async () => {
     if (initFilesPromiseRef.current) return initFilesPromiseRef.current
@@ -317,6 +419,7 @@ export function useLeanGameVerifier() {
       ]
       setProgress(`Downloading ${paths.length} Lean core files...`)
       const files = await fetchOleanFiles(paths, (loaded, total) => {
+        if (total > 0) advanceLoadPercent(40 + (loaded / total) * 8)
         setProgress(`Downloading Lean core: ${loaded} / ${total} files`)
       })
       const payload: Array<{ name: string; data: ArrayBuffer }> = []
@@ -340,7 +443,7 @@ export function useLeanGameVerifier() {
     })
     initFilesPromiseRef.current = promise
     return promise
-  }, [])
+  }, [advanceLoadPercent])
 
   const loadSnapshot = useCallback(async (
     name: string,
@@ -388,14 +491,11 @@ export function useLeanGameVerifier() {
         throw new Error(`${label} verification requires the desktop full Lean runtime.`)
       }
       setProgress(`Reading the local ${label} package...`)
-      const response = await fetch(`${LEAN_WASM_BASE}/${manifestFile}`)
+      const response = await fetch(`${LEAN_WASM_BASE}/${manifestFile}`, { cache: 'no-cache' })
       if (!response.ok) {
         throw new Error(`The local ${label} Lean package was not found.`)
       }
-      const manifest = await response.json() as {
-        files?: string[]
-        packs?: LeanArtifactPack[]
-      }
+      const manifest = await response.json() as ArtifactLayerManifest
       const paths = manifest.files || []
       const manifestReadyAt = performance.now()
       if (paths.length === 0) {
@@ -423,6 +523,8 @@ export function useLeanGameVerifier() {
 
       const packs = manifest.packs || []
       if (packs.length > 0) {
+        const cacheDescriptor = artifactPackCacheDescriptor(libraryRoot, manifest)
+        await prepareArtifactPackCache(cacheDescriptor)
         const workerCount = requestedArtifactPackWorkers()
         const stager = workerCount > 0
           ? new ArtifactPackStagerPool(Math.min(workerCount, packs.length))
@@ -432,6 +534,8 @@ export function useLeanGameVerifier() {
         let inflateWorkMs = 0
         let stageWorkMs = 0
         let transferMs = 0
+        let cacheHits = 0
+        let cachedCompressedBytes = 0
         let loaded = 0
         const stagePack = (index: number): Promise<StagedArtifactPack> => {
           const pack = packs[index]
@@ -440,19 +544,22 @@ export function useLeanGameVerifier() {
               `${LEAN_WASM_BASE}/${libraryRoot}/${pack.file}`,
               window.location.origin,
             ).href
-            return stager.stage(pack, url)
+            return stager.stage(pack, url, cacheDescriptor)
           }
           return (async () => {
             const started = performance.now()
             let downloadMs = 0
             let inflateMs = 0
+            let cacheHit = false
             const files = await fetchLeanArtifactPack(pack, libraryRoot, (timing) => {
               downloadMs = timing.downloadMs
               inflateMs = timing.inflateMs
-            })
+              cacheHit = timing.cacheHit
+            }, cacheDescriptor)
             return {
               files,
               compressedBytes: pack.compressedBytes,
+              cacheHit,
               downloadMs,
               inflateMs,
               elapsedMs: performance.now() - started,
@@ -470,6 +577,7 @@ export function useLeanGameVerifier() {
             setProgress(
               `Loading ${label}: pack ${index + 1} / ${packs.length}`,
             )
+            advanceLoadPercent(60 + ((index + 1) / packs.length) * 25)
             const staged = await pending.get(index)!
             pending.delete(index)
             schedule(index + lookahead)
@@ -484,6 +592,10 @@ export function useLeanGameVerifier() {
             const transferStarted = performance.now()
             await addFilesToWorker(staged.files)
             transferMs += performance.now() - transferStarted
+            if (staged.cacheHit) {
+              cacheHits += 1
+              cachedCompressedBytes += staged.compressedBytes
+            }
             loaded += staged.files.size
             setProgress(`Loading ${label}: ${loaded} / ${paths.length} files`)
           }
@@ -503,6 +615,8 @@ export function useLeanGameVerifier() {
           inflateWorkMs,
           stageWorkMs,
           transferMs,
+          cacheHits,
+          cachedCompressedBytes,
           totalMs: performance.now() - layerStarted,
         }
         window.__leanGameLayerTimings ??= []
@@ -524,7 +638,7 @@ export function useLeanGameVerifier() {
       }
 
       setProgress(readyMessage)
-  }, [])
+  }, [advanceLoadPercent])
 
   const ensureRealAnalysisLayer = useCallback(async () => {
     if (realAnalysisLayerPromiseRef.current) return realAnalysisLayerPromiseRef.current
@@ -555,6 +669,7 @@ export function useLeanGameVerifier() {
       const suffix = LEAN_ASSET_VERSION ? `?v=${encodeURIComponent(LEAN_ASSET_VERSION)}` : ''
       manifoldLayerIndexPromiseRef.current = fetch(
         `${LEAN_WASM_BASE}/manifold-layer.json${suffix}`,
+        { cache: 'no-cache' },
       ).then(async (response) => {
         if (!response.ok) throw new Error('The Manifold Adventure layer index was not found.')
         const index = await response.json() as ManifoldLayerIndex
@@ -569,10 +684,7 @@ export function useLeanGameVerifier() {
     }
 
     const index = await manifoldLayerIndexPromiseRef.current
-    const targetIndex = index.layers.findIndex((layer) => layer.world === level.world)
-    if (targetIndex < 0) throw new Error(`No browser layer was generated for ${level.world}.`)
-
-    for (const layer of index.layers.slice(0, targetIndex + 1)) {
+    for (const layer of manifoldLayersForWorld(index, level.world)) {
       let promise = manifoldLayerPromisesRef.current.get(layer.world)
       if (!promise) {
         promise = loadArtifactLayer({
@@ -631,6 +743,8 @@ export function useLeanGameVerifier() {
     if (initializePromiseRef.current) return initializePromiseRef.current
     const promise = (async () => {
       updateStatus('loading')
+      setLoadPercent(1)
+      setProgress('Starting Lean in this browser...')
       const wasmResponse = await fetch(`${LEAN_WASM_BASE}/lean.js`, { method: 'HEAD' })
       if (!wasmResponse.ok) {
         throw new Error(`Lean WASM was not found at ${LEAN_WASM_BASE}.`)
@@ -643,6 +757,7 @@ export function useLeanGameVerifier() {
       setProgress('Warming the local kernel...')
       const warm = await compileCode('')
       if (!warm.result.success) throw new Error(warm.result.error || 'Lean warmup failed.')
+      advanceLoadPercent(58)
       updateStatus('ready')
       setProgress('Local Lean kernel ready.')
     })().catch((error) => {
@@ -653,20 +768,96 @@ export function useLeanGameVerifier() {
     })
     initializePromiseRef.current = promise
     return promise
-  }, [addInitFiles, compileCode, ensureWorker, trySnapshot, updateStatus])
+  }, [addInitFiles, advanceLoadPercent, compileCode, ensureWorker, trySnapshot, updateStatus])
 
-  const initializeForLevel = useCallback(async (level: GameLevel) => {
+  const prepareRuntime = useCallback(async () => {
     await initialize()
-    const verifier = gameForLevel(level).verifier
-    if (verifier === 'real-analysis') {
-      // This packed layer also stages Init, Lean, and Std. A snapshot restores
-      // Init's environment, but module imports still resolve those artifacts
-      // through Lean's virtual filesystem.
-      await ensureRealAnalysisLayer()
-    } else if (verifier === 'manifold') {
-      await ensureManifoldLayer(level)
+    if (contextPreparationPromisesRef.current.size === 0) advanceLoadPercent(100)
+  }, [advanceLoadPercent, initialize])
+
+  const prepareLevel = useCallback((level: GameLevel): Promise<void> => {
+    const contextKey = contextKeyForLevel(level)
+    if (preparedContextKeysRef.current.has(contextKey)) return Promise.resolve()
+    const existing = contextPreparationPromisesRef.current.get(contextKey)
+    if (existing) return existing
+
+    const promise = (async () => {
+      updateStatus('loading')
+      if (initializePromiseRef.current) setLoadPercent(58)
+      await initialize()
+      setLoadPercent(58)
+      updateStatus('loading')
+      const verifier = gameForLevel(level).verifier
+      let contextModule: string | null = null
+      if (verifier === 'real-analysis') {
+        // This packed layer also stages Init, Lean, and Std. A snapshot restores
+        // Init's environment, but module imports still resolve those artifacts
+        // through Lean's virtual filesystem.
+        await ensureRealAnalysisLayer()
+        contextModule = realAnalysisContextModule(level)
+      } else if (verifier === 'manifold') {
+        await ensureManifoldLayer(level)
+        contextModule = manifoldContextModule(level)
+      }
+
+      if (contextModule) {
+        advanceLoadPercent(90)
+        setProgress(`Opening the ${level.world} world in Lean...`)
+        const warmed = await compileCode(`import ${contextModule}\n`)
+        if (!warmed.result.success) {
+          throw new Error(warmed.result.error || `Lean could not open ${contextModule}.`)
+        }
+      }
+
+      markContextPrepared(contextKey)
+      setLoadPercent(100)
+      updateStatus('ready')
+      setProgress(`${level.world} is ready for local proof checking.`)
+    })().catch((error) => {
+      contextPreparationPromisesRef.current.delete(contextKey)
+      updateStatus('error')
+      setProgress(error instanceof Error ? error.message : String(error))
+      throw error
+    })
+    contextPreparationPromisesRef.current.set(contextKey, promise)
+    return promise
+  }, [
+    advanceLoadPercent,
+    compileCode,
+    contextKeyForLevel,
+    ensureManifoldLayer,
+    ensureRealAnalysisLayer,
+    initialize,
+    markContextPrepared,
+    updateStatus,
+  ])
+
+  const prefetchRuntimeAssets = useCallback(() => {
+    if (runtimePrefetchStartedRef.current) return
+    runtimePrefetchStartedRef.current = true
+    const connection = (navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string }
+    }).connection
+    if (connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || '')) return
+    const suffix = LEAN_ASSET_VERSION ? `?v=${encodeURIComponent(LEAN_ASSET_VERSION)}` : ''
+    for (const file of ['lean.js', 'lean.wasm']) {
+      const href = `${LEAN_BIN_BASE}/${file}${suffix}`
+      if (document.head.querySelector(`link[data-lean-runtime-prefetch="${file}"]`)) continue
+      const link = document.createElement('link')
+      link.rel = 'prefetch'
+      link.as = 'fetch'
+      link.href = href
+      link.dataset.leanRuntimePrefetch = file
+      if (file.endsWith('.wasm')) link.type = 'application/wasm'
+      document.head.append(link)
     }
-  }, [ensureManifoldLayer, ensureRealAnalysisLayer, initialize])
+  }, [])
+
+  const isLevelReady = useCallback((level: GameLevel): boolean => (
+    preparedContextKeys.has(contextKeyForLevel(level))
+  ), [contextKeyForLevel, preparedContextKeys])
+
+  const initializeForLevel = prepareLevel
 
   const inspectGoals = useCallback(async (
     level: GameLevel,
@@ -765,6 +956,9 @@ export function useLeanGameVerifier() {
     proof: string,
     rules: GameRules = 'regular',
   ): Promise<GameVerificationResult> => {
+    // `verify` starts in the button's user gesture, which gives browsers the
+    // best chance of granting persistent storage for the large Mathlib cache.
+    void requestArtifactStoragePersistence()
     const verifier = gameForLevel(level).verifier
     const policy = checkProofPolicy(level, proof, { enforceInventory: rules !== 'none' })
     if (!policy.ok) {
@@ -884,7 +1078,17 @@ export function useLeanGameVerifier() {
     }
   }, [compileCode, initializeForLevel, updateStatus])
 
-  return { status, progress, inspectGoals, verify }
+  return {
+    status,
+    progress,
+    loadPercent,
+    inspectGoals,
+    verify,
+    prepareRuntime,
+    prepareLevel,
+    prefetchRuntimeAssets,
+    isLevelReady,
+  }
 }
 
 export type LeanGameVerifier = ReturnType<typeof useLeanGameVerifier>

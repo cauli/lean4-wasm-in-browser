@@ -6,12 +6,19 @@ import { fileURLToPath } from 'node:url'
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const coursePath = path.join(repoRoot, 'src/game/manifolds.generated.json')
+const conformancePath = path.join(repoRoot, 'src/game/manifolds.conformance.json')
 const outputPath = path.resolve(
   repoRoot,
   process.argv[2] || 'docs/manifold-adventure-course.md',
 )
 
 const course = JSON.parse(fs.readFileSync(coursePath, 'utf8'))
+const conformance = JSON.parse(fs.readFileSync(conformancePath, 'utf8'))
+const exactVerified = new Set(
+  conformance.sourceCommit === course.source.commit
+    ? conformance.verifiedReferenceSolutions
+    : [],
+)
 
 const models = {
   'sphere-charts': {
@@ -25,41 +32,59 @@ const models = {
   'mobius-band': {
     label: 'Möbius band',
     caption: 'Ada carries an arrow once around the band and finds it flipped on her return. There is no consistent choice of "up" across the whole surface.',
+    outlook: true,
   },
   'trefoil-circle': {
     label: 'Circle and trefoil embeddings',
     caption: 'From inside either tube, Ada experiences the same one-manifold: a circle. The knot belongs to the way one circle sits in three-dimensional space.',
+    outlook: true,
   },
   'sphere-triangle': {
     label: 'A triangle with three right angles',
     caption: 'Ada walks three geodesic edges and turns through a right angle at every corner. The 270° angle total reveals curvature from within the sphere.',
+    outlook: true,
   },
   'figure-eight': {
     label: 'Figure-eight crossing',
     caption: 'Ada tests the red crossing as a possible point on a one-manifold. Removing it leaves four nearby arms instead of the two she would find on an interval.',
+    outlook: true,
   },
   'tangent-plane': {
     label: 'Tangent plane at a point',
     caption: 'The plane contains the velocity vectors Ada could choose at this point. It is the tangent space where local motion becomes linear.',
+  },
+  'robot-arm': {
+    label: 'Two-joint robot arm',
+    caption: 'The orange and teal links turn at two circular joints. Their joint state determines the red tip position on the work plane.',
   },
 }
 
 const modelByLevel = {
   'localcharts-4': 'sphere-charts',
   'chartedspaces-5': 'sphere-charts',
-  'canonicalcharts-3': 'torus-loops',
   'canonicalcharts-4': 'torus-loops',
+  'canonicalcharts-5': 'torus-loops',
   'tangentspaces-1': 'tangent-plane',
   'tangentspaces-2': 'tangent-plane',
+  'mapprojections-1': 'sphere-charts',
+  'mapprojections-5': 'sphere-charts',
+  'robotarm-1': 'robot-arm',
+  'robotarm-3': 'robot-arm',
+  'robotarm-4': 'robot-arm',
 }
 
 const captionByLevel = {
-  'localcharts-4': 'A chart can take a point to its drawing and back only inside the colored patch where that chart is valid.',
-  'chartedspaces-5': 'The amber and teal chart sources overlap and together cover the sphere, just as an atlas covers a surface with local maps.',
-  'canonicalcharts-3': "The two highlighted loops picture Ada's two circle readings. A product chart combines one local chart from each factor.",
-  'canonicalcharts-4': 'A paired position belongs to its product chart because each reading is handled by the corresponding factor chart.',
-  'tangentspaces-1': "The attached plane pictures the tangent space at Ada's chosen place. Standing still is its zero vector.",
-  'tangentspaces-2': 'A tangent-bundle point keeps the location on the surface together with a velocity from the tangent space attached there.',
+  'localcharts-4': 'A chart can take a point to its drawing and back only inside the colored patch where that chart is valid. Highlight state: the amber chart.',
+  'chartedspaces-5': 'The amber and teal chart sources overlap and together cover the sphere, just as an atlas covers a surface with local maps. Highlight state: both charts.',
+  'canonicalcharts-4': "The two highlighted loops picture Ada's two circle readings. A product chart combines one local chart from each factor. Highlight state: both loops.",
+  'canonicalcharts-5': 'The paired position belongs to the surface described by those two readings. Highlight state: the torus surface.',
+  'tangentspaces-1': "The attached plane pictures the tangent space at Ada's chosen place. Standing still is its zero vector. Highlight state: Ada and the tangent plane, with no velocity arrow.",
+  'tangentspaces-2': 'A tangent-bundle point keeps the location on the surface together with a velocity from the tangent space attached there. Highlight state: Ada, the plane, and one velocity arrow.',
+  'mapprojections-1': 'A stereographic chart draws every point except its chosen pole. The missing point is the price of flattening the sphere onto one leaf. Highlight state: the first chart.',
+  'mapprojections-5': 'Each colored chart misses one pole. Because the poles differ, the two chart sources cover the whole sphere. Highlight state: both charts.',
+  'robotarm-1': 'The orange displacement ends at the elbow. Adding the teal displacement places the red tip on the work plane. Highlight state: both links and the tip.',
+  'robotarm-3': 'Turning the shoulder through a full revolution changes the angle but not either link direction, so the tip returns to the same point. Highlight state: the shoulder arc and arm.',
+  'robotarm-4': 'Small changes at either circular joint produce small changes at the tip. Highlight state: both joint arcs, both links, and the tip.',
 }
 
 function demoteHeadings(markdown, depth) {
@@ -101,9 +126,18 @@ const lines = [
   '> Every level includes the prose, Lean goal, official solution, hints, and unlocks.',
   '> A **3D MODEL** callout appears wherever the web course displays a 3D scene.',
   '',
-  `**Course status:** ${levels.length}/${levels.length} reference solutions kernel-checked`,
+  `**Course status:** ${exactVerified.size}/${levels.length} reference solutions are recorded against the exact browser compiler for this revision. Native reference checks run separately during development; the exact browser pin remains the release gate.`,
   '',
   `**Caption:** ${course.caption}`,
+  '',
+  '## Revision notes (r2)',
+  '',
+  '- Every level now has a conceptual hint, a tool hint, and a hidden solution hint.',
+  '- New levels exercise the inverse side of a partial chart, both directions of the self-atlas equivalence, an actual transition map, and stereographic source membership.',
+  '- Definition-only exercises that accepted any well-typed term were removed from Tangent Spaces and Robot Arm.',
+  '- Repeated 3D assets now use different named-object highlights, and the robot arm opens its own world.',
+  '- Completing the final robot proof grants `fun_prop`; it is not available while solving that level.',
+  '- The course revision changed, so the old numeric-ID conformance record is ignored until exact pinned CI checks r2.',
   '',
   '## Course map',
   '',
@@ -114,6 +148,7 @@ const lines = [
     const lab = world.id === 'CanonicalCharts'
     const modelSummary = [
       ...(lab ? ['seven-model explorer'] : []),
+      ...(world.id === 'RobotArm' ? ['1 world scene'] : []),
       ...(modelLevels.length > 0 ? [`${modelLevels.length} lesson scene${modelLevels.length === 1 ? '' : 's'}`] : []),
     ].join('; ') || 'None'
     const prerequisite = world.prerequisites.length > 0
@@ -124,7 +159,7 @@ const lines = [
   '',
   '## 3D model index',
   '',
-  'World 4 opens with an interactive explorer containing all seven models. Six individual lessons also embed a model:',
+  'World 4 opens with a seven-model explorer, and World 9 opens with the robot arm. Individual lessons also embed models:',
   '',
   '| Location | Model | Asset |',
   '| --- | --- | --- |',
@@ -132,11 +167,12 @@ const lines = [
     const level = levels.find((candidate) => candidate.id === levelId)
     return `| ${level.world}, level ${level.number}: ${level.title} | ${models[model].label} | [\`${model}.glb\`](${modelPath(model)}) |`
   }),
+  `| RobotArm, world overview: Where the arm can reach | ${models['robot-arm'].label} | [\`robot-arm.glb\`](${modelPath('robot-arm')}) |`,
   '',
   'The World 4 explorer additionally includes:',
   '',
-  ...Object.entries(models).map(([model, info]) => (
-    `- **${info.label}:** ${info.caption} ([\`${model}.glb\`](${modelPath(model)}))`
+  ...Object.entries(models).filter(([model]) => model !== 'robot-arm').map(([model, info]) => (
+    `- **${info.label}**${info.outlook ? ' *(outlook, beyond this course)*' : ''}: ${info.caption} ([\`${model}.glb\`](${modelPath(model)}))`
   )),
   '',
   '## Course introduction',
@@ -175,6 +211,16 @@ for (const [worldIndex, world] of course.worlds.entries()) {
       '',
     )
   }
+  if (world.id === 'RobotArm') {
+    lines.push(
+      modelCallout(
+        'robot-arm',
+        'This interactive scene appears on the world overview.',
+        "Each ring is one circle-valued joint. Reading both rings gives one point of the arm's configuration space. Highlight state: both joint arcs.",
+      ),
+      '',
+    )
+  }
 
   for (const level of world.levels) {
     const model = modelByLevel[level.id]
@@ -182,7 +228,7 @@ for (const [worldIndex, world] of course.worlds.entries()) {
       `### ${worldIndex + 1}.${level.number} ${level.title}`,
       '',
       `- **Level ID:** \`${level.id}\``,
-      `- **Verification:** ${level.verification === 'kernel' ? 'Lean kernel' : level.verification}`,
+      `- **Verification:** ${exactVerified.has(level.id) ? 'exact browser Lean kernel' : 'native reference check required; exact browser record pending'}`,
       `- **Creates:** \`ManifoldAdventure.${level.theoremName}\` (${level.declarationKind})`,
       '',
     )
@@ -221,7 +267,7 @@ for (const [worldIndex, world] of course.worlds.entries()) {
       '',
       '#### Unlocks',
       '',
-      `- **Lean tactics:** ${inlineInventory(level.newTactics)}`,
+      `- **Lean tactics:** ${inlineInventory([...(level.newTactics || []), ...(level.completionTactics || [])])}`,
       `- **Mathlib theorems/declarations:** ${inlineInventory(level.newTheorems)}`,
       `- **Structures, definitions, and notation:** ${inlineInventory(level.newDefinitions)}`,
       `- **Reusable course declaration:** \`ManifoldAdventure.${level.theoremName}\``,
@@ -237,11 +283,11 @@ for (const [worldIndex, world] of course.worlds.entries()) {
 lines.push(
   '## End-state inventory',
   '',
-  'After completing all six worlds, the player has unlocked the following named Mathlib declarations and Lean tactics.',
+  `After completing all ${course.worlds.length} worlds, including the optional branches, the player has unlocked the following named Mathlib declarations and Lean tactics.`,
   '',
   '### Tactics',
   '',
-  ...[...new Set(levels.flatMap((level) => level.newTactics))].map((item) => `- \`${item}\``),
+  ...[...new Set(levels.flatMap((level) => [...(level.newTactics || []), ...(level.completionTactics || [])]))].map((item) => `- \`${item}\``),
   '',
   '### Mathlib theorems and declarations',
   '',

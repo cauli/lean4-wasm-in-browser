@@ -13,9 +13,8 @@ on:
         required: true
         default: "29165653896"
       mathlib_layer_run_id:
-        description: cauli/lean4 action run containing the matching browser Mathlib manifold closure
+        description: cauli/lean4 action run containing the matching sphere-and-circle manifold closure
         required: true
-        default: "30693760471"
       lean_repository:
         description: Lean fork repository
         required: true
@@ -126,8 +125,14 @@ jobs:
           if (String(manifest.lean.toolchainRunId) !== process.argv[4]) {
             throw new Error("closure was built from a different toolchain run");
           }
-          if (!manifest.mathlib.roots.includes("Mathlib.Geometry.Manifold.IsManifold.Basic")) {
-            throw new Error("closure does not contain the course root module");
+          for (const root of [
+            "Mathlib.Geometry.Manifold.IsManifold.Basic",
+            "Mathlib.Geometry.Manifold.Instances.Sphere",
+            "Mathlib.Analysis.SpecialFunctions.Complex.Circle",
+          ]) {
+            if (!manifest.mathlib.roots.includes(root)) {
+              throw new Error(`closure does not contain ${root}`);
+            }
           }
           ' \
             "$CLOSURE_ROOT/manifest.json" \
@@ -186,6 +191,7 @@ jobs:
           const fs = require("fs");
           const index = JSON.parse(fs.readFileSync("public/lean-wasm/manifold-layer.json"));
           const source = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+          const course = JSON.parse(fs.readFileSync("src/game/manifolds.generated.json", "utf8"));
           const c = JSON.parse(fs.readFileSync("src/game/manifolds.conformance.json"));
           if (index.kind !== "manifold-course-layer-index") throw new Error("layer index is invalid");
           if (index.leanCommit !== process.argv[1]) throw new Error("Lean pin changed");
@@ -193,7 +199,13 @@ jobs:
           if (c.validation?.compilerCommit !== process.argv[1]) {
             throw new Error("reference matrix did not use the exact Lean fork compiler");
           }
-          if (index.layers.length !== 6) throw new Error("expected six world layers");
+          if (index.layers.length !== 9) throw new Error("expected nine world layers");
+          if (c.sourceCommit !== course.source.commit) {
+            throw new Error("reference matrix belongs to a different course revision");
+          }
+          if (c.summary?.total !== 40 || c.verifiedReferenceSolutions?.length !== 40) {
+            throw new Error("reference matrix does not cover all 40 levels");
+          }
           const seen = new Set();
           for (const layer of index.layers) {
             const m = JSON.parse(fs.readFileSync(`public/lean-wasm/${layer.manifestFile}`));

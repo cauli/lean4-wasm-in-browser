@@ -17,27 +17,24 @@ structures and library theorems they use come directly from pinned Mathlib.
 
 namespace ManifoldAdventure
 
-universe u v w u' v'
+universe u v w u' v' w' u''
 
 open scoped Topology
 open Filter
 
 theorem local_chart_source_open {Stone : Type u} {Drawing : Type v}
-    [stoneTopology : TopologicalSpace Stone]
-    [drawingTopology : TopologicalSpace Drawing]
+    [TopologicalSpace Stone] [TopologicalSpace Drawing]
     (chart : OpenPartialHomeomorph Stone Drawing) : IsOpen chart.source := by
   exact chart.open_source
 
 theorem local_chart_continuous {Stone : Type u} {Drawing : Type v}
-    [stoneTopology : TopologicalSpace Stone]
-    [drawingTopology : TopologicalSpace Drawing]
+    [TopologicalSpace Stone] [TopologicalSpace Drawing]
     (chart : OpenPartialHomeomorph Stone Drawing) :
     ContinuousOn chart chart.source := by
   exact chart.continuousOn
 
 theorem local_chart_maps_source {Stone : Type u} {Drawing : Type v}
-    [stoneTopology : TopologicalSpace Stone]
-    [drawingTopology : TopologicalSpace Drawing]
+    [TopologicalSpace Stone] [TopologicalSpace Drawing]
     (chart : OpenPartialHomeomorph Stone Drawing)
     (place : Stone) (inPatch : place ∈ chart.source) :
     chart place ∈ chart.target := by
@@ -45,11 +42,19 @@ theorem local_chart_maps_source {Stone : Type u} {Drawing : Type v}
   exact inPatch
 
 theorem local_chart_round_trip {Stone : Type u} {Drawing : Type v}
-    [stoneTopology : TopologicalSpace Stone]
-    [drawingTopology : TopologicalSpace Drawing]
+    [TopologicalSpace Stone] [TopologicalSpace Drawing]
     (chart : OpenPartialHomeomorph Stone Drawing)
     (place : Stone) (inPatch : place ∈ chart.source) :
     chart.symm (chart place) = place := by
   exact chart.left_inv inPatch
+
+theorem local_chart_reads_back {Stone : Type u} {Drawing : Type v}
+    [TopologicalSpace Stone] [TopologicalSpace Drawing]
+    (chart : OpenPartialHomeomorph Stone Drawing)
+    (mark : Drawing) (inDrawing : mark ∈ chart.target) :
+    chart.symm mark ∈ chart.source ∧ chart (chart.symm mark) = mark := by
+  constructor
+  · exact chart.map_target inDrawing
+  · exact chart.right_inv inDrawing
 
 end ManifoldAdventure

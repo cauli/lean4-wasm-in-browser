@@ -11,6 +11,7 @@ Changes that require this check include:
 - rebuilding `.olean` or `.ir` files;
 - changing a layer manifest, pack, dependency closure, or course module;
 - changing worker startup, snapshot loading, artifact staging, or module import;
+- changing Cache Storage keys, pack persistence, or storage eviction behavior;
 - changing the Lean source generated for a browser proof.
 
 ## Record the artifact identity
@@ -54,6 +55,16 @@ A real pass ends with Playwright reporting `1 passed`. These are not passes:
 - the live goal looked correct;
 - the same answer worked after clicking Verify a second time;
 - the worker stayed alive without reaching kernel acceptance.
+
+When pack caching changes, also run the offline cache contract:
+
+```bash
+npx playwright test e2e/artifact-pack-cache.spec.ts --reporter=line
+```
+
+It downloads one small, real Manifold artifact pack, switches Chromium offline,
+and reads the same bytes again. The second read must report a Cache Storage hit;
+an ordinary HTTP-cache hit does not satisfy the test.
 
 The first live-goal assertion has a ten-minute cold-start allowance because it
 includes construction of the complete imported environment. Later assertions

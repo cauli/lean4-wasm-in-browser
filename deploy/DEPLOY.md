@@ -22,8 +22,9 @@ and upload the release asset and point the workflow at it:
 ```bash
 # First run "build Manifold Adventure browser layer" in Actions. Its defaults
 # select the exact Lean 62b6 native-i386 artifact and the matching, prebuilt
-# browser Mathlib closure. Copy the downloaded manifold-layer.json, six world
-# manifests, and six world library directories into public/lean-wasm/.
+# browser Mathlib closure. Copy the downloaded manifold-layer.json, nine world
+# manifests, and nine world library directories into public/lean-wasm/. Copy
+# manifolds.conformance.json into src/game/ so the UI can trust the new IDs.
 bash deploy/pack-pages-assets.sh
 gh release create pages-assets-<ver> --title "Pages static assets" \
   --notes "Static Pages assets" /tmp/pages-assets.tar.gz
@@ -61,6 +62,22 @@ gh run download 30693760471 \
   -D /tmp/browser-mathlib-manifold-closure
 ```
 
+That artifact covers the original six-world path only. The optional
+Map Projections, Circle Motion, and Robot Arm worlds add two closure roots:
+
+```text
+Mathlib.Geometry.Manifold.Instances.Sphere
+Mathlib.Analysis.SpecialFunctions.Complex.Circle
+```
+
+The Lean fork's closure packager already accepts repeated `--root` arguments.
+Its lock file and `build-browser-mathlib-manifold-closure.yml` must list those
+two modules alongside `Mathlib.Geometry.Manifold.IsManifold.Basic`. Run that
+sidecar first, then pass the new action run as `mathlib_layer_run_id` when
+dispatching `build-manifold-layer.yml`. The web workflow rejects the older
+single-root artifact before compilation, so it cannot publish a course with
+missing Sphere or Circle files.
+
 GitHub action artifacts expire. If this exact artifact is no longer available,
 rerun the same workflow on `reinstate-wasm` with `toolchain_run_id=29165653896`.
 The lock file in the Lean fork and the downloaded `manifest.json` retain every
@@ -70,19 +87,20 @@ authenticates the manifest and all packs.
 This repository's
 [`build-manifold-layer.yml`](../.github/workflows/build-manifold-layer.yml)
 downloads that closure, verifies its checksums and pins, unpacks it, compiles
-the six cumulative `ManifoldAdventure` world modules with the matching native
+the nine graph-linked `ManifoldAdventure` world modules with the matching native
 i386 toolchain, checks all reference solutions in Lean's kernel, and packages
 each world's new dependencies as a separate layer. The first world is
 standalone; it does not depend on the Real Analysis package.
 
-The current compiled course layer comes from
+The previously published six-world course layer came from
 [web integration run `30743932602`](https://github.com/cauli/lean4-wasm-in-browser/actions/runs/30743932602).
 Its artifact is
 `manifold-layer-62b6a2291302d4bbeace37642a066b7510d0145c` and contains
 `manifold-layer.json`, six world manifests, six world library directories, and
 the kernel conformance record. It also contains the precompiled browser policy
 module in the first world, including executable IR. The Homeomorphisms layer is
-218 MiB compressed; the six layers together are 330 MiB in 58 packs. Download
+218 MiB compressed; those six layers total 330 MiB in 58 packs. It does not
+contain the three optional worlds in revision r2. Download
 it with:
 
 ```bash
@@ -167,6 +185,12 @@ manifold-smooth-manifolds-layer.json
 manifold-smooth-manifolds-lib/artifacts-000.pack ...
 manifold-tangent-spaces-layer.json
 manifold-tangent-spaces-lib/artifacts-000.pack ...
+manifold-map-projections-layer.json
+manifold-map-projections-lib/artifacts-000.pack ...
+manifold-circle-motion-layer.json
+manifold-circle-motion-lib/artifacts-000.pack ...
+manifold-robot-arm-layer.json
+manifold-robot-arm-lib/artifacts-000.pack ...
 ```
 
 The optional `slim/` and `snapshots/` directories are uploaded when present.

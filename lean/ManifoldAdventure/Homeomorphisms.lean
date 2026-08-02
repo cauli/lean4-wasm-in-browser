@@ -3,7 +3,6 @@ module
 public import Mathlib.Topology.Homeomorph.Defs
 public import ManifoldAdventure.BrowserPolicy
 
-
 @[expose] public section
 
 /-!
@@ -17,7 +16,7 @@ structures and library theorems they use come directly from pinned Mathlib.
 
 namespace ManifoldAdventure
 
-universe u v w u' v'
+universe u v w u' v' w' u''
 
 open scoped Topology
 open Filter
@@ -48,6 +47,6 @@ theorem homeomorph_composition_apply {Trail : Type u} {Drawing : Type v} {RouteB
     (trailMap : Trail ≃ₜ Drawing) (bookMap : Drawing ≃ₜ RouteBook)
     (place : Trail) :
     trailMap.trans bookMap place = bookMap (trailMap place) := by
-  exact Homeomorph.trans_apply trailMap bookMap place
+  exact trailMap.trans_apply bookMap place
 
 end ManifoldAdventure

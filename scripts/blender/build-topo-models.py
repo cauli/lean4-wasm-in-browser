@@ -11,6 +11,7 @@ Each model is a small, self-explanatory scene for one lesson:
   sphere-triangle geodesic triangle with three right angles on a sphere
   figure-eight    figure-eight curve whose crossing fails the local line test
   tangent-plane   tangent plane and velocity arrows at one point of a sphere
+  robot-arm       two circle-valued joints and their forward-kinematics endpoint
 
 Exports go to public/game-assets/manifolds/models/.
 """
@@ -41,6 +42,10 @@ PLANE_GLASS = (0.85, 0.92, 1.0, 0.32)
 ARROW_GREEN = (0.2, 0.72, 0.35, 1.0)
 ARROW_ORANGE = (0.96, 0.55, 0.14, 1.0)
 ADA_DARK = (0.12, 0.12, 0.14, 1.0)
+ROBOT_BASE = (0.055, 0.12, 0.20, 1.0)
+ROBOT_FIRST = (0.95, 0.35, 0.035, 1.0)
+ROBOT_SECOND = (0.00, 0.45, 0.62, 1.0)
+ROBOT_JOINT = (0.72, 0.56, 0.25, 1.0)
 
 
 def clear_scene():
@@ -137,6 +142,34 @@ def small_sphere(name, center, radius, material):
     mesh = uv_sphere_mesh(f"{name}Mesh", radius, segments=24, rings=16)
     obj = add_object(name, mesh, material)
     obj.location = center
+    return obj
+
+
+def cylinder(name, center, radius, depth, material, vertices=48):
+    bpy.ops.mesh.primitive_cylinder_add(
+        vertices=vertices, radius=radius, depth=depth, location=center,
+    )
+    obj = bpy.context.object
+    obj.name = name
+    obj.data.materials.append(material)
+    for polygon in obj.data.polygons:
+        polygon.use_smooth = True
+    return obj
+
+
+def torus(name, center, major_radius, minor_radius, material):
+    bpy.ops.mesh.primitive_torus_add(
+        major_radius=major_radius,
+        minor_radius=minor_radius,
+        major_segments=64,
+        minor_segments=12,
+        location=center,
+    )
+    obj = bpy.context.object
+    obj.name = name
+    obj.data.materials.append(material)
+    for polygon in obj.data.polygons:
+        polygon.use_smooth = True
     return obj
 
 
@@ -343,6 +376,77 @@ def build_tangent_plane():
     export_glb("tangent-plane")
 
 
+def build_robot_arm():
+    clear_scene()
+    first_material = make_material("FirstLink", ROBOT_FIRST, roughness=0.34, metallic=0.15)
+    second_material = make_material("SecondLink", ROBOT_SECOND, roughness=0.35, metallic=0.12)
+    joint_material = make_material("Joint", ROBOT_JOINT, roughness=0.22, metallic=0.55)
+
+    # OpenPong's small Genesis link module gives the diagram the same physical
+    # language as the robot simulator. Set OPENPONG_LINK_GLB when the sibling
+    # checkout is elsewhere. The fallback keeps the course model buildable on
+    # its own, although it omits the module's molded details.
+    default_link = os.path.abspath(os.path.join(
+        os.path.dirname(__file__),
+        "../../../openpong/webapp/apps/web/public/arena/models/genesis-link.glb",
+    ))
+    link_source = os.environ.get("OPENPONG_LINK_GLB", default_link)
+    if os.path.isfile(link_source):
+        before = set(bpy.data.objects)
+        bpy.ops.import_scene.gltf(filepath=link_source)
+        imported = [obj for obj in bpy.data.objects if obj not in before]
+        mesh_objects = [obj for obj in imported if obj.type == "MESH"]
+        if not mesh_objects:
+            raise RuntimeError(f"No mesh found in OpenPong link asset: {link_source}")
+        template = max(mesh_objects, key=lambda obj: obj.dimensions.length)
+        for obj in imported:
+            if obj != template:
+                bpy.data.objects.remove(obj, do_unlink=True)
+    else:
+        bpy.ops.mesh.primitive_cube_add()
+        template = bpy.context.object
+        template.dimensions = (0.162, 0.21, 1.03)
+        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+        bevel = template.modifiers.new("Soft edges", "BEVEL")
+        bevel.width = 0.06
+        bevel.segments = 3
+        bpy.context.view_layer.objects.active = template
+        bpy.ops.object.modifier_apply(modifier=bevel.name)
+
+    template_dimensions = template.dimensions.copy()
+    base = Vector((0.0, 0.0, 0.42))
+    elbow = Vector((2.15, 0.72, 0.58))
+    tip = Vector((3.48, 2.02, 0.72))
+
+    def place_link(obj, name, start, end, thickness, material):
+        delta = end - start
+        obj.name = name
+        obj.location = (start + end) / 2
+        obj.rotation_mode = "QUATERNION"
+        obj.rotation_quaternion = delta.to_track_quat("Z", "Y")
+        obj.scale = (thickness, thickness, delta.length / template_dimensions.z)
+        obj.data.materials.clear()
+        obj.data.materials.append(material)
+
+    second_link = template.copy()
+    second_link.data = template.data.copy()
+    bpy.context.collection.objects.link(second_link)
+    place_link(template, "FirstLink", base, elbow, 1.58, first_material)
+    place_link(second_link, "SecondLink", elbow, tip, 1.34, second_material)
+
+    cylinder("Workspace", (0, 0, 0.04), 3.75, 0.08,
+             make_material("Workspace", ROBOT_BASE, roughness=0.70), vertices=72)
+    cylinder("Base", (0, 0, 0.24), 0.74, 0.42,
+             make_material("Base", ROBOT_BASE, roughness=0.32, metallic=0.35), vertices=64)
+    torus("ShoulderAngle", (0, 0, 0.52), 0.92, 0.045, first_material)
+    cylinder("ShoulderJoint", base, 0.43, 0.38, joint_material)
+    torus("ElbowAngle", elbow, 0.62, 0.04, second_material)
+    cylinder("ElbowJoint", elbow, 0.36, 0.34, joint_material)
+    small_sphere("Tip", tip, 0.30,
+                 make_material("TipColor", MARK_RED, roughness=0.30, metallic=0.15))
+    export_glb("robot-arm")
+
+
 BUILDERS = [
     build_sphere_charts,
     build_torus_loops,
@@ -351,6 +455,7 @@ BUILDERS = [
     build_sphere_triangle,
     build_figure_eight,
     build_tangent_plane,
+    build_robot_arm,
 ]
 
 

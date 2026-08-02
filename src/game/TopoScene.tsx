@@ -11,6 +11,7 @@ interface Props {
   showCaption?: boolean
   caption?: string
   assetBase?: string
+  highlight?: string[]
 }
 
 function showFallback(mount: HTMLElement) {
@@ -26,8 +27,10 @@ export function TopoScene({
   showCaption = true,
   caption,
   assetBase = '/game-assets/manifolds',
+  highlight = [],
 }: Props) {
   const mountRef = useRef<HTMLDivElement>(null)
+  const highlightKey = highlight.join('\0')
   const [autoRotate, setAutoRotate] = useState(
     () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   )
@@ -76,10 +79,22 @@ export function TopoScene({
         (gltf) => {
           if (disposed) return
           const root = gltf.scene
+          const highlighted = new Set(highlightKey ? highlightKey.split('\0') : [])
           root.traverse((child) => {
             if (child instanceof THREE.Mesh) {
-              const materials = Array.isArray(child.material) ? child.material : [child.material]
+              const originalMaterials = Array.isArray(child.material) ? child.material : [child.material]
+              const materials = originalMaterials.map((material) => material.clone())
+              child.material = Array.isArray(child.material) ? materials : materials[0]
               for (const material of materials) {
+                if (highlighted.size > 0) {
+                  const selected = highlighted.has(child.name)
+                  material.transparent = true
+                  material.opacity *= selected ? 1 : 0.34
+                  if (selected && material instanceof THREE.MeshStandardMaterial) {
+                    material.emissive.copy(material.color)
+                    material.emissiveIntensity = 0.28
+                  }
+                }
                 if (material.transparent) {
                   material.depthWrite = false
                   child.renderOrder = 1
@@ -153,7 +168,7 @@ export function TopoScene({
       renderer?.dispose()
       showFallback(mount)
     }
-  }, [assetBase, compact, model])
+  }, [assetBase, compact, highlightKey, model])
 
   const toggleRotation = () => {
     autoRotateRef.current = !autoRotateRef.current

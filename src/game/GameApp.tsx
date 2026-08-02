@@ -88,32 +88,64 @@ function supportLabel(support: VerificationSupport): string {
 interface LevelTopoScene {
   model: TopoModelId
   caption: string
+  highlight?: string[]
 }
 
 const topoSceneByLevel: Record<string, LevelTopoScene> = {
   'localcharts-4': {
     model: 'sphere-charts',
     caption: 'A chart can take a point to its drawing and back only inside the colored patch where that chart is valid.',
+    highlight: ['NorthChart'],
   },
   'chartedspaces-5': {
     model: 'sphere-charts',
     caption: 'The amber and teal chart sources overlap and together cover the sphere, just as an atlas covers a surface with local maps.',
-  },
-  'canonicalcharts-3': {
-    model: 'torus-loops',
-    caption: 'The two highlighted loops picture Ada\'s two circle readings. A product chart combines one local chart from each factor.',
+    highlight: ['NorthChart', 'SouthChart'],
   },
   'canonicalcharts-4': {
     model: 'torus-loops',
-    caption: 'A paired position belongs to its product chart because each reading is handled by the corresponding factor chart.',
+    caption: 'The two highlighted loops picture Ada\'s two circle readings. A product chart combines one local chart from each factor.',
+    highlight: ['MeridianLoop', 'LongitudeLoop'],
+  },
+  'canonicalcharts-5': {
+    model: 'torus-loops',
+    caption: 'The surface is emphasized as the home of the paired point, while its two factor loops recede.',
+    highlight: ['Torus'],
   },
   'tangentspaces-1': {
     model: 'tangent-plane',
     caption: 'The attached plane pictures the tangent space at Ada\'s chosen place. Standing still is its zero vector.',
+    highlight: ['Ada', 'TangentPlane'],
   },
   'tangentspaces-2': {
     model: 'tangent-plane',
     caption: 'A tangent-bundle point keeps the location on the surface together with a velocity from the tangent space attached there.',
+    highlight: ['Ada', 'TangentPlane', 'Velocity'],
+  },
+  'mapprojections-1': {
+    model: 'sphere-charts',
+    caption: 'A stereographic chart draws every point except its chosen pole. The missing point is the price of flattening the sphere onto one leaf.',
+    highlight: ['NorthChart'],
+  },
+  'mapprojections-5': {
+    model: 'sphere-charts',
+    caption: 'Each colored chart misses one pole. Because the poles differ, the two chart sources cover the whole sphere.',
+    highlight: ['NorthChart', 'SouthChart'],
+  },
+  'robotarm-1': {
+    model: 'robot-arm',
+    caption: 'The orange displacement ends at the elbow. Adding the teal displacement places the red tip on the work plane.',
+    highlight: ['MA_FirstLink', 'MA_SecondLink', 'MA_Tip'],
+  },
+  'robotarm-3': {
+    model: 'robot-arm',
+    caption: 'Turning the shoulder through a full revolution changes the angle but not either link direction, so the tip returns to the same point.',
+    highlight: ['MA_ShoulderAngle', 'MA_FirstLink', 'MA_SecondLink', 'MA_Tip'],
+  },
+  'robotarm-4': {
+    model: 'robot-arm',
+    caption: 'Small changes at either circular joint produce small changes at the tip. The final proof states that this forward-kinematics map is continuous.',
+    highlight: ['MA_ShoulderAngle', 'MA_ElbowAngle', 'MA_FirstLink', 'MA_SecondLink', 'MA_Tip'],
   },
 }
 
@@ -168,6 +200,47 @@ function DevelopmentBadge({ game }: { game: LeanGame }) {
       <span>WIP</span>
       <span className="game-development-badge-label">Work in progress</span>
     </span>
+  )
+}
+
+function RuntimePreparationBar({
+  verifier,
+  ready,
+  onRetry,
+}: {
+  verifier: LeanGameVerifier
+  ready: boolean
+  onRetry: () => void
+}) {
+  if (ready && verifier.status !== 'error') return null
+  const failed = verifier.status === 'error'
+  return (
+    <section
+      className={`game-runtime-status${failed ? ' game-runtime-status-error' : ''}`}
+      aria-live="polite"
+    >
+      <div className="game-runtime-status-copy">
+        <strong>{failed ? 'Lean stopped while preparing' : 'Preparing local Lean'}</strong>
+        <span>{verifier.progress}</span>
+      </div>
+      {!failed ? (
+        <div
+          className="game-runtime-progress"
+          role="progressbar"
+          aria-label="Preparing local Lean"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={verifier.loadPercent}
+          aria-valuetext={verifier.progress}
+        >
+          <span style={{ width: `${verifier.loadPercent}%` }} />
+        </div>
+      ) : (
+        <button type="button" className="game-runtime-retry" onClick={onRetry}>
+          Try again
+        </button>
+      )}
+    </section>
   )
 }
 
@@ -271,17 +344,17 @@ function VerificationAudit({ game }: { game: LeanGame }) {
     { label: 'Version parity', state: 'partial', detail: `The course targets ${game.source.toolchain}; a reproducible compatibility transform builds it against the exact newer Lean and Mathlib commits used by this browser.` },
   ]
   const manifoldRows: typeof nngRows = [
-    { label: 'Course structure', state: 'ready', detail: 'The course has 6 worlds and 25 levels, from homeomorphisms through charts, atlases, smooth manifolds, products, and tangent bundles.' },
-    { label: 'Difficulty ladder', state: 'ready', detail: 'The ladder moves from projections out of bundled structures to typeclass synthesis and construction of dependent tangent-bundle values.' },
+    { label: 'Course structure', state: 'ready', detail: 'The course has 9 worlds and 40 levels. A six-world main path is joined by optional branches on stereographic projection, circular motion, and robot kinematics.' },
+    { label: 'Difficulty ladder', state: 'ready', detail: 'The main path moves from bundled structures to dependent tangent-bundle values. Optional branches turn the same topology into concrete calculations and constructions.' },
     { label: 'Proof elaboration', state: 'ready', detail: 'Every exercise elaborates in the pinned Mathlib manifold context; the statements use Mathlib structures rather than proxy propositions.' },
     { label: 'Kernel verification', state: 'ready', detail: "Lean's local kernel checks every accepted proof. No proof server is involved." },
-    { label: 'Mathlib API unlocks', state: 'ready', detail: 'Levels unlock actual declarations such as Homeomorph.continuous, mem_chart_source, chartAt_self_eq, IsManifold.of_le, and IsManifold.prod.' },
+    { label: 'Mathlib API unlocks', state: 'ready', detail: 'Levels unlock actual declarations such as Homeomorph.continuous, mem_chart_source, stereographic_source, Circle.exp_add_two_pi, and contMDiff_circleExp.' },
     { label: 'Course theorem unlocks', state: 'ready', detail: 'Each completed exercise also adds its proved ManifoldAdventure theorem to the inventory for later reuse.' },
     { label: 'Reference solutions', state: 'ready', detail: 'The generated BrowserBase contains no course axioms, sorry declarations, or unsafe placeholders.' },
-    { label: 'Pinned source', state: 'ready', detail: 'Compiler, upstream Lean base, and Mathlib revisions are recorded in the verifier metadata and conformance manifest.' },
+    { label: 'Pinned source', state: 'partial', detail: 'Compiler, upstream Lean base, and Mathlib revisions are pinned. Revision r2 invalidates the old numeric-ID conformance record until all 40 levels pass the matching Linux i386 CI gate.' },
     { label: 'Learning prerequisites', state: 'partial', detail: 'The opening worlds introduce Lean notation, but the smooth-manifold worlds assume some topology and linear-algebra vocabulary.' },
     { label: 'Sources', state: 'ready', detail: 'The course links its generated Lean source and recommends Tu, Lee, and Milnor for the surrounding mathematics.' },
-    { label: 'Browser artifacts', state: 'ready', detail: 'The course layer is designed for the pointer-width-compatible native-i386 and WASM artifacts produced by the local Lean fork CI.' },
+    { label: 'Browser artifacts', state: 'partial', detail: 'The graph-aware packager is ready. Publishing the optional branches requires a new fork artifact rooted at the sphere and circle modules, followed by the documented browser gate.' },
     { label: 'Saved progress', state: 'ready', detail: 'The game keeps answers, attempts, completed levels, locks, and rule settings in its own local save.' },
   ]
   const rows = game.id === nngGame.id
@@ -337,6 +410,15 @@ function WorldOverview({
           {game.id === manifoldGame.id && world.id === 'CanonicalCharts' && (
             <Suspense fallback={<p>Loading the local 3D model…</p>}>
               <ManifoldObjectLab />
+            </Suspense>
+          )}
+          {game.id === manifoldGame.id && world.id === 'RobotArm' && (
+            <Suspense fallback={<p>Loading the local 3D model...</p>}>
+              <TopoScene
+                model="robot-arm"
+                caption="Each ring is one circle-valued joint. Reading both rings gives one point of the arm's configuration space."
+                highlight={['MA_ShoulderAngle', 'MA_ElbowAngle']}
+              />
             </Suspense>
           )}
         </article>
@@ -575,6 +657,7 @@ function LevelRewards({
 }) {
   const newTools = [
     ...level.newTactics.map((name) => ({ kind: 'Tactic', name })),
+    ...(level.completionTactics || []).map((name) => ({ kind: 'Completion tactic', name })),
     ...level.newDefinitions.map((name) => ({
       kind: game.id === manifoldGame.id ? 'Mathlib definition' : 'Definition',
       name,
@@ -656,7 +739,16 @@ function LevelWorkspace({
   const world = getWorld(level.world, game)
   const topoScene = topoSceneForLevel(level)
   const levelCompleted = progress.completed.includes(level.id)
-  const isBusy = status === 'loading' || status === 'checking'
+  const levelReady = verifier.isLevelReady(level)
+  const isChecking = status === 'checking'
+  const verifyDisabled = !levelReady || status === 'loading' || status === 'checking' || status === 'error'
+  const verifyTooltip = !levelReady
+    ? `Lean is still preparing this level. ${checkerProgress}`
+    : status === 'checking'
+      ? 'Lean is checking the current proof.'
+      : status === 'error'
+        ? checkerProgress
+        : 'Check this proof with the local Lean kernel.'
 
   useEffect(() => {
     const revision = goalPreviewRevision.current + 1
@@ -743,7 +835,12 @@ function LevelWorkspace({
             <GameMarkdown assetBase={game.assetBase}>{level.introduction}</GameMarkdown>
             {topoScene && (
               <Suspense fallback={<p>Loading the 3D model...</p>}>
-                <TopoScene model={topoScene.model} caption={topoScene.caption} compact />
+                <TopoScene
+                  model={topoScene.model}
+                  caption={topoScene.caption}
+                  highlight={topoScene.highlight}
+                  compact
+                />
               </Suspense>
             )}
           </article>
@@ -864,9 +961,16 @@ function LevelWorkspace({
             />
           </div>
           <div className="proof-actions">
-            <button type="button" className="game-primary-button" onClick={checkAnswer} disabled={isBusy}>
-              {isBusy ? 'Checking...' : 'Verify answer'}
-            </button>
+            <span className="verify-button-tooltip" title={verifyTooltip}>
+              <button
+                type="button"
+                className="game-primary-button"
+                onClick={checkAnswer}
+                disabled={verifyDisabled}
+              >
+                {isChecking ? 'Checking...' : 'Verify answer'}
+              </button>
+            </span>
             {following && levelCompleted && (
               <AppLink
                 href={levelPath(following)}
@@ -884,8 +988,15 @@ function LevelWorkspace({
                 type="button"
                 className="game-secondary-button"
                 onClick={() => setHintIndex((current) => Math.min(level.hints.length - 1, current + 1))}
+                disabled={hintIndex >= level.hints.length - 1}
               >
-                {hintIndex < 0 ? 'Show a hint' : 'Next hint'}
+                {hintIndex < 0
+                  ? 'Show a hint'
+                  : hintIndex === level.hints.length - 2
+                    ? 'Reveal solution hint'
+                    : hintIndex >= level.hints.length - 1
+                      ? 'Solution hint shown'
+                      : 'Next hint'}
               </button>
             )}
             <button
@@ -896,9 +1007,11 @@ function LevelWorkspace({
             >
               {solutionVisible ? 'Hide solution' : 'View solution'}
             </button>
-            <span className={`checker-state checker-state-${status}`}>
-              {checkerProgress}
-            </span>
+            {levelReady && (
+              <span className={`checker-state checker-state-${status}`}>
+                {checkerProgress}
+              </span>
+            )}
           </div>
           {(result || (!goalPreviewPending && goalInspection?.kind !== 'goals' && goalInspection)) && (
             <div className="proof-feedback" aria-live="polite">
@@ -1083,6 +1196,22 @@ export default function GameApp() {
     && progress.rules === 'regular'
     && !canOpenLevel(selectedLevel, completed),
   )
+  const isCatalog = !game
+  const isWorldMap = Boolean(game && !selectedLevel && !selectedWorld)
+  const preparationLevel = selectedLevel && !selectedLevelLocked ? selectedLevel : undefined
+  const { prepareLevel, prepareRuntime, prefetchRuntimeAssets } = verifier
+
+  useEffect(() => {
+    if (isCatalog) {
+      const timeout = window.setTimeout(prefetchRuntimeAssets, 350)
+      return () => window.clearTimeout(timeout)
+    }
+    if (preparationLevel) {
+      void prepareLevel(preparationLevel).catch(() => undefined)
+    } else {
+      void prepareRuntime().catch(() => undefined)
+    }
+  }, [isCatalog, preparationLevel, prefetchRuntimeAssets, prepareLevel, prepareRuntime])
 
   useEffect(() => {
     const previousTitle = document.title
@@ -1134,8 +1263,16 @@ export default function GameApp() {
       [game.id]: updater(current[game.id] || EMPTY_PROGRESS),
     }))
   }
-  const isCatalog = !game
-  const isWorldMap = Boolean(game && !selectedLevel && !selectedWorld)
+  const runtimeReady = preparationLevel
+    ? verifier.isLevelReady(preparationLevel)
+    : verifier.status === 'ready' || verifier.status === 'checking'
+  const retryRuntimePreparation = () => {
+    if (preparationLevel) {
+      void prepareLevel(preparationLevel).catch(() => undefined)
+    } else {
+      void prepareRuntime().catch(() => undefined)
+    }
+  }
 
   return (
     <div className="game-app">
@@ -1207,6 +1344,14 @@ export default function GameApp() {
           </>
         ) : null}
       </header>
+
+      {!isCatalog && (
+        <RuntimePreparationBar
+          verifier={verifier}
+          ready={runtimeReady}
+          onRetry={retryRuntimePreparation}
+        />
+      )}
 
       {isCatalog ? (
         <GameCatalog progressByGame={progressByGame} navigate={navigate} />

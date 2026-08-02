@@ -17,58 +17,45 @@ structures and library theorems they use come directly from pinned Mathlib.
 
 namespace ManifoldAdventure
 
-universe u v w u' v'
+universe u v w u' v' w' u''
 
 open scoped Topology ContDiff
 open Filter ENat
 
 noncomputable def tangent_zero {Scalar : Type u}
-    [scalarField : NontriviallyNormedField Scalar]
-    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
-    [vectorSpace : NormedSpace Scalar Vectors]
+    [NontriviallyNormedField Scalar]
+    {Vectors : Type v} [NormedAddCommGroup Vectors]
+    [NormedSpace Scalar Vectors]
     {Coordinates : Type w}
-    [coordinateTopology : TopologicalSpace Coordinates]
+    [TopologicalSpace Coordinates]
     (model : ModelWithCorners Scalar Vectors Coordinates)
-    {Surface : Type u'} [surfaceTopology : TopologicalSpace Surface]
-    [surfaceCharts : ChartedSpace Coordinates Surface] (place : Surface) :
+    {Surface : Type u'} [TopologicalSpace Surface]
+    [ChartedSpace Coordinates Surface] (place : Surface) :
     TangentSpace model place := by
   exact 0
 
-def tangent_vector_as_bundle_point {Scalar : Type u}
-    [scalarField : NontriviallyNormedField Scalar]
-    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
-    [vectorSpace : NormedSpace Scalar Vectors]
-    {Coordinates : Type w}
-    [coordinateTopology : TopologicalSpace Coordinates]
-    (model : ModelWithCorners Scalar Vectors Coordinates)
-    {Surface : Type u'} [surfaceTopology : TopologicalSpace Surface]
-    [surfaceCharts : ChartedSpace Coordinates Surface]
-    {place : Surface} (velocity : TangentSpace model place) :
-    TangentBundle model Surface := by
-  exact ⟨place, velocity⟩
-
 theorem tangent_bundle_base {Scalar : Type u}
-    [scalarField : NontriviallyNormedField Scalar]
-    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
-    [vectorSpace : NormedSpace Scalar Vectors]
+    [NontriviallyNormedField Scalar]
+    {Vectors : Type v} [NormedAddCommGroup Vectors]
+    [NormedSpace Scalar Vectors]
     {Coordinates : Type w}
-    [coordinateTopology : TopologicalSpace Coordinates]
+    [TopologicalSpace Coordinates]
     (model : ModelWithCorners Scalar Vectors Coordinates)
-    {Surface : Type u'} [surfaceTopology : TopologicalSpace Surface]
-    [surfaceCharts : ChartedSpace Coordinates Surface]
+    {Surface : Type u'} [TopologicalSpace Surface]
+    [ChartedSpace Coordinates Surface]
     {place : Surface} (velocity : TangentSpace model place) :
     (⟨place, velocity⟩ : TangentBundle model Surface).1 = place := by
   rfl
 
 theorem tangent_bundle_has_zero {Scalar : Type u}
-    [scalarField : NontriviallyNormedField Scalar]
-    {Vectors : Type v} [vectorGroup : NormedAddCommGroup Vectors]
-    [vectorSpace : NormedSpace Scalar Vectors]
+    [NontriviallyNormedField Scalar]
+    {Vectors : Type v} [NormedAddCommGroup Vectors]
+    [NormedSpace Scalar Vectors]
     {Coordinates : Type w}
-    [coordinateTopology : TopologicalSpace Coordinates]
+    [TopologicalSpace Coordinates]
     (model : ModelWithCorners Scalar Vectors Coordinates)
-    {Surface : Type u'} [surfaceTopology : TopologicalSpace Surface]
-    [surfaceCharts : ChartedSpace Coordinates Surface] (place : Surface) :
+    {Surface : Type u'} [TopologicalSpace Surface]
+    [ChartedSpace Coordinates Surface] (place : Surface) :
     ∃ bundlePoint : TangentBundle model Surface, bundlePoint.1 = place := by
   refine ⟨⟨place, tangent_zero model place⟩, ?_⟩
   rfl

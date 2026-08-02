@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { TopoScene } from './TopoScene'
-import { topoModels, type TopoModelId } from './topo-models'
+import { topologyGalleryModelIds, topoModels, type TopoModelId } from './topo-models'
 import './ManifoldObjectLab.css'
 
 interface Props {
@@ -23,7 +23,7 @@ export function ManifoldObjectLab({ initialObject = 'sphere-charts', compact = f
         </div>
       </div>
       <div className="manifold-object-tabs" role="tablist" aria-label="Choose a shape">
-        {(Object.keys(topoModels) as TopoModelId[]).map((object) => (
+        {topologyGalleryModelIds.map((object) => (
           <button
             type="button"
             role="tab"
@@ -31,7 +31,7 @@ export function ManifoldObjectLab({ initialObject = 'sphere-charts', compact = f
             onClick={() => setSelected(object)}
             key={object}
           >
-            {topoModels[object].label}
+            {topoModels[object].label}{topoModels[object].outlook ? ' (outlook)' : ''}
           </button>
         ))}
       </div>
