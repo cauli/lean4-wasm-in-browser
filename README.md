@@ -229,8 +229,9 @@ It packages only the transitive closure rooted at
 `Mathlib.Geometry.Manifold.IsManifold.Basic`, not full Mathlib. See
 [`deploy/DEPLOY.md`](deploy/DEPLOY.md#browser-mathlib-artifact) for the pinned
 run, artifact name, and download command used by this web project. The latest
-corrected course artifact is available from [web integration run `30722723778`](https://github.com/cauli/lean4-wasm-in-browser/actions/runs/30722723778),
-and the complete static deployment bundle is the
+course artifact, with its inventory checker compiled once into the first world,
+is available from [web integration run `30743932602`](https://github.com/cauli/lean4-wasm-in-browser/actions/runs/30743932602).
+The complete static deployment bundle is still the
 [`pages-assets-manifold-b6428ed` release](https://github.com/cauli/lean4-wasm-in-browser/releases/tag/pages-assets-manifold-b6428ed).
 
 ```bash

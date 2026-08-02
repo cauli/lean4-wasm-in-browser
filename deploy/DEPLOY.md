@@ -76,15 +76,17 @@ each world's new dependencies as a separate layer. The first world is
 standalone; it does not depend on the Real Analysis package.
 
 The current compiled course layer comes from
-[web integration run `30722723778`](https://github.com/cauli/lean4-wasm-in-browser/actions/runs/30722723778).
+[web integration run `30743932602`](https://github.com/cauli/lean4-wasm-in-browser/actions/runs/30743932602).
 Its artifact is
 `manifold-layer-62b6a2291302d4bbeace37642a066b7510d0145c` and contains
 `manifold-layer.json`, six world manifests, six world library directories, and
-the kernel conformance record. The Homeomorphisms layer is 218 MiB compressed;
-the six layers together are 330 MiB in 58 packs. Download it with:
+the kernel conformance record. It also contains the precompiled browser policy
+module in the first world, including executable IR. The Homeomorphisms layer is
+218 MiB compressed; the six layers together are 330 MiB in 58 packs. Download
+it with:
 
 ```bash
-gh run download 30722723778 \
+gh run download 30743932602 \
   -R cauli/lean4-wasm-in-browser \
   -n manifold-layer-62b6a2291302d4bbeace37642a066b7510d0145c \
   -D /tmp/manifold-browser-layer

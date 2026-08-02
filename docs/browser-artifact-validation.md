@@ -112,6 +112,66 @@ Separate these stages in the trace:
 This distinction matters. A page can display every module as loaded while Lean
 is still compiling the generated proof module.
 
+## Precompiled inventory policy
+
+The Manifold course enforces its unlock rules twice. TypeScript catches obvious
+mistakes quickly, while Lean checks the parsed tactic syntax before elaborating
+the proof. The Lean check is authoritative because it resolves declarations in
+the imported Mathlib environment.
+
+The old generator copied that recursive Lean checker into every temporary proof
+file. Each edit therefore asked the browser compiler to compile the checker as
+well as the student's few lines. The replacement divides the work this way:
+
+- `lean/ManifoldAdventure/BrowserPolicy.lean` owns the syntax walk, declaration
+  resolution, and inventory error messages;
+- `src/game/mathlib-verification-source.ts` sends the eight level-specific name
+  sets as newline-delimited strings;
+- each generated world publicly imports the policy module;
+- `scripts/build-manifold-course.sh` compiles the policy before the worlds;
+- `scripts/create-manifold-layer-index.mjs` refuses a first-world package that
+  lacks `BrowserPolicy.olean`, `BrowserPolicy.ir`, or `BrowserPolicy.ir.sig`.
+
+A generated attempt now has this shape:
+
+```lean
+import ManifoldAdventure.Homeomorphisms
+
+namespace ManifoldAdventure
+
+theorem browser_challenge ... := by
+  manifold_browser_user
+    "allowed keywords"
+    "allowed tactics"
+    "known tactics"
+    "disabled tactics"
+    "allowed declarations"
+    "known declarations"
+    "disabled declarations"
+    "this level's declaration"
+    exact trailMap.continuous
+
+end ManifoldAdventure
+```
+
+`tacticSeqIndentGt` gives the user proof a strict indentation boundary. This is
+important for live goals: the wrapper must not consume the verifier's following
+`all_goals` and `trace_state` commands when the editor is empty.
+
+Run the native contract before requesting a browser artifact:
+
+```bash
+node scripts/create-manifold-game.mjs
+bash scripts/build-manifold-course.sh /tmp/manifold-mathlib4
+MATHLIB_ROOT=/tmp/manifold-mathlib4 node scripts/verify-manifold-references.mjs
+```
+
+That command checks all 25 reference solutions, an empty live-goal preview,
+self-reference rejection, and locked-declaration rejection. A local compiler
+whose commit differs from the browser pin may run these checks, but it does not
+overwrite the pinned conformance record. The exact native-i386 compiler in
+`build-manifold-layer.yml` produces the publishable record and browser files.
+
 ## Incident record: Manifold inventory overflow
 
 On 2026-08-02, Homeomorphisms level 1 reproduced `RangeError: Maximum call
