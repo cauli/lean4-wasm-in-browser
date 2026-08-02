@@ -260,6 +260,7 @@ test('the unlock ladder exposes real Mathlib declarations and Lean tactics', () 
     'unfold',
     'fun_prop',
     'calc',
+    'have',
     'obtain',
     'rcases',
   ])

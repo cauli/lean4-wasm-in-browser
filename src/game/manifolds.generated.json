@@ -1544,7 +1544,9 @@
             "Use `abs_sub_le_iff.mpr`, split with `constructor`, then apply `norm_sub_norm_le` to one link and the negative of the other.",
             "*(hidden)* `unfold robot_arm_tip`, then `apply abs_sub_le_iff.mpr`, then `constructor`, then `· have h := norm_sub_norm_le`, then `    ((firstLength : ℂ) * (joints.1 : ℂ))`, then `    (-((secondLength : ℂ) * ((joints.1 * joints.2 : Circle) : ℂ)))`, then `  simpa [Circle.norm_coe, abs_of_nonneg, hFirst, hSecond] using h`, then `· have h := norm_sub_norm_le`, then `    ((secondLength : ℂ) * ((joints.1 * joints.2 : Circle) : ℂ))`, then `    (-((firstLength : ℂ) * (joints.1 : ℂ)))`, then `  simpa [Circle.norm_coe, abs_of_nonneg, hFirst, hSecond, add_comm] using h`"
           ],
-          "newTactics": [],
+          "newTactics": [
+            "have"
+          ],
           "completionTactics": [],
           "hiddenTactics": [],
           "newTheorems": [

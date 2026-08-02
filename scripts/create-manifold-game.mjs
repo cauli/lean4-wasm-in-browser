@@ -1208,6 +1208,7 @@ constructor
             'Absolute value hides two inequalities. Prove the reverse-triangle estimate in both orders.',
             'Use `abs_sub_le_iff.mpr`, split with `constructor`, then apply `norm_sub_norm_le` to one link and the negative of the other.',
           ],
+          newTactics: ['have'],
           newTheorems: ['norm_sub_norm_le', 'abs_sub_le_iff'],
         },
         {
