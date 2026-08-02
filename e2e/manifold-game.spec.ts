@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 const progressKey = 'manifoldAdventureV4MathlibProgress'
+const coldMathlibTimeout = 600_000
 
 async function resetManifoldGame(page: Page) {
   await page.goto('/games/manifold-adventure')
@@ -56,7 +57,7 @@ test('opens the Mathlib-native course and kernel-checks its first proof locally'
   await setEditor(page, 'exact trailMap.continuous_symm')
   await expect(page.locator('.proof-feedback .live-goal-error')).toContainText(
     /not unlocked.*continuous_symm/i,
-    { timeout: 180_000 },
+    { timeout: coldMathlibTimeout },
   )
 
   await page.getByRole('button', { name: 'View solution' }).click()

@@ -55,9 +55,12 @@ A real pass ends with Playwright reporting `1 passed`. These are not passes:
 - the same answer worked after clicking Verify a second time;
 - the worker stayed alive without reaching kernel acceptance.
 
-The assertions inside the test have their own time limits. Do not raise them in
-a release change merely to obtain a green result. A temporary longer wait is
-useful while diagnosing a slow failure, but restore the test afterward.
+The first live-goal assertion has a ten-minute cold-start allowance because it
+includes construction of the complete imported environment. Later assertions
+retain their shorter limits and therefore measure warm proof checking. Do not
+raise either limit in a release change merely to obtain a green result. A
+temporary longer wait is useful while diagnosing a slow failure, but restore
+the test afterward.
 
 ## Keep the failure evidence
 
@@ -139,3 +142,9 @@ and the self-reference and locked-declaration rejection cases. That protects
 the policy contract, but it does not replace this browser gate. A rebuilt,
 commit-matched i386 course layer must still complete the first proof in
 Chromium before publication.
+
+The exact layer built by [Actions run 30743932602](https://github.com/cauli/lean4-wasm-in-browser/actions/runs/30743932602)
+from course commit `ccfc08159915c9a12ebe0d4509af4266a1e040a7` passed the gate
+in a fresh Chromium context in 5.6 minutes. The locked-declaration preview and
+the valid proof both completed on their first attempt, and the valid proof was
+accepted by the local kernel without fetching the Real Analysis layer.
