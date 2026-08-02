@@ -206,7 +206,6 @@ jobs:
           if (c.summary?.total !== 44 || c.verifiedReferenceSolutions?.length !== 44) {
             throw new Error("reference matrix does not cover all 44 levels");
           }
-          const seen = new Set();
           for (const layer of index.layers) {
             const m = JSON.parse(fs.readFileSync(`public/lean-wasm/${layer.manifestFile}`));
             if (m.leanCommit !== process.argv[1] || m.mathlibCommit !== process.argv[2]) {
@@ -215,9 +214,10 @@ jobs:
             if (!m.files.includes(`ManifoldAdventure/${layer.world}.olean`)) {
               throw new Error(`course ${layer.world}.olean is missing`);
             }
-            for (const file of m.files) {
-              if (seen.has(file)) throw new Error(`${file} is duplicated across world layers`);
-              seen.add(file);
+            // Optional sibling worlds can legitimately package the same dependency;
+            // create-manifold-layer-index rejects overlap along a dependency path.
+            if (new Set(m.files).size !== m.files.length) {
+              throw new Error(`${layer.world} contains a duplicate file entry`);
             }
           }
           const first = JSON.parse(fs.readFileSync(
