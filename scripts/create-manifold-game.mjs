@@ -69,6 +69,12 @@ const WORLD_MODULES = {
     courseImports: ['ManifoldAdventure.CircleMotion'],
     openCommands: ['open scoped Topology Manifold ContDiff', 'open Function'],
   },
+  RobotReachability: {
+    module: 'ManifoldAdventure.RobotReachability',
+    mathlibImports: [],
+    courseImports: ['ManifoldAdventure.RobotArm'],
+    openCommands: ['open scoped Topology Manifold ContDiff', 'open Function'],
+  },
 }
 const MATHLIB_DOCS = {
   homeomorph: 'https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html',
@@ -77,6 +83,7 @@ const MATHLIB_DOCS = {
   isManifold: 'https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html',
   sphere: 'https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html',
   circle: 'https://leanprover-community.github.io/mathlib4_docs/Mathlib/Analysis/SpecialFunctions/Complex/Circle.html',
+  normedGroup: 'https://leanprover-community.github.io/mathlib4_docs/Mathlib/Analysis/Normed/Group/Basic.html',
   topologyBasic: 'https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Defs/Basic.html',
 }
 
@@ -90,6 +97,7 @@ const WORLD_PRESENTATION = {
   MapProjections: { optional: true, mapPosition: { x: 820, y: 600 } },
   CircleMotion: { optional: true, mapPosition: { x: 180, y: 1320 } },
   RobotArm: { optional: true, mapPosition: { x: 180, y: 1580 } },
+  RobotReachability: { optional: true, mapPosition: { x: 180, y: 1840 } },
 }
 
 function mathlibDoc(name, page, anchor = name) {
@@ -167,7 +175,7 @@ function makeWorld(id, title, introduction, prerequisites, levels, options = {})
 const game = {
   source: {
     repository: 'https://github.com/cauli/lean4-wasm-in-browser',
-    commit: `mathlib-manifolds-${MATHLIB_COMMIT.slice(0, 10)}-r2`,
+    commit: `mathlib-manifolds-${MATHLIB_COMMIT.slice(0, 10)}-r3`,
     license: 'Apache-2.0 for Mathlib; original course text in this repository',
     toolchain: `cauli/lean4@${LEAN_COMMIT.slice(0, 10)} (upstream ${LEAN_UPSTREAM_COMMIT.slice(0, 10)})`,
     mathlibCommit: MATHLIB_COMMIT,
@@ -1129,6 +1137,132 @@ exact (continuous_const.mul (continuous_subtype_val.comp continuous_fst)).add
             'Continuous.mul',
             'Continuous.add',
           ],
+        },
+      ],
+    ),
+    makeWorld(
+      'RobotReachability',
+      'Can the arm touch it?',
+      `# The ring of reach
+
+Ada sees a crumb on the work surface and asks a practical question before turning either hinge: can the tip touch it at all? The two bars can stretch only so far, and when one is longer, folding the shorter bar leaves a gap near the base.
+
+For nonnegative lengths \`firstLength\` and \`secondLength\`, every endpoint lies between the radii \`|firstLength - secondLength|\` and \`firstLength + secondLength\`. Each link direction is a point of Mathlib's ${mathlibDoc('Circle', MATHLIB_DOCS.circle)}, while the endpoint lies in the complex plane. The interactive lab turns those inequalities into a shaded annulus. Drag the target to see the two inverse-kinematics poses meet at its boundaries.
+
+The three-link switch is an outlook. An extra hinge can close the central gap and turns isolated solutions into a continuous family. The Lean levels keep their formal argument on the two-link arm, where the obstruction is already useful and precise.`,
+      ['RobotArm'],
+      [
+        {
+          title: 'The arm has an outer limit',
+          theoremName: 'robot_tip_norm_le',
+          signature: `(firstLength secondLength : ℝ)
+    (hFirst : 0 ≤ firstLength) (hSecond : 0 ≤ secondLength)
+    (joints : Circle × Circle) :
+    ‖robot_arm_tip firstLength secondLength joints‖ ≤
+      firstLength + secondLength`,
+          introduction: `Ada straightens both bars toward the crumb. Even in this longest pose, the tip cannot travel farther than the two bar lengths added together.
+
+The endpoint is a sum of two complex displacement vectors. The triangle inequality \`norm_add_le\` bounds the norm of their sum by the sum of their norms. Each ${mathlibDoc('Circle', MATHLIB_DOCS.circle)} direction has norm one, recorded by \`Circle.norm_coe\`, so the two terms simplify to the two nonnegative lengths.
+
+**Objective:** Prove that the endpoint is no farther from the base than the sum of the link lengths.`,
+          conclusion: `The outer dashed circle is now a proved limit, not just a feature of the drawing.`,
+          solution: `unfold robot_arm_tip
+calc
+  _ ≤ ‖(firstLength : ℂ) * (joints.1 : ℂ)‖ +
+      ‖(secondLength : ℂ) * ((joints.1 * joints.2 : Circle) : ℂ)‖ := norm_add_le _ _
+  _ = firstLength + secondLength := by
+    simp [Circle.norm_coe, abs_of_nonneg, hFirst, hSecond]`,
+          hints: [
+            'Treat the endpoint as the sum of the two link vectors, then bound the length of that sum.',
+            'Unfold `robot_arm_tip`, use a `calc` block with `norm_add_le`, then simplify the two unit-circle norms.',
+          ],
+          newTactics: ['calc'],
+          newTheorems: ['norm_add_le', 'Circle.norm_coe'],
+        },
+        {
+          title: 'The folded arm leaves a gap',
+          theoremName: 'robot_tip_norm_ge',
+          signature: `(firstLength secondLength : ℝ)
+    (hFirst : 0 ≤ firstLength) (hSecond : 0 ≤ secondLength)
+    (joints : Circle × Circle) :
+    |firstLength - secondLength| ≤
+      ‖robot_arm_tip firstLength secondLength joints‖`,
+          introduction: `Ada folds the second bar back toward the base. If one bar is longer, the shorter one cannot cancel all of it, so a circular gap remains around the hinge.
+
+The reverse triangle inequality appears in Mathlib as ${mathlibDoc('norm_sub_norm_le', MATHLIB_DOCS.normedGroup)}. Since absolute value asks for both orders of subtraction, \`abs_sub_le_iff\` splits the claim into \`firstLength - secondLength ≤ ...\` and its mirror image. Each half uses the same reverse-triangle argument with the bars exchanged.
+
+**Objective:** Prove that the endpoint stays at least the difference of the link lengths away from the base.`,
+          conclusion: `The hole around the base now has the exact lower radius forced by the two bars.`,
+          solution: `unfold robot_arm_tip
+apply abs_sub_le_iff.mpr
+constructor
+· have h := norm_sub_norm_le
+    ((firstLength : ℂ) * (joints.1 : ℂ))
+    (-((secondLength : ℂ) * ((joints.1 * joints.2 : Circle) : ℂ)))
+  simpa [Circle.norm_coe, abs_of_nonneg, hFirst, hSecond] using h
+· have h := norm_sub_norm_le
+    ((secondLength : ℂ) * ((joints.1 * joints.2 : Circle) : ℂ))
+    (-((firstLength : ℂ) * (joints.1 : ℂ)))
+  simpa [Circle.norm_coe, abs_of_nonneg, hFirst, hSecond, add_comm] using h`,
+          hints: [
+            'Absolute value hides two inequalities. Prove the reverse-triangle estimate in both orders.',
+            'Use `abs_sub_le_iff.mpr`, split with `constructor`, then apply `norm_sub_norm_le` to one link and the negative of the other.',
+          ],
+          newTheorems: ['norm_sub_norm_le', 'abs_sub_le_iff'],
+        },
+        {
+          title: 'Every pose stays in the ring',
+          theoremName: 'robot_tip_mem_reach_annulus',
+          signature: `(firstLength secondLength : ℝ)
+    (hFirst : 0 ≤ firstLength) (hSecond : 0 ≤ secondLength)
+    (joints : Circle × Circle) :
+    |firstLength - secondLength| ≤
+        ‖robot_arm_tip firstLength secondLength joints‖ ∧
+      ‖robot_arm_tip firstLength secondLength joints‖ ≤
+        firstLength + secondLength`,
+          introduction: `Ada lays the two limits over the work surface. Every pose of the arm must land in the ring between them.
+
+The goal is the conjunction of the lower and upper bounds from the previous levels. Each endpoint still comes from two ${mathlibDoc('Circle', MATHLIB_DOCS.circle)}-valued joints. This is where the two inequalities become one reusable description of the arm's workspace obstruction. Split the conjunction and cite the course declarations you have just proved.
+
+**Objective:** Combine the two radius bounds to show that every endpoint lies in the closed annulus.`,
+          conclusion: `Every configuration on the torus now maps into the shaded ring.`,
+          solution: `constructor
+· exact robot_tip_norm_ge firstLength secondLength hFirst hSecond joints
+· exact robot_tip_norm_le firstLength secondLength hFirst hSecond joints`,
+          hints: [
+            'The two halves of this conjunction are exactly the previous two course declarations.',
+            'Use `constructor`, then apply `robot_tip_norm_ge` and `robot_tip_norm_le`.',
+          ],
+        },
+        {
+          title: 'Outside the ring is out of reach',
+          theoremName: 'robot_target_outside_annulus_unreachable',
+          signature: `(firstLength secondLength : ℝ)
+    (hFirst : 0 ≤ firstLength) (hSecond : 0 ≤ secondLength)
+    (point : ℂ)
+    (outside : ‖point‖ < |firstLength - secondLength| ∨
+      firstLength + secondLength < ‖point‖) :
+    ¬ ∃ joints : Circle × Circle,
+      robot_arm_tip firstLength secondLength joints = point`,
+          introduction: `Ada places the crumb outside the shaded ring. No amount of turning can make the tip land there: either the crumb is inside the folded gap or it lies beyond both bars.
+
+Reachability is written as an existential statement: some \`joints : Circle × Circle\` send the tip to \`point\`, with ${mathlibDoc('Circle', MATHLIB_DOCS.circle)} carrying each joint angle modulo a full turn. Assume such joints exist, replace \`point\` with their endpoint, then split the two ways \`outside\` can hold. Each branch contradicts one of the bounds already proved. The lab constructs poses for interior targets; this level proves the complementary obstruction in Lean.
+
+**Objective:** Prove that a target outside the annulus has no inverse-kinematics solution.`,
+          conclusion: `Ada can now reject an impossible target before moving either hinge.`,
+          solution: `intro reaches
+obtain ⟨joints, rfl⟩ := reaches
+rcases outside with tooClose | tooFar
+· exact (not_lt_of_ge
+    (robot_tip_norm_ge firstLength secondLength hFirst hSecond joints)) tooClose
+· exact (not_lt_of_ge
+    (robot_tip_norm_le firstLength secondLength hFirst hSecond joints)) tooFar`,
+          hints: [
+            'Assume a reaching configuration exists, substitute its endpoint for the target, then contradict the appropriate radius bound.',
+            'Use `intro`, unpack the existential with `obtain`, split `outside` with `rcases`, and close each branch with `not_lt_of_ge`.',
+          ],
+          newTactics: ['obtain', 'rcases'],
+          newTheorems: ['not_lt_of_ge'],
         },
       ],
     ),

@@ -26,6 +26,7 @@ import {
 } from './game-data'
 import { GameMarkdown } from './GameMarkdown'
 import type { TopoModelId } from './topo-models'
+import type { RobotWorkspaceFocus } from './RobotWorkspaceLab'
 import { CourseWorldTree, GameInventoryOverview, NaturalNumberWorldTree } from './WorldTree'
 import {
   useLeanGameVerifier,
@@ -37,6 +38,7 @@ import {
 import './GameApp.css'
 
 const ManifoldObjectLab = lazy(() => import('./ManifoldObjectLab'))
+const RobotWorkspaceLab = lazy(() => import('./RobotWorkspaceLab'))
 const TopoScene = lazy(() => import('./TopoScene'))
 
 declare global {
@@ -152,6 +154,13 @@ const topoSceneByLevel: Record<string, LevelTopoScene> = {
 function topoSceneForLevel(level: GameLevel): LevelTopoScene | undefined {
   if (level.gameId !== manifoldGame.id) return undefined
   return topoSceneByLevel[level.id]
+}
+
+const robotWorkspaceFocusByLevel: Record<string, RobotWorkspaceFocus> = {
+  'robotreachability-1': 'outer',
+  'robotreachability-2': 'inner',
+  'robotreachability-3': 'annulus',
+  'robotreachability-4': 'unreachable',
 }
 
 function canOpenLevel(level: GameLevel, completed: Set<string>): boolean {
@@ -344,14 +353,14 @@ function VerificationAudit({ game }: { game: LeanGame }) {
     { label: 'Version parity', state: 'partial', detail: `The course targets ${game.source.toolchain}; a reproducible compatibility transform builds it against the exact newer Lean and Mathlib commits used by this browser.` },
   ]
   const manifoldRows: typeof nngRows = [
-    { label: 'Course structure', state: 'ready', detail: 'The course has 9 worlds and 40 levels. A six-world main path is joined by optional branches on stereographic projection, circular motion, and robot kinematics.' },
+    { label: 'Course structure', state: 'ready', detail: 'The course has 10 worlds and 44 levels. A six-world main path is joined by optional branches on stereographic projection, circular motion, robot kinematics, and reachability.' },
     { label: 'Difficulty ladder', state: 'ready', detail: 'The main path moves from bundled structures to dependent tangent-bundle values. Optional branches turn the same topology into concrete calculations and constructions.' },
     { label: 'Proof elaboration', state: 'ready', detail: 'Every exercise elaborates in the pinned Mathlib manifold context; the statements use Mathlib structures rather than proxy propositions.' },
     { label: 'Kernel verification', state: 'ready', detail: "Lean's local kernel checks every accepted proof. No proof server is involved." },
     { label: 'Mathlib API unlocks', state: 'ready', detail: 'Levels unlock actual declarations such as Homeomorph.continuous, mem_chart_source, stereographic_source, Circle.exp_add_two_pi, and contMDiff_circleExp.' },
     { label: 'Course theorem unlocks', state: 'ready', detail: 'Each completed exercise also adds its proved ManifoldAdventure theorem to the inventory for later reuse.' },
     { label: 'Reference solutions', state: 'ready', detail: 'The generated BrowserBase contains no course axioms, sorry declarations, or unsafe placeholders.' },
-    { label: 'Pinned source', state: 'partial', detail: 'Compiler, upstream Lean base, and Mathlib revisions are pinned. Revision r2 invalidates the old numeric-ID conformance record until all 40 levels pass the matching Linux i386 CI gate.' },
+    { label: 'Pinned source', state: 'partial', detail: 'Compiler, upstream Lean base, and Mathlib revisions are pinned. Revision r3 invalidates the old numeric-ID conformance record until all 44 levels pass the matching Linux i386 CI gate.' },
     { label: 'Learning prerequisites', state: 'partial', detail: 'The opening worlds introduce Lean notation, but the smooth-manifold worlds assume some topology and linear-algebra vocabulary.' },
     { label: 'Sources', state: 'ready', detail: 'The course links its generated Lean source and recommends Tu, Lee, and Milnor for the surrounding mathematics.' },
     { label: 'Browser artifacts', state: 'partial', detail: 'The graph-aware packager is ready. Publishing the optional branches requires a new fork artifact rooted at the sphere and circle modules, followed by the documented browser gate.' },
@@ -419,6 +428,11 @@ function WorldOverview({
                 caption="Each ring is one circle-valued joint. Reading both rings gives one point of the arm's configuration space."
                 highlight={['MA_ShoulderAngle', 'MA_ElbowAngle']}
               />
+            </Suspense>
+          )}
+          {game.id === manifoldGame.id && world.id === 'RobotReachability' && (
+            <Suspense fallback={<p>Loading the reachability lab...</p>}>
+              <RobotWorkspaceLab allowThreeLinks />
             </Suspense>
           )}
         </article>
@@ -738,6 +752,7 @@ function LevelWorkspace({
   const following = nextLevel(level)
   const world = getWorld(level.world, game)
   const topoScene = topoSceneForLevel(level)
+  const robotWorkspaceFocus = robotWorkspaceFocusByLevel[level.id]
   const levelCompleted = progress.completed.includes(level.id)
   const levelReady = verifier.isLevelReady(level)
   const isChecking = status === 'checking'
@@ -841,6 +856,11 @@ function LevelWorkspace({
                   highlight={topoScene.highlight}
                   compact
                 />
+              </Suspense>
+            )}
+            {robotWorkspaceFocus && (
+              <Suspense fallback={<p>Loading the reachability lab...</p>}>
+                <RobotWorkspaceLab focus={robotWorkspaceFocus} compact />
               </Suspense>
             )}
           </article>

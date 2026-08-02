@@ -22,8 +22,8 @@ and upload the release asset and point the workflow at it:
 ```bash
 # First run "build Manifold Adventure browser layer" in Actions. Its defaults
 # select the exact Lean 62b6 native-i386 artifact and the matching, prebuilt
-# browser Mathlib closure. Copy the downloaded manifold-layer.json, nine world
-# manifests, and nine world library directories into public/lean-wasm/. Copy
+# browser Mathlib closure. Copy the downloaded manifold-layer.json, ten world
+# manifests, and ten world library directories into public/lean-wasm/. Copy
 # manifolds.conformance.json into src/game/ so the UI can trust the new IDs.
 bash deploy/pack-pages-assets.sh
 gh release create pages-assets-<ver> --title "Pages static assets" \
@@ -87,7 +87,7 @@ authenticates the manifest and all packs.
 This repository's
 [`build-manifold-layer.yml`](../.github/workflows/build-manifold-layer.yml)
 downloads that closure, verifies its checksums and pins, unpacks it, compiles
-the nine graph-linked `ManifoldAdventure` world modules with the matching native
+the ten graph-linked `ManifoldAdventure` world modules with the matching native
 i386 toolchain, checks all reference solutions in Lean's kernel, and packages
 each world's new dependencies as a separate layer. The first world is
 standalone; it does not depend on the Real Analysis package.

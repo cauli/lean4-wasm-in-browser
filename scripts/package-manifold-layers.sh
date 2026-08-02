@@ -9,12 +9,12 @@ ASSET_ROOT="$PWD/public/lean-wasm"
 WORLD_SLUGS=(
   homeomorphisms local-charts charted-spaces
   canonical-charts smooth-manifolds tangent-spaces
-  map-projections circle-motion robot-arm
+  map-projections circle-motion robot-arm robot-reachability
 )
 WORLD_MODULES=(
   Homeomorphisms LocalCharts ChartedSpaces
   CanonicalCharts SmoothManifolds TangentSpaces
-  MapProjections CircleMotion RobotArm
+  MapProjections CircleMotion RobotArm RobotReachability
 )
 # These are transitive artifact dependencies, not merely the visible course
 # edges. A branch receives the declarations and Mathlib files it builds on,
@@ -29,6 +29,7 @@ WORLD_BASE_SLUGS=(
   "homeomorphisms,local-charts"
   "homeomorphisms,local-charts,charted-spaces,canonical-charts,smooth-manifolds"
   "homeomorphisms,local-charts,charted-spaces,canonical-charts,smooth-manifolds,circle-motion"
+  "homeomorphisms,local-charts,charted-spaces,canonical-charts,smooth-manifolds,circle-motion,robot-arm"
 )
 
 for INDEX in "${!WORLD_SLUGS[@]}"; do

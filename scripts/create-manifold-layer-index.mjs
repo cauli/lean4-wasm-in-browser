@@ -20,6 +20,7 @@ const layers = [
   ['MapProjections', 'map-projections', 'map projections', ['LocalCharts'], ['homeomorphisms', 'local-charts']],
   ['CircleMotion', 'circle-motion', 'circular motion', ['SmoothManifolds'], ['homeomorphisms', 'local-charts', 'charted-spaces', 'canonical-charts', 'smooth-manifolds']],
   ['RobotArm', 'robot-arm', 'robot arm', ['CircleMotion'], ['homeomorphisms', 'local-charts', 'charted-spaces', 'canonical-charts', 'smooth-manifolds', 'circle-motion']],
+  ['RobotReachability', 'robot-reachability', 'robot reachability', ['RobotArm'], ['homeomorphisms', 'local-charts', 'charted-spaces', 'canonical-charts', 'smooth-manifolds', 'circle-motion', 'robot-arm']],
 ].map(([world, slug, label, prerequisites, artifactBases]) => ({
   world,
   module: `ManifoldAdventure.${world}`,

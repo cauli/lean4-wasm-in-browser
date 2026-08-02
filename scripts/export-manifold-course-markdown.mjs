@@ -130,25 +130,29 @@ const lines = [
   '',
   `**Caption:** ${course.caption}`,
   '',
-  '## Revision notes (r2)',
+  '## Revision notes (r3)',
   '',
   '- Every level now has a conceptual hint, a tool hint, and a hidden solution hint.',
   '- New levels exercise the inverse side of a partial chart, both directions of the self-atlas equivalence, an actual transition map, and stereographic source membership.',
   '- Definition-only exercises that accepted any well-typed term were removed from Tangent Spaces and Robot Arm.',
   '- Repeated 3D assets now use different named-object highlights, and the robot arm opens its own world.',
   '- Completing the final robot proof grants `fun_prop`; it is not available while solving that level.',
-  '- The course revision changed, so the old numeric-ID conformance record is ignored until exact pinned CI checks r2.',
+  '- A new optional reachability world proves the two radial obstructions for a planar two-link arm and includes an interactive annulus lab in every lesson.',
+  '- The world overview lets reviewers compare two and three links. The three-link mode is explicitly marked as an outlook rather than part of the four Lean goals.',
+  '- The course revision changed, so the old numeric-ID conformance record is ignored until exact pinned CI checks r3.',
   '',
   '## Course map',
   '',
-  '| World | Levels | Prerequisite | 3D content |',
+  '| World | Levels | Prerequisite | Interactive content |',
   '| --- | ---: | --- | --- |',
   ...course.worlds.map((world, index) => {
     const modelLevels = world.levels.filter((level) => modelByLevel[level.id])
     const lab = world.id === 'CanonicalCharts'
+    const robotWorkspaceLab = world.id === 'RobotReachability'
     const modelSummary = [
       ...(lab ? ['seven-model explorer'] : []),
       ...(world.id === 'RobotArm' ? ['1 world scene'] : []),
+      ...(robotWorkspaceLab ? ['reachability lab in overview and 4 lessons'] : []),
       ...(modelLevels.length > 0 ? [`${modelLevels.length} lesson scene${modelLevels.length === 1 ? '' : 's'}`] : []),
     ].join('; ') || 'None'
     const prerequisite = world.prerequisites.length > 0
@@ -159,7 +163,7 @@ const lines = [
   '',
   '## 3D model index',
   '',
-  'World 4 opens with a seven-model explorer, and World 9 opens with the robot arm. Individual lessons also embed models:',
+  'World 4 opens with a seven-model explorer, World 9 opens with the robot arm, and World 10 contains an interactive reachability lab. Individual lessons also embed models:',
   '',
   '| Location | Model | Asset |',
   '| --- | --- | --- |',
@@ -221,6 +225,14 @@ for (const [worldIndex, world] of course.worlds.entries()) {
       '',
     )
   }
+  if (world.id === 'RobotReachability') {
+    lines.push(
+      '> **INTERACTIVE LAB: Robot reachability**',
+      '>',
+      '> The world overview lets the reviewer drag a target, change link lengths, and compare two-link inverse kinematics with a three-link outlook. The lesson versions focus the same instrument on the theorem at hand.',
+      '',
+    )
+  }
 
   for (const level of world.levels) {
     const model = modelByLevel[level.id]
@@ -240,6 +252,14 @@ for (const [worldIndex, world] of course.worlds.entries()) {
           'This interactive scene appears immediately after the lesson introduction.',
           captionByLevel[level.id],
         ),
+        '',
+      )
+    }
+    if (world.id === 'RobotReachability') {
+      lines.push(
+        '> **INTERACTIVE LAB: Robot reachability**',
+        '>',
+        `> This lesson opens the lab in its ${level.number === 1 ? 'outer-limit' : level.number === 2 ? 'folded-gap' : level.number === 3 ? 'annulus' : 'unreachable-target'} state. Players can still drag the target and change both link lengths.`,
         '',
       )
     }

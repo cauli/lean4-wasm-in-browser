@@ -199,12 +199,12 @@ jobs:
           if (c.validation?.compilerCommit !== process.argv[1]) {
             throw new Error("reference matrix did not use the exact Lean fork compiler");
           }
-          if (index.layers.length !== 9) throw new Error("expected nine world layers");
+          if (index.layers.length !== 10) throw new Error("expected ten world layers");
           if (c.sourceCommit !== course.source.commit) {
             throw new Error("reference matrix belongs to a different course revision");
           }
-          if (c.summary?.total !== 40 || c.verifiedReferenceSolutions?.length !== 40) {
-            throw new Error("reference matrix does not cover all 40 levels");
+          if (c.summary?.total !== 44 || c.verifiedReferenceSolutions?.length !== 44) {
+            throw new Error("reference matrix does not cover all 44 levels");
           }
           const seen = new Set();
           for (const layer of index.layers) {

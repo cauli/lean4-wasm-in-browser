@@ -4,22 +4,24 @@
 > Every level includes the prose, Lean goal, official solution, hints, and unlocks.
 > A **3D MODEL** callout appears wherever the web course displays a 3D scene.
 
-**Course status:** 0/40 reference solutions are recorded against the exact browser compiler for this revision. Native reference checks run separately during development; the exact browser pin remains the release gate.
+**Course status:** 0/44 reference solutions are recorded against the exact browser compiler for this revision. Native reference checks run separately during development; the exact browser pin remains the release gate.
 
 **Caption:** A kernel-checked course on Mathlib topology and manifolds, with optional paths through map projections and robot motion.
 
-## Revision notes (r2)
+## Revision notes (r3)
 
 - Every level now has a conceptual hint, a tool hint, and a hidden solution hint.
 - New levels exercise the inverse side of a partial chart, both directions of the self-atlas equivalence, an actual transition map, and stereographic source membership.
 - Definition-only exercises that accepted any well-typed term were removed from Tangent Spaces and Robot Arm.
 - Repeated 3D assets now use different named-object highlights, and the robot arm opens its own world.
 - Completing the final robot proof grants `fun_prop`; it is not available while solving that level.
-- The course revision changed, so the old numeric-ID conformance record is ignored until exact pinned CI checks r2.
+- A new optional reachability world proves the two radial obstructions for a planar two-link arm and includes an interactive annulus lab in every lesson.
+- The world overview lets reviewers compare two and three links. The three-link mode is explicitly marked as an outlook rather than part of the four Lean goals.
+- The course revision changed, so the old numeric-ID conformance record is ignored until exact pinned CI checks r3.
 
 ## Course map
 
-| World | Levels | Prerequisite | 3D content |
+| World | Levels | Prerequisite | Interactive content |
 | --- | ---: | --- | --- |
 | 1. Homeomorphisms | 4 | None | None |
 | 2. Open partial homeomorphisms | 5 | `Homeomorphisms` | 1 lesson scene |
@@ -30,10 +32,11 @@
 | 7. One pole is missing | 5 | `LocalCharts` | 2 lesson scenes |
 | 8. The dial comes around | 4 | `SmoothManifolds` | None |
 | 9. Two hinges, one reach | 4 | `CircleMotion` | 1 world scene; 3 lesson scenes |
+| 10. Can the arm touch it? | 4 | `RobotArm` | reachability lab in overview and 4 lessons |
 
 ## 3D model index
 
-World 4 opens with a seven-model explorer, and World 9 opens with the robot arm. Individual lessons also embed models:
+World 4 opens with a seven-model explorer, World 9 opens with the robot arm, and World 10 contains an interactive reachability lab. Individual lessons also embed models:
 
 | Location | Model | Asset |
 | --- | --- | --- |
@@ -79,7 +82,7 @@ For the mathematics, continue with Loring Tu's *An Introduction to Manifolds*, J
 ### Formal source
 
 - Repository: https://github.com/cauli/lean4-wasm-in-browser
-- Course source revision: `mathlib-manifolds-de3a9cf330-r2`
+- Course source revision: `mathlib-manifolds-de3a9cf330-r3`
 - Lean toolchain: `cauli/lean4@62b6a22913 (upstream ecf55de08b)`
 - Mathlib commit: `de3a9cf33016bbb6d15880d7680643f7ca2d25ba`
 - License: Apache-2.0 for Mathlib; original course text in this repository
@@ -2354,9 +2357,272 @@ by
 
 Small changes at the hinges now produce small changes at the tip. Now that Ada has built the proof by hand, the course gives her the power tool: with `fun_prop` unlocked, `unfold robot_arm_tip; fun_prop` closes the same goal in one line.
 
+## World 10: Can the arm touch it?
+
+**Prerequisites:** `RobotArm`
+
+### The ring of reach
+
+Ada sees a crumb on the work surface and asks a practical question before turning either hinge: can the tip touch it at all? The two bars can stretch only so far, and when one is longer, folding the shorter bar leaves a gap near the base.
+
+For nonnegative lengths `firstLength` and `secondLength`, every endpoint lies between the radii `|firstLength - secondLength|` and `firstLength + secondLength`. Each link direction is a point of Mathlib's [`Circle`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Analysis/SpecialFunctions/Complex/Circle.html#Circle), while the endpoint lies in the complex plane. The interactive lab turns those inequalities into a shaded annulus. Drag the target to see the two inverse-kinematics poses meet at its boundaries.
+
+The three-link switch is an outlook. An extra hinge can close the central gap and turns isolated solutions into a continuous family. The Lean levels keep their formal argument on the two-link arm, where the obstruction is already useful and precise.
+
+> **INTERACTIVE LAB: Robot reachability**
+>
+> The world overview lets the reviewer drag a target, change link lengths, and compare two-link inverse kinematics with a three-link outlook. The lesson versions focus the same instrument on the theorem at hand.
+
+### 10.1 The arm has an outer limit
+
+- **Level ID:** `robotreachability-1`
+- **Verification:** native reference check required; exact browser record pending
+- **Creates:** `ManifoldAdventure.robot_tip_norm_le` (theorem)
+
+> **INTERACTIVE LAB: Robot reachability**
+>
+> This lesson opens the lab in its outer-limit state. Players can still drag the target and change both link lengths.
+
+#### Lesson
+
+Ada straightens both bars toward the crumb. Even in this longest pose, the tip cannot travel farther than the two bar lengths added together.
+
+The endpoint is a sum of two complex displacement vectors. The triangle inequality `norm_add_le` bounds the norm of their sum by the sum of their norms. Each [`Circle`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Analysis/SpecialFunctions/Complex/Circle.html#Circle) direction has norm one, recorded by `Circle.norm_coe`, so the two terms simplify to the two nonnegative lengths.
+
+#### Human-readable objective
+
+**Objective:** Prove that the endpoint is no farther from the base than the sum of the link lengths.
+
+#### Goal
+
+```lean
+theorem robot_tip_norm_le (firstLength secondLength : ℝ)
+    (hFirst : 0 ≤ firstLength) (hSecond : 0 ≤ secondLength)
+    (joints : Circle × Circle) :
+    ‖robot_arm_tip firstLength secondLength joints‖ ≤
+      firstLength + secondLength := by
+  -- Write your proof here.
+```
+
+#### Official solution
+
+```lean
+by
+  unfold robot_arm_tip
+  calc
+    _ ≤ ‖(firstLength : ℂ) * (joints.1 : ℂ)‖ +
+        ‖(secondLength : ℂ) * ((joints.1 * joints.2 : Circle) : ℂ)‖ := norm_add_le _ _
+    _ = firstLength + secondLength := by
+      simp [Circle.norm_coe, abs_of_nonneg, hFirst, hSecond]
+```
+
+#### Hints
+
+1. Treat the endpoint as the sum of the two link vectors, then bound the length of that sum.
+2. Unfold `robot_arm_tip`, use a `calc` block with `norm_add_le`, then simplify the two unit-circle norms.
+3. *(hidden)* `unfold robot_arm_tip`, then `calc`, then `  _ ≤ ‖(firstLength : ℂ) * (joints.1 : ℂ)‖ +`, then `      ‖(secondLength : ℂ) * ((joints.1 * joints.2 : Circle) : ℂ)‖ := norm_add_le _ _`, then `  _ = firstLength + secondLength := by`, then `    simp [Circle.norm_coe, abs_of_nonneg, hFirst, hSecond]`
+
+#### Unlocks
+
+- **Lean tactics:** `calc`
+- **Mathlib theorems/declarations:** `norm_add_le`, `Circle.norm_coe`
+- **Structures, definitions, and notation:** _None_
+- **Reusable course declaration:** `ManifoldAdventure.robot_tip_norm_le`
+
+#### After the proof
+
+The outer dashed circle is now a proved limit, not just a feature of the drawing.
+
+### 10.2 The folded arm leaves a gap
+
+- **Level ID:** `robotreachability-2`
+- **Verification:** native reference check required; exact browser record pending
+- **Creates:** `ManifoldAdventure.robot_tip_norm_ge` (theorem)
+
+> **INTERACTIVE LAB: Robot reachability**
+>
+> This lesson opens the lab in its folded-gap state. Players can still drag the target and change both link lengths.
+
+#### Lesson
+
+Ada folds the second bar back toward the base. If one bar is longer, the shorter one cannot cancel all of it, so a circular gap remains around the hinge.
+
+The reverse triangle inequality appears in Mathlib as [`norm_sub_norm_le`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Analysis/Normed/Group/Basic.html#norm_sub_norm_le). Since absolute value asks for both orders of subtraction, `abs_sub_le_iff` splits the claim into `firstLength - secondLength ≤ ...` and its mirror image. Each half uses the same reverse-triangle argument with the bars exchanged.
+
+#### Human-readable objective
+
+**Objective:** Prove that the endpoint stays at least the difference of the link lengths away from the base.
+
+#### Goal
+
+```lean
+theorem robot_tip_norm_ge (firstLength secondLength : ℝ)
+    (hFirst : 0 ≤ firstLength) (hSecond : 0 ≤ secondLength)
+    (joints : Circle × Circle) :
+    |firstLength - secondLength| ≤
+      ‖robot_arm_tip firstLength secondLength joints‖ := by
+  -- Write your proof here.
+```
+
+#### Official solution
+
+```lean
+by
+  unfold robot_arm_tip
+  apply abs_sub_le_iff.mpr
+  constructor
+  · have h := norm_sub_norm_le
+      ((firstLength : ℂ) * (joints.1 : ℂ))
+      (-((secondLength : ℂ) * ((joints.1 * joints.2 : Circle) : ℂ)))
+    simpa [Circle.norm_coe, abs_of_nonneg, hFirst, hSecond] using h
+  · have h := norm_sub_norm_le
+      ((secondLength : ℂ) * ((joints.1 * joints.2 : Circle) : ℂ))
+      (-((firstLength : ℂ) * (joints.1 : ℂ)))
+    simpa [Circle.norm_coe, abs_of_nonneg, hFirst, hSecond, add_comm] using h
+```
+
+#### Hints
+
+1. Absolute value hides two inequalities. Prove the reverse-triangle estimate in both orders.
+2. Use `abs_sub_le_iff.mpr`, split with `constructor`, then apply `norm_sub_norm_le` to one link and the negative of the other.
+3. *(hidden)* `unfold robot_arm_tip`, then `apply abs_sub_le_iff.mpr`, then `constructor`, then `· have h := norm_sub_norm_le`, then `    ((firstLength : ℂ) * (joints.1 : ℂ))`, then `    (-((secondLength : ℂ) * ((joints.1 * joints.2 : Circle) : ℂ)))`, then `  simpa [Circle.norm_coe, abs_of_nonneg, hFirst, hSecond] using h`, then `· have h := norm_sub_norm_le`, then `    ((secondLength : ℂ) * ((joints.1 * joints.2 : Circle) : ℂ))`, then `    (-((firstLength : ℂ) * (joints.1 : ℂ)))`, then `  simpa [Circle.norm_coe, abs_of_nonneg, hFirst, hSecond, add_comm] using h`
+
+#### Unlocks
+
+- **Lean tactics:** _None_
+- **Mathlib theorems/declarations:** `norm_sub_norm_le`, `abs_sub_le_iff`
+- **Structures, definitions, and notation:** _None_
+- **Reusable course declaration:** `ManifoldAdventure.robot_tip_norm_ge`
+
+#### After the proof
+
+The hole around the base now has the exact lower radius forced by the two bars.
+
+### 10.3 Every pose stays in the ring
+
+- **Level ID:** `robotreachability-3`
+- **Verification:** native reference check required; exact browser record pending
+- **Creates:** `ManifoldAdventure.robot_tip_mem_reach_annulus` (theorem)
+
+> **INTERACTIVE LAB: Robot reachability**
+>
+> This lesson opens the lab in its annulus state. Players can still drag the target and change both link lengths.
+
+#### Lesson
+
+Ada lays the two limits over the work surface. Every pose of the arm must land in the ring between them.
+
+The goal is the conjunction of the lower and upper bounds from the previous levels. Each endpoint still comes from two [`Circle`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Analysis/SpecialFunctions/Complex/Circle.html#Circle)-valued joints. This is where the two inequalities become one reusable description of the arm's workspace obstruction. Split the conjunction and cite the course declarations you have just proved.
+
+#### Human-readable objective
+
+**Objective:** Combine the two radius bounds to show that every endpoint lies in the closed annulus.
+
+#### Goal
+
+```lean
+theorem robot_tip_mem_reach_annulus (firstLength secondLength : ℝ)
+    (hFirst : 0 ≤ firstLength) (hSecond : 0 ≤ secondLength)
+    (joints : Circle × Circle) :
+    |firstLength - secondLength| ≤
+        ‖robot_arm_tip firstLength secondLength joints‖ ∧
+      ‖robot_arm_tip firstLength secondLength joints‖ ≤
+        firstLength + secondLength := by
+  -- Write your proof here.
+```
+
+#### Official solution
+
+```lean
+by
+  constructor
+  · exact robot_tip_norm_ge firstLength secondLength hFirst hSecond joints
+  · exact robot_tip_norm_le firstLength secondLength hFirst hSecond joints
+```
+
+#### Hints
+
+1. The two halves of this conjunction are exactly the previous two course declarations.
+2. Use `constructor`, then apply `robot_tip_norm_ge` and `robot_tip_norm_le`.
+3. *(hidden)* `constructor`, then `· exact robot_tip_norm_ge firstLength secondLength hFirst hSecond joints`, then `· exact robot_tip_norm_le firstLength secondLength hFirst hSecond joints`
+
+#### Unlocks
+
+- **Lean tactics:** _None_
+- **Mathlib theorems/declarations:** _None_
+- **Structures, definitions, and notation:** _None_
+- **Reusable course declaration:** `ManifoldAdventure.robot_tip_mem_reach_annulus`
+
+#### After the proof
+
+Every configuration on the torus now maps into the shaded ring.
+
+### 10.4 Outside the ring is out of reach
+
+- **Level ID:** `robotreachability-4`
+- **Verification:** native reference check required; exact browser record pending
+- **Creates:** `ManifoldAdventure.robot_target_outside_annulus_unreachable` (theorem)
+
+> **INTERACTIVE LAB: Robot reachability**
+>
+> This lesson opens the lab in its unreachable-target state. Players can still drag the target and change both link lengths.
+
+#### Lesson
+
+Ada places the crumb outside the shaded ring. No amount of turning can make the tip land there: either the crumb is inside the folded gap or it lies beyond both bars.
+
+Reachability is written as an existential statement: some `joints : Circle × Circle` send the tip to `point`, with [`Circle`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Analysis/SpecialFunctions/Complex/Circle.html#Circle) carrying each joint angle modulo a full turn. Assume such joints exist, replace `point` with their endpoint, then split the two ways `outside` can hold. Each branch contradicts one of the bounds already proved. The lab constructs poses for interior targets; this level proves the complementary obstruction in Lean.
+
+#### Human-readable objective
+
+**Objective:** Prove that a target outside the annulus has no inverse-kinematics solution.
+
+#### Goal
+
+```lean
+theorem robot_target_outside_annulus_unreachable (firstLength secondLength : ℝ)
+    (hFirst : 0 ≤ firstLength) (hSecond : 0 ≤ secondLength)
+    (point : ℂ)
+    (outside : ‖point‖ < |firstLength - secondLength| ∨
+      firstLength + secondLength < ‖point‖) :
+    ¬ ∃ joints : Circle × Circle,
+      robot_arm_tip firstLength secondLength joints = point := by
+  -- Write your proof here.
+```
+
+#### Official solution
+
+```lean
+by
+  intro reaches
+  obtain ⟨joints, rfl⟩ := reaches
+  rcases outside with tooClose | tooFar
+  · exact (not_lt_of_ge
+      (robot_tip_norm_ge firstLength secondLength hFirst hSecond joints)) tooClose
+  · exact (not_lt_of_ge
+      (robot_tip_norm_le firstLength secondLength hFirst hSecond joints)) tooFar
+```
+
+#### Hints
+
+1. Assume a reaching configuration exists, substitute its endpoint for the target, then contradict the appropriate radius bound.
+2. Use `intro`, unpack the existential with `obtain`, split `outside` with `rcases`, and close each branch with `not_lt_of_ge`.
+3. *(hidden)* `intro reaches`, then `obtain ⟨joints, rfl⟩ := reaches`, then `rcases outside with tooClose | tooFar`, then `· exact (not_lt_of_ge`, then `    (robot_tip_norm_ge firstLength secondLength hFirst hSecond joints)) tooClose`, then `· exact (not_lt_of_ge`, then `    (robot_tip_norm_le firstLength secondLength hFirst hSecond joints)) tooFar`
+
+#### Unlocks
+
+- **Lean tactics:** `obtain`, `rcases`
+- **Mathlib theorems/declarations:** `not_lt_of_ge`
+- **Structures, definitions, and notation:** _None_
+- **Reusable course declaration:** `ManifoldAdventure.robot_target_outside_annulus_unreachable`
+
+#### After the proof
+
+Ada can now reject an impossible target before moving either hinge.
+
 ## End-state inventory
 
-After completing all 9 worlds, including the optional branches, the player has unlocked the following named Mathlib declarations and Lean tactics.
+After completing all 10 worlds, including the optional branches, the player has unlocked the following named Mathlib declarations and Lean tactics.
 
 ### Tactics
 
@@ -2377,6 +2643,9 @@ After completing all 9 worlds, including the optional branches, the player has u
 - `right`
 - `unfold`
 - `fun_prop`
+- `calc`
+- `obtain`
+- `rcases`
 
 ### Mathlib theorems and declarations
 
@@ -2425,6 +2694,11 @@ After completing all 9 worlds, including the optional branches, the player has u
 - `Continuous.comp`
 - `Continuous.mul`
 - `Continuous.add`
+- `norm_add_le`
+- `Circle.norm_coe`
+- `norm_sub_norm_le`
+- `abs_sub_le_iff`
+- `not_lt_of_ge`
 
 ### Structures, definitions, and notation
 
@@ -2534,3 +2808,7 @@ After completing all 9 worlds, including the optional branches, the player has u
 - `ManifoldAdventure.robot_arm_at_rest`: Both bars point forward
 - `ManifoldAdventure.robot_full_turn_same_tip`: A full shoulder turn reaches the same point
 - `ManifoldAdventure.robot_arm_tip_continuous`: The arm moves without a jump
+- `ManifoldAdventure.robot_tip_norm_le`: The arm has an outer limit
+- `ManifoldAdventure.robot_tip_norm_ge`: The folded arm leaves a gap
+- `ManifoldAdventure.robot_tip_mem_reach_annulus`: Every pose stays in the ring
+- `ManifoldAdventure.robot_target_outside_annulus_unreachable`: Outside the ring is out of reach

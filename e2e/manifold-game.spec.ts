@@ -35,10 +35,10 @@ test('opens the Mathlib-native course and kernel-checks its first proof locally'
   await expect(page.getByRole('heading', {
     name: 'The Manifold Adventure',
   })).toBeVisible()
-  await expect(page.locator('.course-world-graph .tree-world')).toHaveCount(9)
-  await expect(page.locator('.course-world-graph .tree-level')).toHaveCount(40)
-  await expect(page.getByText('9 worlds · 40 levels')).toBeVisible()
-  await expect(page.getByText('optional path')).toHaveCount(3)
+  await expect(page.locator('.course-world-graph .tree-world')).toHaveCount(10)
+  await expect(page.locator('.course-world-graph .tree-level')).toHaveCount(44)
+  await expect(page.getByText('10 worlds · 44 levels')).toBeVisible()
+  await expect(page.getByText('optional path', { exact: true })).toHaveCount(4)
   await expect(page.locator('.game-header').getByLabel('Work in progress')).toBeVisible()
   await expect(page.getByText(/Mathlib's manifold API/).first()).toBeVisible()
   await expect(page.locator('.course-world-graph .tree-world').first()).toHaveClass(/unlocked/)
@@ -98,8 +98,8 @@ test('catalog presents the manifold course as local Mathlib', async ({ page }) =
 
   const card = page.locator('.game-card-manifold-adventure')
   await expect(card.locator('img')).toHaveAttribute('src', '/game-assets/manifolds/cover.svg')
-  await expect(card).toContainText('9 worlds')
-  await expect(card).toContainText('40 levels')
+  await expect(card).toContainText('10 worlds')
+  await expect(card).toContainText('44 levels')
   await expect(card).toContainText('0 browser-kernel levels · local Mathlib')
   await expect(card.getByLabel('Work in progress')).toContainText('WIP')
   await expect(card).toContainText('By this project')
@@ -143,6 +143,23 @@ test('opens the robot world with its configuration-space model', async ({ page }
   await expect(page.getByRole('img', { name: /Interactive 3D model of a Two-joint robot arm/ }))
     .toBeVisible()
   await expect(page.getByText(/Each ring is one circle-valued joint/)).toBeVisible()
+})
+
+test('the reachability world has a course-native interactive workspace lab', async ({ page }) => {
+  await page.goto('/games/manifold-adventure/robotreachability')
+
+  const lab = page.locator('.robot-workspace-lab')
+  await expect(lab).toBeVisible()
+  await expect(lab.getByRole('img', { name: /2-link robot workspace/ })).toBeVisible()
+  await expect(lab).toContainText('Reachable')
+
+  await lab.getByRole('button', { name: 'Three links' }).click()
+  await expect(lab.getByRole('img', { name: /3-link robot workspace/ })).toBeVisible()
+  await expect(lab.getByText('Third link', { exact: false }).first()).toBeVisible()
+  await expect(lab).toContainText('continuous family of poses')
+
+  await lab.getByLabel('Target radius').fill('6.5')
+  await expect(lab).toContainText('Unreachable')
 })
 
 test('level pages embed models alongside matching Mathlib lessons', async ({ page }) => {

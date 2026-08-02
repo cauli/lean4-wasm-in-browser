@@ -603,6 +603,66 @@
       "declaration": "robot_arm_tip_continuous (firstLength secondLength : ℝ) :\n    Continuous (robot_arm_tip firstLength secondLength)",
       "declarationKind": "theorem",
       "referenceTheorem": "ManifoldAdventure.robot_arm_tip_continuous"
+    },
+    "robotreachability-1": {
+      "sourcePath": "lean/ManifoldAdventure/RobotReachability.lean",
+      "fullModule": "ManifoldAdventure.RobotReachability",
+      "contextModule": "ManifoldAdventure.RobotReachability",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology Manifold ContDiff",
+        "open Function"
+      ],
+      "declaration": "robot_tip_norm_le (firstLength secondLength : ℝ)\n    (hFirst : 0 ≤ firstLength) (hSecond : 0 ≤ secondLength)\n    (joints : Circle × Circle) :\n    ‖robot_arm_tip firstLength secondLength joints‖ ≤\n      firstLength + secondLength",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.robot_tip_norm_le"
+    },
+    "robotreachability-2": {
+      "sourcePath": "lean/ManifoldAdventure/RobotReachability.lean",
+      "fullModule": "ManifoldAdventure.RobotReachability",
+      "contextModule": "ManifoldAdventure.RobotReachability",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology Manifold ContDiff",
+        "open Function"
+      ],
+      "declaration": "robot_tip_norm_ge (firstLength secondLength : ℝ)\n    (hFirst : 0 ≤ firstLength) (hSecond : 0 ≤ secondLength)\n    (joints : Circle × Circle) :\n    |firstLength - secondLength| ≤\n      ‖robot_arm_tip firstLength secondLength joints‖",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.robot_tip_norm_ge"
+    },
+    "robotreachability-3": {
+      "sourcePath": "lean/ManifoldAdventure/RobotReachability.lean",
+      "fullModule": "ManifoldAdventure.RobotReachability",
+      "contextModule": "ManifoldAdventure.RobotReachability",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology Manifold ContDiff",
+        "open Function"
+      ],
+      "declaration": "robot_tip_mem_reach_annulus (firstLength secondLength : ℝ)\n    (hFirst : 0 ≤ firstLength) (hSecond : 0 ≤ secondLength)\n    (joints : Circle × Circle) :\n    |firstLength - secondLength| ≤\n        ‖robot_arm_tip firstLength secondLength joints‖ ∧\n      ‖robot_arm_tip firstLength secondLength joints‖ ≤\n        firstLength + secondLength",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.robot_tip_mem_reach_annulus"
+    },
+    "robotreachability-4": {
+      "sourcePath": "lean/ManifoldAdventure/RobotReachability.lean",
+      "fullModule": "ManifoldAdventure.RobotReachability",
+      "contextModule": "ManifoldAdventure.RobotReachability",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology Manifold ContDiff",
+        "open Function"
+      ],
+      "declaration": "robot_target_outside_annulus_unreachable (firstLength secondLength : ℝ)\n    (hFirst : 0 ≤ firstLength) (hSecond : 0 ≤ secondLength)\n    (point : ℂ)\n    (outside : ‖point‖ < |firstLength - secondLength| ∨\n      firstLength + secondLength < ‖point‖) :\n    ¬ ∃ joints : Circle × Circle,\n      robot_arm_tip firstLength secondLength joints = point",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.robot_target_outside_annulus_unreachable"
     }
   }
 }

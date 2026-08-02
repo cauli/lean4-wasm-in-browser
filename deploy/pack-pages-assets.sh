@@ -5,7 +5,7 @@
 #
 #   lean-lib-files.json
 #   real-analysis-layer.json
-#   manifold-layer.json + nine world-layer manifests
+#   manifold-layer.json + ten world-layer manifests
 #   lean-lib/**.olean, **.ir, **.ir.sig
 #   real-analysis-lib/artifacts-*.pack
 #   manifold-<world>-lib/artifacts-*.pack
@@ -37,7 +37,7 @@ rsync -aL --include='artifacts-*.pack' --exclude='*' \
 for SLUG in \
   homeomorphisms local-charts charted-spaces \
   canonical-charts smooth-manifolds tangent-spaces \
-  map-projections circle-motion robot-arm
+  map-projections circle-motion robot-arm robot-reachability
 do
   cp -L \
     "public/lean-wasm/manifold-$SLUG-layer.json" \

@@ -121,11 +121,12 @@ unfinished upstream proofs contain `sorry`, and four large proofs hit the
 browser call-stack limit even in isolated workers. Branch-sensitive `Hint` /
 `Branch` evaluation remains a separate unported GameServer feature.
 
-The **Manifold Adventure** at `/games/manifold-adventure` has 9 worlds and 40
+The **Manifold Adventure** at `/games/manifold-adventure` has 10 worlds and 44
 short kernel-checked exercises. Its main path follows Ada the ant through
 homeomorphisms, local charts, charted spaces, smooth manifolds, and tangent
 spaces using Mathlib's own structures. Optional paths branch into stereographic
-projection, circular motion, and the forward kinematics of a two-joint arm.
+projection, circular motion, the forward kinematics of a two-joint arm, and a
+reachability world with an interactive annulus and three-link outlook.
 Eight 3D teaching models are built in Blender by
 `scripts/blender/build-topo-models.py` (run it inside Blender, e.g. through a
 BlenderMCP socket) and rendered as lazy-loaded interactive Three.js scenes.

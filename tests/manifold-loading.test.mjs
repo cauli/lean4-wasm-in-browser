@@ -78,7 +78,8 @@ test('optional worlds package and load only their graph prerequisites', () => {
   assert.match(layerIndexer, /\['MapProjections',[\s\S]*\['LocalCharts'\]/)
   assert.match(layerIndexer, /\['CircleMotion',[\s\S]*\['SmoothManifolds'\]/)
   assert.match(layerIndexer, /\['RobotArm',[\s\S]*\['CircleMotion'\]/)
-  assert.match(manifoldPackager, /map-projections circle-motion robot-arm/)
+  assert.match(layerIndexer, /\['RobotReachability',[\s\S]*\['RobotArm'\]/)
+  assert.match(manifoldPackager, /map-projections circle-motion robot-arm robot-reachability/)
   assert.match(
     manifoldPackager,
     /homeomorphisms,local-charts,charted-spaces,canonical-charts,smooth-manifolds,circle-motion/,
@@ -89,10 +90,10 @@ test('optional worlds package and load only their graph prerequisites', () => {
     manifoldWorkflow,
     /mathlib_layer_run_id:[\s\S]{0,180}default: "30693760471"/,
   )
-  assert.match(manifoldWorkflow, /index\.layers\.length !== 9/)
-  assert.match(manifoldWorkflow, /verifiedReferenceSolutions\?\.length !== 40/)
-  assert.match(pagesBuilder, /map-projections circle-motion robot-arm/)
-  assert.match(pagesAssetPackager, /map-projections circle-motion robot-arm/)
+  assert.match(manifoldWorkflow, /index\.layers\.length !== 10/)
+  assert.match(manifoldWorkflow, /verifiedReferenceSolutions\?\.length !== 44/)
+  assert.match(pagesBuilder, /map-projections circle-motion robot-arm robot-reachability/)
+  assert.match(pagesAssetPackager, /map-projections circle-motion robot-arm robot-reachability/)
 })
 
 test('the first course layer retains Init files needed by Lean module resolution', () => {

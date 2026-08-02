@@ -27,6 +27,7 @@ COURSE_MODULES=(
   ManifoldAdventure.MapProjections
   ManifoldAdventure.CircleMotion
   ManifoldAdventure.RobotArm
+  ManifoldAdventure.RobotReachability
   ManifoldAdventure.BrowserBase
 )
 

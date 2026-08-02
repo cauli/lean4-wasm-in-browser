@@ -9,6 +9,7 @@ public import ManifoldAdventure.TangentSpaces
 public import ManifoldAdventure.MapProjections
 public import ManifoldAdventure.CircleMotion
 public import ManifoldAdventure.RobotArm
+public import ManifoldAdventure.RobotReachability
 
 @[expose] public section
 

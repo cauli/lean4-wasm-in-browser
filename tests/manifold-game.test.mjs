@@ -40,10 +40,11 @@ test('the Mathlib-native Manifold Adventure has a core path and optional branche
       ['MapProjections', 5],
       ['CircleMotion', 4],
       ['RobotArm', 4],
+      ['RobotReachability', 4],
     ],
   )
-  assert.equal(levels.length, 40)
-  assert.equal(new Set(levels.map((level) => level.id)).size, 40)
+  assert.equal(levels.length, 44)
+  assert.equal(new Set(levels.map((level) => level.id)).size, 44)
   assert.deepEqual(game.worlds[0].prerequisites, [])
 
   for (let index = 1; index < 6; index += 1) {
@@ -56,6 +57,7 @@ test('the Mathlib-native Manifold Adventure has a core path and optional branche
   assert.deepEqual(game.worlds[6].prerequisites, ['LocalCharts'])
   assert.deepEqual(game.worlds[7].prerequisites, ['SmoothManifolds'])
   assert.deepEqual(game.worlds[8].prerequisites, ['CircleMotion'])
+  assert.deepEqual(game.worlds[9].prerequisites, ['RobotArm'])
   assert.ok(game.worlds.slice(6).every((world) => world.optional))
   assert.ok(game.worlds.every((world) => world.mapPosition))
 })
@@ -155,6 +157,10 @@ test('level titles describe moments in Ada\'s story', () => {
       'Both bars point forward',
       'A full shoulder turn reaches the same point',
       'The arm moves without a jump',
+      'The arm has an outer limit',
+      'The folded arm leaves a gap',
+      'Every pose stays in the ring',
+      'Outside the ring is out of reach',
     ],
   )
 })
@@ -253,6 +259,9 @@ test('the unlock ladder exposes real Mathlib declarations and Lean tactics', () 
     'right',
     'unfold',
     'fun_prop',
+    'calc',
+    'obtain',
+    'rcases',
   ])
 
   const introducedTheorems = levels.flatMap((level) => level.newTheorems)
@@ -302,6 +311,11 @@ test('the unlock ladder exposes real Mathlib declarations and Lean tactics', () 
     'Continuous.comp',
     'Continuous.mul',
     'Continuous.add',
+    'norm_add_le',
+    'Circle.norm_coe',
+    'norm_sub_norm_le',
+    'abs_sub_le_iff',
+    'not_lt_of_ge',
   ]
   assert.deepEqual(introducedTheorems, expectedTheorems)
 
@@ -332,11 +346,15 @@ test('each level creates a reusable course declaration without placeholders', ()
 
   const tangentFinal = levels.find((level) => level.theoremName === 'tangent_bundle_has_zero')
   assert.match(tangentFinal.solution, /\btangent_zero model place\b/)
-  const robotFinal = levels.at(-1)
+  const robotFinal = levels.find((level) => level.theoremName === 'robot_arm_tip_continuous')
   assert.equal(robotFinal.theoremName, 'robot_arm_tip_continuous')
   assert.match(robotFinal.solution, /continuous_subtype_val/)
   assert.deepEqual(robotFinal.completionTactics, ['fun_prop'])
   assert.doesNotMatch(robotFinal.newTactics.join(' '), /fun_prop/)
+
+  const reachabilityFinal = levels.at(-1)
+  assert.equal(reachabilityFinal.theoremName, 'robot_target_outside_annulus_unreachable')
+  assert.match(reachabilityFinal.solution, /robot_tip_norm_(?:ge|le)/)
 })
 
 test('the generated verifier maps every challenge to its narrow world module', () => {

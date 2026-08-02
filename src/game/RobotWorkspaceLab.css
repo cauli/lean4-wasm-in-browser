@@ -1,0 +1,253 @@
+.robot-workspace-lab {
+  margin: 1.25rem 0;
+  overflow: hidden;
+  border: 1px solid var(--game-border);
+  border-radius: 0.45rem;
+  background: var(--game-panel);
+  color: var(--game-text);
+}
+
+.robot-workspace-heading {
+  display: flex;
+  min-height: 3.6rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid var(--game-border);
+  background: #fbfcfd;
+}
+
+.robot-workspace-heading > div:first-child {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.robot-workspace-heading span {
+  color: var(--game-dim);
+  font-size: 0.68rem;
+}
+
+.robot-workspace-heading strong {
+  font-size: 0.86rem;
+}
+
+.robot-joint-switch {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--game-border);
+  border-radius: 0.28rem;
+}
+
+.robot-joint-switch button {
+  min-height: 2rem;
+  border: 0;
+  border-right: 1px solid var(--game-border);
+  padding: 0.3rem 0.65rem;
+  background: white;
+  color: var(--game-muted);
+  cursor: pointer;
+  font-size: 0.7rem;
+}
+
+.robot-joint-switch button:last-child {
+  border-right: 0;
+}
+
+.robot-joint-switch button[aria-pressed='true'] {
+  background: var(--game-accent);
+  color: var(--game-accent-ink);
+}
+
+.robot-workspace-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem 1rem;
+  padding: 0.8rem 0.9rem 0.7rem;
+  border-bottom: 1px solid var(--game-border-soft);
+}
+
+.robot-workspace-controls label {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+  color: var(--game-muted);
+  font-size: 0.68rem;
+}
+
+.robot-workspace-controls label > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.robot-workspace-controls output {
+  color: var(--game-text);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+.robot-workspace-controls input[type='range'] {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--game-accent);
+}
+
+.robot-workspace-plot {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: linear-gradient(#ffffff, #f8fafc);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.robot-workspace-axis {
+  stroke: var(--game-border-soft);
+  stroke-width: 1;
+}
+
+.robot-workspace-region {
+  fill: var(--game-accent);
+  fill-opacity: 0.11;
+  fill-rule: evenodd;
+}
+
+.robot-workspace-boundary {
+  fill: none;
+  stroke: #39885a;
+  stroke-dasharray: 7 5;
+  stroke-width: 2;
+}
+
+.robot-workspace-boundary.is-focused {
+  stroke-width: 4;
+}
+
+.robot-arm-pose polyline {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 7;
+}
+
+.robot-arm-pose circle {
+  stroke: white;
+  stroke-width: 2;
+}
+
+.robot-arm-pose-1 polyline {
+  stroke: #1976d2;
+}
+
+.robot-arm-pose-1 circle {
+  fill: #1976d2;
+}
+
+.robot-arm-pose-2 polyline {
+  stroke: #c46620;
+}
+
+.robot-arm-pose-2 circle {
+  fill: #c46620;
+}
+
+.robot-arm-pose-3 polyline {
+  stroke: #1976d2;
+}
+
+.robot-arm-pose-3 circle {
+  fill: #1976d2;
+}
+
+.robot-arm-family-pose {
+  fill: none;
+  stroke: #1976d2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  opacity: 0.1;
+}
+
+.robot-workspace-base {
+  fill: var(--game-text);
+}
+
+.robot-workspace-target circle:first-child {
+  fill: #c13d70;
+  opacity: 0.16;
+}
+
+.robot-workspace-target circle:last-child {
+  fill: #c13d70;
+  stroke: white;
+  stroke-width: 2;
+}
+
+.robot-workspace-label {
+  fill: var(--game-dim);
+  font: 0.68rem Roboto, Arial, sans-serif;
+}
+
+.robot-workspace-status {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: baseline;
+  padding: 0.65rem 0.9rem;
+  border-top: 1px solid var(--game-border-soft);
+  color: var(--game-muted);
+  font-size: 0.72rem;
+}
+
+.robot-workspace-status strong {
+  color: #176a27;
+  font-size: 0.7rem;
+}
+
+.robot-workspace-status.is-unreachable strong {
+  color: var(--game-danger);
+}
+
+.robot-workspace-help {
+  margin: 0;
+  padding: 0 0.9rem 0.7rem;
+  color: var(--game-dim);
+  font-size: 0.65rem;
+  text-align: center;
+}
+
+.robot-workspace-lab-compact {
+  margin: 0.9rem 0 0;
+}
+
+.robot-workspace-lab-compact .robot-workspace-heading {
+  padding: 0.6rem 0.7rem;
+}
+
+.robot-workspace-lab-compact .robot-workspace-controls {
+  gap: 0.5rem 0.75rem;
+  padding: 0.65rem 0.7rem;
+}
+
+.robot-workspace-lab-compact .robot-workspace-status {
+  grid-template-columns: 1fr;
+  gap: 0.18rem;
+  padding: 0.55rem 0.7rem;
+}
+
+@media (max-width: 700px) {
+  .robot-workspace-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .robot-workspace-controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .robot-workspace-lab * {
+    scroll-behavior: auto;
+  }
+}
