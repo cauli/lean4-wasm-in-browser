@@ -29,7 +29,6 @@ trap 'rm -rf "$STAGE"' EXIT
 cp -L public/lean-wasm/lean-lib-files.json "$STAGE/"
 cp -L public/lean-wasm/real-analysis-layer.json "$STAGE/"
 cp -L public/lean-wasm/manifold-layer.json "$STAGE/"
-cp -L public/lean-wasm/manifold-*-layer.json "$STAGE/"
 rsync -aL --prune-empty-dirs --include='*/' \
   --include='*.olean' --include='*.ir' --include='*.ir.sig' --exclude='*' \
   public/lean-wasm/lean-lib/ "$STAGE/lean-lib/"
@@ -39,6 +38,9 @@ for SLUG in \
   homeomorphisms local-charts charted-spaces \
   canonical-charts smooth-manifolds tangent-spaces
 do
+  cp -L \
+    "public/lean-wasm/manifold-$SLUG-layer.json" \
+    "$STAGE/manifold-$SLUG-layer.json"
   rsync -aL --include='artifacts-*.pack' --exclude='*' \
     "public/lean-wasm/manifold-$SLUG-lib/" \
     "$STAGE/manifold-$SLUG-lib/"

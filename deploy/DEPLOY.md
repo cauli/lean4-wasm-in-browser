@@ -94,9 +94,9 @@ gh run download 30743932602 \
 
 The immutable Pages bundle that combines this supplement with the unchanged
 shared Lean and Real Analysis assets is the
-[`pages-assets-manifold-b6428ed` release](https://github.com/cauli/lean4-wasm-in-browser/releases/tag/pages-assets-manifold-b6428ed).
+[`pages-assets-manifold-policy-ccfc081` release](https://github.com/cauli/lean4-wasm-in-browser/releases/tag/pages-assets-manifold-policy-ccfc081).
 Its SHA-256 is
-`a3fd810af68445126b15ecd2e4d0f969b0df11fa437a9cca4365007428ea4719`.
+`0b441e86c41a37c3782b263b7e1217640fc2d0596e6a92f3b952aaf36ded9dcc`.
 
 Before publishing any replacement binary, snapshot, library tree, or packed
 course layer, run the

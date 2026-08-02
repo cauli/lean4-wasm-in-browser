@@ -231,8 +231,8 @@ It packages only the transitive closure rooted at
 run, artifact name, and download command used by this web project. The latest
 course artifact, with its inventory checker compiled once into the first world,
 is available from [web integration run `30743932602`](https://github.com/cauli/lean4-wasm-in-browser/actions/runs/30743932602).
-The complete static deployment bundle is still the
-[`pages-assets-manifold-b6428ed` release](https://github.com/cauli/lean4-wasm-in-browser/releases/tag/pages-assets-manifold-b6428ed).
+The matching static deployment bundle is the
+[`pages-assets-manifold-policy-ccfc081` release](https://github.com/cauli/lean4-wasm-in-browser/releases/tag/pages-assets-manifold-policy-ccfc081).
 
 ```bash
 npm install
