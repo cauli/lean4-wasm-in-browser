@@ -42,6 +42,7 @@ import {
   type ArtifactPackCacheDescriptor,
 } from '../artifact-pack-cache'
 import { createInactivityWatchdog, type InactivityWatchdog } from './inactivity-watchdog.js'
+import { liveGoalsFromDiagnostics } from './live-goals'
 
 export type CheckerStatus = 'idle' | 'loading' | 'ready' | 'checking' | 'error'
 
@@ -250,38 +251,6 @@ function parseDiagnostics(
   return diagnostics
 }
 
-function liveGoalsFromDiagnostics(
-  diagnostics: GameDiagnostic[],
-  traceMarker: string,
-): string[] {
-  const goals: string[] = []
-  let waitingForState = false
-
-  for (const diagnostic of diagnostics) {
-    if (diagnostic.kind !== 'trace') continue
-    const traceLines = diagnostic.message.trim().split('\n').map((line) => line.trim())
-    if (traceLines.length > 0 && traceLines.every((line) => line === traceMarker)) {
-      waitingForState = true
-      continue
-    }
-    if (!waitingForState) continue
-    waitingForState = false
-    if (!diagnostic.message.includes('⊢')) continue
-
-    const state = diagnostic.message.trim()
-    const caseStarts = [...state.matchAll(/^case .+$/gm)].map((match) => match.index || 0)
-    if (caseStarts.length <= 1) {
-      goals.push(state)
-      continue
-    }
-    for (let index = 0; index < caseStarts.length; index += 1) {
-      const goal = state.slice(caseStarts[index], caseStarts[index + 1]).trim()
-      if (goal.includes('⊢')) goals.push(goal)
-    }
-  }
-
-  return [...new Set(goals)]
-}
 
 function inventoryPolicyDiagnostics(diagnostics: GameDiagnostic[]): GameDiagnostic[] {
   return diagnostics
