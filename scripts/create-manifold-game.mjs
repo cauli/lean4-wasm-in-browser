@@ -88,16 +88,15 @@ const MATHLIB_DOCS = {
 }
 
 const WORLD_PRESENTATION = {
-  Homeomorphisms: { mapPosition: { x: 500, y: 120 } },
-  LocalCharts: { mapPosition: { x: 500, y: 360 } },
-  ChartedSpaces: { mapPosition: { x: 500, y: 600 } },
-  CanonicalCharts: { mapPosition: { x: 500, y: 840 } },
-  SmoothManifolds: { mapPosition: { x: 500, y: 1080 } },
-  TangentSpaces: { mapPosition: { x: 500, y: 1320 } },
-  MapProjections: { optional: true, mapPosition: { x: 820, y: 600 } },
-  CircleMotion: { optional: true, mapPosition: { x: 180, y: 1320 } },
-  RobotArm: { optional: true, mapPosition: { x: 180, y: 1580 } },
-  RobotReachability: { optional: true, mapPosition: { x: 180, y: 1840 } },
+  Charts: { mapPosition: { x: 500, y: 120 } },
+  ChartedSpaces: { mapPosition: { x: 500, y: 360 } },
+  CanonicalCharts: { mapPosition: { x: 500, y: 600 } },
+  SmoothManifolds: { mapPosition: { x: 500, y: 840 } },
+  TangentSpaces: { mapPosition: { x: 500, y: 1080 } },
+  MapProjections: { optional: true, mapPosition: { x: 820, y: 360 } },
+  CircleMotion: { optional: true, mapPosition: { x: 180, y: 1080 } },
+  RobotArm: { optional: true, mapPosition: { x: 180, y: 1340 } },
+  RobotReachability: { optional: true, mapPosition: { x: 180, y: 1600 } },
 }
 
 function mathlibDoc(name, page, anchor = name) {
@@ -126,15 +125,21 @@ function hiddenSolutionHint(solution) {
 
 function makeLevel(world, number, level) {
   const lesson = lessonText(level.introduction, level.statementText)
-  const worldModule = WORLD_MODULES[world]
-  if (!worldModule) throw new Error(`No Lean module configured for ${world}.`)
+  // A game world may gather levels from several Lean modules (the opening
+  // world spans Homeomorphisms and LocalCharts). `leanWorld`/`leanNumber`
+  // preserve each level's Lean-side identity: module, source path, and the
+  // id that conformance records and player progress are keyed by.
+  const leanWorld = level.leanWorld || world
+  const worldModule = WORLD_MODULES[leanWorld]
+  if (!worldModule) throw new Error(`No Lean module configured for ${leanWorld}.`)
   if (level.hints.length !== 2) {
     throw new Error(`${world} level ${number} must have a conceptual hint and a tool hint.`)
   }
 
   return {
-    id: `${world.toLowerCase()}-${number}`,
+    id: `${leanWorld.toLowerCase()}-${level.leanNumber ?? number}`,
     world,
+    leanWorld,
     number,
     title: level.title,
     introduction: lesson.introduction,
@@ -172,41 +177,11 @@ function makeWorld(id, title, introduction, prerequisites, levels, options = {})
   }
 }
 
-const game = {
-  source: {
-    repository: 'https://github.com/cauli/lean4-wasm-in-browser',
-    commit: `mathlib-manifolds-${MATHLIB_COMMIT.slice(0, 10)}-r3`,
-    license: 'Apache-2.0 for Mathlib; original course text in this repository',
-    toolchain: `cauli/lean4@${LEAN_COMMIT.slice(0, 10)} (upstream ${LEAN_UPSTREAM_COMMIT.slice(0, 10)})`,
-    mathlibCommit: MATHLIB_COMMIT,
-    importedAt: '2026-07-29T00:00:00.000Z',
-  },
-  title: 'The Manifold Adventure',
-  introduction: `# The Manifold Adventure
-
-Ada is an ant, so she can only inspect her world from the inside. Manifold theory takes the same point of view: understand the whole space through local coordinates.
-
-The main path uses [Mathlib's manifold API](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html) from the start. First come [\`Homeomorph\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html#Homeomorph) and [\`OpenPartialHomeomorph\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph). A [\`ChartedSpace\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#ChartedSpace) supplies an [\`atlas\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#atlas) and a [\`chartAt\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#chartAt) for each point. A [\`ModelWithCorners\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#ModelWithCorners) lets [\`IsManifold\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold) express smooth compatibility, leading to [\`TangentSpace\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentSpace) and [\`TangentBundle\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentBundle). Optional paths apply the same structures to stereographic maps, circular motion, and a two-joint arm.`,
-  information: `The formal sources are in \`lean/ManifoldAdventure/\`. Each world imports the smallest Mathlib area it needs, from homeomorphisms through smooth manifolds, at pinned Mathlib commit \`${MATHLIB_COMMIT}\`.
-
-Hints are staged. The first gives a conceptual nudge, the second names the tool, and the third contains the full solution. A tactic may appear as new in more than one level when optional branches make the first encounter order-dependent.
-
-For the mathematics, continue with Loring Tu's *An Introduction to Manifolds*, John Lee's *Introduction to Smooth Manifolds*, or John Milnor's *Topology from the Differentiable Viewpoint*.`,
-  caption: 'A kernel-checked course on Mathlib topology and manifolds, with optional paths through map projections and robot motion.',
-  coverImage: 'images/cover.svg',
-  worlds: [
-    makeWorld(
-      'Homeomorphisms',
-      'Homeomorphisms',
-      `# One path, two descriptions
-
-Ada begins on a single trail. She can copy the whole route onto one leaf, matching every place on the trail with one place in the drawing.
-
-A ${mathlibDoc('Homeomorph', MATHLIB_DOCS.homeomorph)} is Mathlib's bundled version of such a correspondence. In the goals, \`Trail\` is the actual path, \`Drawing\` is the inked route rather than the whole leaf, and \`trailMap\` connects them. The structure contains an equivalence and continuity proofs in both directions.
-
-This world names its instance assumptions, such as \`trailTopology\`, so the lessons can point at them. Later worlds leave them anonymous, which is ordinary Lean style.`,
-      [],
-      [
+// The original opening worlds' level definitions. The GAME now surfaces a
+// merged five-level opening world, but the Lean modules must keep every
+// declaration exactly as compiled into the deployed artifact layers, so the
+// full lists remain the source for Lean emission below.
+const HOMEOMORPHISM_LEVELS = [
         {
           title: 'The drawing matches the trail',
           theoremName: 'homeomorph_continuous',
@@ -284,20 +259,9 @@ Here \`trailMap\` goes from the actual \`Trail\` to the \`Drawing\`, while \`boo
           newTheorems: ['Homeomorph.trans_apply'],
           newDefinitions: ['Homeomorph.trans'],
         },
-      ],
-    ),
-    makeWorld(
-      'LocalCharts',
-      'Open partial homeomorphisms',
-      `# A chart only sees a patch
+]
 
-The trail soon climbs onto a rounded stone. From where Ada stands she can survey only the patch around her, and no single leaf can record the whole closed surface, so she draws just the part she can see.
-
-Mathlib represents one local chart by ${mathlibDoc('OpenPartialHomeomorph', MATHLIB_DOCS.openPartialHomeomorph)}. In these goals, \`Stone\` is the curved surface, \`Drawing\` is Ada's coordinate picture, and \`chart\` connects only the part she has drawn. It has a \`source\` on the stone, a \`target\` in the drawing, and inverse laws that apply inside the patch.
-
-From this world on, background structure appears in anonymous instance brackets such as \`[TopologicalSpace Stone]\`. World 1 named these assumptions only so its text could point at them.`,
-      ['Homeomorphisms'],
-      [
+const LOCAL_CHART_LEVELS = [
         {
           title: 'Room around every place',
           theoremName: 'local_chart_source_open',
@@ -392,7 +356,71 @@ You have met \`chart.map_source\` and \`chart.left_inv\`. Mathlib names their mi
           newTheorems: ['OpenPartialHomeomorph.map_target', 'OpenPartialHomeomorph.right_inv'],
           newDefinitions: ['And'],
         },
-      ],
+]
+
+// Insert a "by the way" paragraph before a level's closing objective: the
+// vehicle for granting sibling lemmas without a level dedicated to each.
+function withAside(level, aside) {
+  const paragraphs = level.introduction.trim().split(/\n\n+/)
+  const objective = paragraphs.pop()
+  return { ...level, introduction: [...paragraphs, aside.trim(), objective].join('\n\n') }
+}
+
+const CHARTS_WORLD_LEVELS = [
+  { ...HOMEOMORPHISM_LEVELS[0], leanWorld: 'Homeomorphisms', leanNumber: 1 },
+  {
+    ...withAside(HOMEOMORPHISM_LEVELS[3], `Ada will not stop to prove the other directions, but they ride along in the same bundle: \`trailMap.symm\` reads the drawing back onto the trail, its continuity is ${mathlibDoc('Homeomorph.continuous_symm', MATHLIB_DOCS.homeomorph)}, and the round trip law \`trailMap.symm (trailMap place) = place\` is stored as ${mathlibDoc('Homeomorph.symm_apply_apply', MATHLIB_DOCS.homeomorph)}. All three are in the inventory from here on.`),
+    leanWorld: 'Homeomorphisms',
+    leanNumber: 4,
+    newTheorems: ['Homeomorph.trans_apply', 'Homeomorph.continuous_symm', 'Homeomorph.symm_apply_apply'],
+    newDefinitions: ['Homeomorph.trans', 'Homeomorph.symm', 'Eq'],
+  },
+  {
+    ...withAside(LOCAL_CHART_LEVELS[2], `Two chart facts come along without their own levels: the shaded patch \`chart.source\` is open, stored as ${mathlibDoc('OpenPartialHomeomorph.open_source', MATHLIB_DOCS.openPartialHomeomorph)}, and the chart is continuous on that patch, stored as ${mathlibDoc('OpenPartialHomeomorph.continuousOn', MATHLIB_DOCS.openPartialHomeomorph)}. Both are in the inventory.`),
+    leanWorld: 'LocalCharts',
+    leanNumber: 3,
+    newTheorems: ['OpenPartialHomeomorph.map_source', 'OpenPartialHomeomorph.open_source', 'OpenPartialHomeomorph.continuousOn'],
+    newDefinitions: ['OpenPartialHomeomorph.target', 'Membership.mem', 'OpenPartialHomeomorph', 'OpenPartialHomeomorph.source', 'IsOpen', 'ContinuousOn'],
+  },
+  { ...LOCAL_CHART_LEVELS[3], leanWorld: 'LocalCharts', leanNumber: 4 },
+  { ...LOCAL_CHART_LEVELS[4], leanWorld: 'LocalCharts', leanNumber: 5 },
+]
+
+const game = {
+  source: {
+    repository: 'https://github.com/cauli/lean4-wasm-in-browser',
+    commit: `mathlib-manifolds-${MATHLIB_COMMIT.slice(0, 10)}-r4`,
+    license: 'Apache-2.0 for Mathlib; original course text in this repository',
+    toolchain: `cauli/lean4@${LEAN_COMMIT.slice(0, 10)} (upstream ${LEAN_UPSTREAM_COMMIT.slice(0, 10)})`,
+    mathlibCommit: MATHLIB_COMMIT,
+    importedAt: '2026-07-29T00:00:00.000Z',
+  },
+  title: 'The Manifold Adventure',
+  introduction: `# The Manifold Adventure
+
+Ada is an ant, so she can only inspect her world from the inside. Manifold theory takes the same point of view: understand the whole space through local coordinates.
+
+The main path uses [Mathlib's manifold API](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html) from the start. First come [\`Homeomorph\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html#Homeomorph) and [\`OpenPartialHomeomorph\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph). A [\`ChartedSpace\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#ChartedSpace) supplies an [\`atlas\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#atlas) and a [\`chartAt\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#chartAt) for each point. A [\`ModelWithCorners\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#ModelWithCorners) lets [\`IsManifold\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold) express smooth compatibility, leading to [\`TangentSpace\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentSpace) and [\`TangentBundle\`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentBundle). Optional paths apply the same structures to stereographic maps, circular motion, and a two-joint arm.`,
+  information: `The formal sources are in \`lean/ManifoldAdventure/\`. Each world imports the smallest Mathlib area it needs, from homeomorphisms through smooth manifolds, at pinned Mathlib commit \`${MATHLIB_COMMIT}\`.
+
+Hints are staged. The first gives a conceptual nudge, the second names the tool, and the third contains the full solution. A tactic may appear as new in more than one level when optional branches make the first encounter order-dependent.
+
+For the mathematics, continue with Loring Tu's *An Introduction to Manifolds*, John Lee's *Introduction to Smooth Manifolds*, or John Milnor's *Topology from the Differentiable Viewpoint*.`,
+  caption: 'A kernel-checked course on Mathlib topology and manifolds, with optional paths through map projections and robot motion.',
+  coverImage: 'images/cover.svg',
+  worlds: [
+    makeWorld(
+      'Charts',
+      'Homeomorphisms and local charts',
+      `# One path, two descriptions
+
+Ada begins on a single trail. She can copy the whole route onto one leaf, matching every place on the trail with one place in the drawing. A ${mathlibDoc('Homeomorph', MATHLIB_DOCS.homeomorph)} is Mathlib's bundled version of such a correspondence: an equivalence together with continuity proofs in both directions.
+
+The trail soon climbs onto a rounded stone. From where Ada stands she can survey only the patch around her, and no single leaf can record the whole closed surface, so she draws just the part she can see. Mathlib represents one local chart by ${mathlibDoc('OpenPartialHomeomorph', MATHLIB_DOCS.openPartialHomeomorph)}: it has a \`source\` on the stone, a \`target\` in the drawing, and inverse laws that apply inside the patch.
+
+The first two levels name their instance assumptions, such as \`trailTopology\`, so the lessons can point at them. The chart levels leave them anonymous, which is ordinary Lean style.`,
+      [],
+      CHARTS_WORLD_LEVELS,
     ),
     makeWorld(
       'ChartedSpaces',
@@ -402,7 +430,7 @@ You have met \`chart.map_source\` and \`chart.left_inv\`. Mathlib names their mi
 The stone is larger than one patch. Ada carries a stack of leaves, each covering a different part, and keeps them together as her atlas.
 
 The class ${mathlibDoc('ChartedSpace', MATHLIB_DOCS.chartedSpace)} equips a surface with an atlas. The goals call the actual world \`Surface\`, the shared coordinate space \`Coordinates\`, and Ada's location \`place\`. Mathlib often writes the same three objects as \`M\`, \`H\`, and \`x\`.`,
-      ['LocalCharts'],
+      ['Charts'],
       [
         {
           title: 'A leaf for where she stands',
@@ -851,7 +879,7 @@ The course definition \`tangent_zero model place\` gives the standing-still velo
 Ada finds a glass bead near the trail. She wants to copy its surface onto a leaf, but one drawing cannot include the point where she holds the bead. She makes a second drawing from another pole to cover the gap.
 
 Mathlib builds this map as ${mathlibDoc('stereographic', MATHLIB_DOCS.sphere)}, an \`OpenPartialHomeomorph\` from the unit sphere to a flat orthogonal plane. This branch uses the local-chart ideas from the main path on a concrete sphere. It assumes only World 2, and introduces the extra tactics it needs on the way to the covering proof.`,
-      ['LocalCharts'],
+      ['Charts'],
       [
         {
           title: 'The pole stays off the leaf',
@@ -1271,19 +1299,30 @@ rcases outside with tooClose | tooFar
 }
 
 const levels = game.worlds.flatMap((world) => world.levels)
+// The leaves of the course-import graph. Importing them reaches every world
+// module, so all levels can share ONE resident Lean environment: the browser
+// keys environments by the exact header import set, and per-world headers made
+// every world switch re-pay the full multi-minute Mathlib import.
+const importedByOtherWorlds = new Set(
+  Object.values(WORLD_MODULES).flatMap((config) => config.courseImports || []),
+)
+const contextImports = Object.values(WORLD_MODULES)
+  .map(({ module }) => module)
+  .filter((module) => !importedByOtherWorlds.has(module))
 const verifier = {
   baseModule: BASE_MODULE,
   leanCommit: LEAN_COMMIT,
   leanUpstreamCommit: LEAN_UPSTREAM_COMMIT,
   mathlibCommit: MATHLIB_COMMIT,
+  contextImports,
   levels: Object.fromEntries(levels.map((level) => [
     level.id,
     {
       sourcePath: level.sourcePath,
-      fullModule: WORLD_MODULES[level.world].module,
-      contextModule: WORLD_MODULES[level.world].module,
+      fullModule: WORLD_MODULES[level.leanWorld].module,
+      contextModule: WORLD_MODULES[level.leanWorld].module,
       namespaces: [NAMESPACE],
-      openCommands: WORLD_MODULES[level.world].openCommands,
+      openCommands: WORLD_MODULES[level.leanWorld].openCommands,
       declaration: level.statement,
       declarationKind: level.declarationKind,
       referenceTheorem: `${NAMESPACE}.${level.theoremName}`,
@@ -1334,7 +1373,23 @@ function leanOutputUrl(moduleName) {
 
 fs.writeFileSync(gameOutputUrl, `${JSON.stringify(game, null, 2)}\n`)
 fs.writeFileSync(verifierOutputUrl, `${JSON.stringify(verifier, null, 2)}\n`)
-for (const world of game.worlds) {
+// Lean sources are emitted per MODULE, not per game world: the opening game
+// world spans two modules whose declaration lists (including levels the game
+// no longer surfaces) must stay exactly as compiled into the deployed layers.
+const leanWorlds = [
+  {
+    id: 'Homeomorphisms',
+    title: 'Homeomorphisms',
+    levels: HOMEOMORPHISM_LEVELS.map((def, index) => makeLevel('Homeomorphisms', index + 1, def)),
+  },
+  {
+    id: 'LocalCharts',
+    title: 'Open partial homeomorphisms',
+    levels: LOCAL_CHART_LEVELS.map((def, index) => makeLevel('LocalCharts', index + 1, def)),
+  },
+  ...game.worlds.filter((world) => WORLD_MODULES[world.id]),
+]
+for (const world of leanWorlds) {
   const moduleName = WORLD_MODULES[world.id].module
   const outputUrl = leanOutputUrl(moduleName)
   const source = `${leanHeader(world)}\n${leanDeclarations(world.levels)}\n\nend ${NAMESPACE}\n`

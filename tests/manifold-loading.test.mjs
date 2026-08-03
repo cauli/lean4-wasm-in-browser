@@ -69,8 +69,11 @@ test('the manifold loader does not stage the Real Analysis course', () => {
   assert.doesNotMatch(manifoldLoader, /ensureRealAnalysisLayer/)
   assert.doesNotMatch(manifoldLoader, /real-analysis/)
   assert.match(manifoldLoader, /getManifoldLayerIndex\(\)/)
-  assert.match(manifoldLoader, /manifoldLayersForWorld\(index, level\.world\)/)
+  assert.match(manifoldLoader, /manifoldLayersForCourse\(index\)/)
   assert.doesNotMatch(manifoldLoader, /index\.layers\.slice/)
+
+  // The course staging order still walks each layer's prerequisite graph.
+  assert.match(loader, /manifoldLayersForWorld\(index, target\.world\)/)
 
   const indexStart = loader.indexOf('const getManifoldLayerIndex')
   const indexEnd = loader.indexOf('const warmLayerPackCache', indexStart)
@@ -133,7 +136,10 @@ test('game routes prepare Lean before the player asks to verify', () => {
   assert.match(gameApp, /window\.setTimeout\(prefetchRuntimeAssets, 350\)/)
   assert.match(gameApp, /role="progressbar"/)
   assert.match(gameApp, /disabled=\{verifyDisabled\}/)
-  assert.match(loader, /compileCode\(`import \$\{contextModule\}\\n`\)/)
+  assert.match(
+    loader,
+    /compileCode\(`\$\{contextImports\.map\(\(name\) => `import \$\{name\}`\)\.join\('\\n'\)\}\\n`\)/,
+  )
 })
 
 test('long Mathlib imports time out only after Lean stops making progress', () => {

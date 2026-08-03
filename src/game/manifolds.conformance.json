@@ -1,35 +1,31 @@
 {
-  "sourceCommit": "mathlib-manifolds-de3a9cf330-r3",
+  "sourceCommit": "mathlib-manifolds-de3a9cf330-r4",
   "leanCommit": "62b6a2291302d4bbeace37642a066b7510d0145c",
   "leanUpstreamCommit": "ecf55de08b9d855e749f80c491c6f294dd307e60",
   "mathlibCommit": "de3a9cf33016bbb6d15880d7680643f7ca2d25ba",
-  "testedAt": "2026-08-02T23:51:52.256Z",
+  "testedAt": "2026-08-03T22:28:24.660Z",
   "rules": "regular",
   "validation": {
-    "kind": "pinned-mathlib-native-kernel",
+    "kind": "pinned-mathlib-wasm-kernel",
     "compilerCommit": "62b6a2291302d4bbeace37642a066b7510d0145c",
     "targetBrowserLeanCommit": "62b6a2291302d4bbeace37642a066b7510d0145c",
-    "referenceModule": "ManifoldAdventure.BrowserBase",
+    "referenceModule": "ManifoldAdventure.TangentSpaces + ManifoldAdventure.MapProjections + ManifoldAdventure.RobotReachability",
     "semanticInventoryPolicy": true,
     "policyImplementation": "precompiled-course-module",
     "goalPreviewCheck": "empty-proof",
     "negativePolicyChecks": [
-      "self-reference",
-      "locked-declaration"
+      "homeomorphisms-1 rejects a tactic outside the unlocked inventory",
+      "homeomorphisms-1 rejects the reference theorem of the level itself"
     ]
   },
   "summary": {
-    "total": 44,
-    "kernel": 44,
+    "total": 40,
+    "kernel": 40,
     "partial": 0
   },
   "verifiedReferenceSolutions": [
     "homeomorphisms-1",
-    "homeomorphisms-2",
-    "homeomorphisms-3",
     "homeomorphisms-4",
-    "localcharts-1",
-    "localcharts-2",
     "localcharts-3",
     "localcharts-4",
     "localcharts-5",

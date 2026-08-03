@@ -31,8 +31,7 @@ test('the Mathlib-native Manifold Adventure has a core path and optional branche
   assert.deepEqual(
     game.worlds.map((world) => [world.id, world.levels.length]),
     [
-      ['Homeomorphisms', 4],
-      ['LocalCharts', 5],
+      ['Charts', 5],
       ['ChartedSpaces', 5],
       ['CanonicalCharts', 5],
       ['SmoothManifolds', 5],
@@ -43,22 +42,29 @@ test('the Mathlib-native Manifold Adventure has a core path and optional branche
       ['RobotReachability', 4],
     ],
   )
-  assert.equal(levels.length, 44)
-  assert.equal(new Set(levels.map((level) => level.id)).size, 44)
+  assert.equal(levels.length, 40)
+  assert.equal(new Set(levels.map((level) => level.id)).size, 40)
   assert.deepEqual(game.worlds[0].prerequisites, [])
 
-  for (let index = 1; index < 6; index += 1) {
+  // The opening world spans two Lean modules but keeps each level's original
+  // Lean-side id, so conformance records and player progress stay valid.
+  assert.deepEqual(
+    game.worlds[0].levels.map((level) => level.id),
+    ['homeomorphisms-1', 'homeomorphisms-4', 'localcharts-3', 'localcharts-4', 'localcharts-5'],
+  )
+
+  for (let index = 1; index < 5; index += 1) {
     assert.deepEqual(
       game.worlds[index].prerequisites,
       [game.worlds[index - 1].id],
       `${game.worlds[index].id} should follow the previous world`,
     )
   }
-  assert.deepEqual(game.worlds[6].prerequisites, ['LocalCharts'])
-  assert.deepEqual(game.worlds[7].prerequisites, ['SmoothManifolds'])
-  assert.deepEqual(game.worlds[8].prerequisites, ['CircleMotion'])
-  assert.deepEqual(game.worlds[9].prerequisites, ['RobotArm'])
-  assert.ok(game.worlds.slice(6).every((world) => world.optional))
+  assert.deepEqual(game.worlds[5].prerequisites, ['Charts'])
+  assert.deepEqual(game.worlds[6].prerequisites, ['SmoothManifolds'])
+  assert.deepEqual(game.worlds[7].prerequisites, ['CircleMotion'])
+  assert.deepEqual(game.worlds[8].prerequisites, ['RobotArm'])
+  assert.ok(game.worlds.slice(5).every((world) => world.optional))
   assert.ok(game.worlds.every((world) => world.mapPosition))
 })
 
@@ -118,11 +124,7 @@ test('level titles describe moments in Ada\'s story', () => {
     levels.map((level) => level.title),
     [
       'The drawing matches the trail',
-      'The drawing leads Ada back',
-      'Back where she started',
       'Into the route book',
-      'Room around every place',
-      'No jumps inside the patch',
       'Her mark lands in the drawing',
       'Back to the same spot',
       'The leaf reads back into the patch',
@@ -268,12 +270,14 @@ test('the unlock ladder exposes real Mathlib declarations and Lean tactics', () 
   const introducedTheorems = levels.flatMap((level) => level.newTheorems)
   const expectedTheorems = [
     'Homeomorph.continuous',
+    // The route-book and mark-lands levels grant their cut siblings' lemmas
+    // as inventory asides, so those unlock alongside the surfaced theorem.
+    'Homeomorph.trans_apply',
     'Homeomorph.continuous_symm',
     'Homeomorph.symm_apply_apply',
-    'Homeomorph.trans_apply',
+    'OpenPartialHomeomorph.map_source',
     'OpenPartialHomeomorph.open_source',
     'OpenPartialHomeomorph.continuousOn',
-    'OpenPartialHomeomorph.map_source',
     'OpenPartialHomeomorph.left_inv',
     'OpenPartialHomeomorph.map_target',
     'OpenPartialHomeomorph.right_inv',
@@ -382,7 +386,9 @@ test('generated world modules are the source of truth for all reference proofs',
   const contextModules = [...new Set(
     levels.map((level) => verifier.levels[level.id].contextModule),
   )]
-  assert.equal(contextModules.length, game.worlds.length)
+  // One Lean module per original world: the merged opening game world spans
+  // two of them.
+  assert.equal(contextModules.length, 10)
   for (const moduleName of contextModules) {
     assert.match(browserBase, new RegExp(`public import ${moduleName.replaceAll('.', '\\.')}`))
   }
@@ -401,20 +407,29 @@ test('generated world modules are the source of truth for all reference proofs',
   assert.match(browserPolicy, /syntax \(name := manifoldBrowserUser\)/)
   assert.match(browserPolicy, /private meta partial def checkInventory/)
   assert.match(browserPolicy, /Lean\.Elab\.Tactic\.evalTactic tactics/)
+  const worldsById = new Map(game.worlds.map((world) => [world.id, world]))
   for (const world of game.worlds) {
     const moduleName = verifier.levels[world.levels[0].id].contextModule
     for (const prerequisite of world.prerequisites) {
+      // A game world may span several Lean modules; its deepest module is the
+      // one dependents must import to retain earlier unlocks.
+      const prerequisiteModule = verifier.levels[
+        worldsById.get(prerequisite).levels.at(-1).id
+      ].contextModule
       assert.match(
         worldSources.get(moduleName),
-        new RegExp(`public import ManifoldAdventure\\.${prerequisite}`),
+        new RegExp(`public import ${prerequisiteModule.replaceAll('.', '\\.')}`),
         `${moduleName} must retain declarations unlocked in ${prerequisite}`,
       )
     }
   }
+  // The modules keep every original declaration (44): four are granted as
+  // inventory asides rather than surfaced as levels.
   assert.equal(
     [...allSources.matchAll(/^(?:theorem|(?:noncomputable )?def) /gm)].length,
-    levels.length,
+    44,
   )
+  assert.equal(levels.length, 40)
   assert.equal([...allSources.matchAll(/^(?:noncomputable )?def /gm)].length, 2)
   assert.doesNotMatch(allSources, /\b(sorry|admit|axiom|unsafe)\b/)
 

@@ -13,4 +13,4 @@ const source = createMathlibVerificationSource(
 
 export const buildManifoldChallengeSource = source.buildChallengeSource
 export const buildManifoldGoalInspectionSource = source.buildGoalInspectionSource
-export const manifoldContextModule = source.contextModule
+export const manifoldContextImports = source.contextImports

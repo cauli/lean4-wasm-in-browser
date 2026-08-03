@@ -28,7 +28,7 @@ import {
 import {
   buildManifoldChallengeSource,
   buildManifoldGoalInspectionSource,
-  manifoldContextModule,
+  manifoldContextImports,
 } from './manifold-verification-source'
 import {
   ArtifactPackStagerPool,
@@ -131,6 +131,21 @@ function manifoldLayersForWorld(
   }
 
   visit(targetWorld)
+  return ordered
+}
+
+// Every layer in the index, each preceded by its prerequisites: the staging
+// order for the shared course environment.
+function manifoldLayersForCourse(index: ManifoldLayerIndex): ManifoldWorldLayer[] {
+  const seen = new Set<string>()
+  const ordered: ManifoldWorldLayer[] = []
+  for (const target of index.layers) {
+    for (const layer of manifoldLayersForWorld(index, target.world)) {
+      if (seen.has(layer.world)) continue
+      seen.add(layer.world)
+      ordered.push(layer)
+    }
+  }
   return ordered
 }
 
@@ -300,7 +315,10 @@ export function useLeanGameVerifier() {
 
   const contextKeyForLevel = useCallback((level: GameLevel): string => {
     const verifier = gameForLevel(level).verifier
-    if (verifier === 'manifold') return `manifold:${level.world}`
+    // Every manifold level shares one resident environment (the union import
+    // header), so preparing any level prepares the whole course and world
+    // switches never re-import.
+    if (verifier === 'manifold') return 'manifold:course'
     if (verifier === 'real-analysis') return 'real-analysis'
     return 'lean-core'
   }, [])
@@ -748,15 +766,18 @@ export function useLeanGameVerifier() {
       await warmLayerPackCache('real-analysis-layer.json', 'real-analysis-lib')
     } else if (verifier === 'manifold') {
       const index = await getManifoldLayerIndex()
-      for (const layer of manifoldLayersForWorld(index, level.world)) {
+      for (const layer of manifoldLayersForCourse(index)) {
         await warmLayerPackCache(layer.manifestFile, layer.libraryRoot)
       }
     }
   }, [getManifoldLayerIndex, warmLayerPackCache])
 
-  const ensureManifoldLayer = useCallback(async (level: GameLevel) => {
+  // The union context imports every world module, so all layers must be
+  // staged before the course environment opens — not just the current world's
+  // prerequisite chain.
+  const ensureManifoldLayer = useCallback(async () => {
     const index = await getManifoldLayerIndex()
-    for (const layer of manifoldLayersForWorld(index, level.world)) {
+    for (const layer of manifoldLayersForCourse(index)) {
       let promise = manifoldLayerPromisesRef.current.get(layer.world)
       if (!promise) {
         promise = loadArtifactLayer({
@@ -882,24 +903,28 @@ export function useLeanGameVerifier() {
       setLoadPercent(58)
       updateStatus('loading')
       const verifier = gameForLevel(level).verifier
-      let contextModule: string | null = null
+      let contextImports: string[] | null = null
       if (verifier === 'real-analysis') {
         // This packed layer also stages Init, Lean, and Std. A snapshot restores
         // Init's environment, but module imports still resolve those artifacts
         // through Lean's virtual filesystem.
         await ensureRealAnalysisLayer()
-        contextModule = realAnalysisContextModule(level)
+        contextImports = [realAnalysisContextModule(level)]
       } else if (verifier === 'manifold') {
-        await ensureManifoldLayer(level)
-        contextModule = manifoldContextModule(level)
+        await ensureManifoldLayer()
+        contextImports = manifoldContextImports(level)
       }
 
-      if (contextModule) {
+      if (contextImports) {
         advanceLoadPercent(90)
-        setProgress(`Opening the ${level.world} world in Lean...`)
-        const warmed = await compileCode(`import ${contextModule}\n`)
+        setProgress(verifier === 'manifold'
+          ? 'Opening the course in Lean...'
+          : `Opening the ${level.world} world in Lean...`)
+        // The warm-up header must be byte-identical to the one every level
+        // compiles with: the resident environment is keyed by the import set.
+        const warmed = await compileCode(`${contextImports.map((name) => `import ${name}`).join('\n')}\n`)
         if (!warmed.result.success) {
-          throw new Error(warmed.result.error || `Lean could not open ${contextModule}.`)
+          throw new Error(warmed.result.error || `Lean could not open ${contextImports.join(', ')}.`)
         }
       }
 

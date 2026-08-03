@@ -22,6 +22,14 @@ export interface MathlibVerifierLevel {
 
 export interface MathlibVerifierData {
   baseModule: string
+  /**
+   * When present, every level compiles against this one shared import set
+   * (the leaves of the course-import graph) instead of its own world module.
+   * The browser keys resident Lean environments by the exact header import
+   * set, so a shared header means one multi-minute Mathlib import serves the
+   * whole course rather than one per world.
+   */
+  contextImports?: string[]
   levels: Record<string, MathlibVerifierLevel>
 }
 
@@ -156,6 +164,14 @@ export function createMathlibVerificationSource(
     return metadata
   }
 
+  // The exact header import set, in a canonical order: the same array must be
+  // produced for every level (and for the warm-up compile) or the resident
+  // environment cache misses and re-imports.
+  function contextImportsFor(level: GameLevel): string[] {
+    if (verifierData.contextImports?.length) return verifierData.contextImports
+    return [verifierLevel(level).contextModule]
+  }
+
   function buildSource(
     level: GameLevel,
     proof: string,
@@ -170,7 +186,7 @@ export function createMathlibVerificationSource(
       ? buildInventoryPolicyArguments(mathlibPolicy(game, verifierData, level))
       : []
     const header = [
-      `import ${metadata.contextModule}`,
+      ...contextImportsFor(level).map((module) => `import ${module}`),
       '',
       ...(metadata.openCommands || []),
       ...((metadata.openCommands || []).length > 0 ? [''] : []),
@@ -229,8 +245,6 @@ export function createMathlibVerificationSource(
     ): GoalInspectionSource {
       return buildSource(level, proof, true, enforceInventory) as GoalInspectionSource
     },
-    contextModule(level: GameLevel): string {
-      return verifierLevel(level).contextModule
-    },
+    contextImports: contextImportsFor,
   }
 }

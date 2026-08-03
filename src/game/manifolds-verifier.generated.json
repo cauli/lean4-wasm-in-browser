@@ -3,6 +3,11 @@
   "leanCommit": "62b6a2291302d4bbeace37642a066b7510d0145c",
   "leanUpstreamCommit": "ecf55de08b9d855e749f80c491c6f294dd307e60",
   "mathlibCommit": "de3a9cf33016bbb6d15880d7680643f7ca2d25ba",
+  "contextImports": [
+    "ManifoldAdventure.TangentSpaces",
+    "ManifoldAdventure.MapProjections",
+    "ManifoldAdventure.RobotReachability"
+  ],
   "levels": {
     "homeomorphisms-1": {
       "sourcePath": "lean/ManifoldAdventure/Homeomorphisms.lean",
@@ -19,36 +24,6 @@
       "declarationKind": "theorem",
       "referenceTheorem": "ManifoldAdventure.homeomorph_continuous"
     },
-    "homeomorphisms-2": {
-      "sourcePath": "lean/ManifoldAdventure/Homeomorphisms.lean",
-      "fullModule": "ManifoldAdventure.Homeomorphisms",
-      "contextModule": "ManifoldAdventure.Homeomorphisms",
-      "namespaces": [
-        "ManifoldAdventure"
-      ],
-      "openCommands": [
-        "open scoped Topology",
-        "open Filter"
-      ],
-      "declaration": "homeomorph_inverse_continuous {Trail : Type u} {Drawing : Type v}\n    [trailTopology : TopologicalSpace Trail]\n    [drawingTopology : TopologicalSpace Drawing]\n    (trailMap : Trail ≃ₜ Drawing) : Continuous trailMap.symm",
-      "declarationKind": "theorem",
-      "referenceTheorem": "ManifoldAdventure.homeomorph_inverse_continuous"
-    },
-    "homeomorphisms-3": {
-      "sourcePath": "lean/ManifoldAdventure/Homeomorphisms.lean",
-      "fullModule": "ManifoldAdventure.Homeomorphisms",
-      "contextModule": "ManifoldAdventure.Homeomorphisms",
-      "namespaces": [
-        "ManifoldAdventure"
-      ],
-      "openCommands": [
-        "open scoped Topology",
-        "open Filter"
-      ],
-      "declaration": "homeomorph_round_trip {Trail : Type u} {Drawing : Type v}\n    [trailTopology : TopologicalSpace Trail]\n    [drawingTopology : TopologicalSpace Drawing]\n    (trailMap : Trail ≃ₜ Drawing) (place : Trail) :\n    trailMap.symm (trailMap place) = place",
-      "declarationKind": "theorem",
-      "referenceTheorem": "ManifoldAdventure.homeomorph_round_trip"
-    },
     "homeomorphisms-4": {
       "sourcePath": "lean/ManifoldAdventure/Homeomorphisms.lean",
       "fullModule": "ManifoldAdventure.Homeomorphisms",
@@ -63,36 +38,6 @@
       "declaration": "homeomorph_composition_apply {Trail : Type u} {Drawing : Type v} {RouteBook : Type w}\n    [trailTopology : TopologicalSpace Trail]\n    [drawingTopology : TopologicalSpace Drawing]\n    [routeBookTopology : TopologicalSpace RouteBook]\n    (trailMap : Trail ≃ₜ Drawing) (bookMap : Drawing ≃ₜ RouteBook)\n    (place : Trail) :\n    trailMap.trans bookMap place = bookMap (trailMap place)",
       "declarationKind": "theorem",
       "referenceTheorem": "ManifoldAdventure.homeomorph_composition_apply"
-    },
-    "localcharts-1": {
-      "sourcePath": "lean/ManifoldAdventure/LocalCharts.lean",
-      "fullModule": "ManifoldAdventure.LocalCharts",
-      "contextModule": "ManifoldAdventure.LocalCharts",
-      "namespaces": [
-        "ManifoldAdventure"
-      ],
-      "openCommands": [
-        "open scoped Topology",
-        "open Filter"
-      ],
-      "declaration": "local_chart_source_open {Stone : Type u} {Drawing : Type v}\n    [TopologicalSpace Stone] [TopologicalSpace Drawing]\n    (chart : OpenPartialHomeomorph Stone Drawing) : IsOpen chart.source",
-      "declarationKind": "theorem",
-      "referenceTheorem": "ManifoldAdventure.local_chart_source_open"
-    },
-    "localcharts-2": {
-      "sourcePath": "lean/ManifoldAdventure/LocalCharts.lean",
-      "fullModule": "ManifoldAdventure.LocalCharts",
-      "contextModule": "ManifoldAdventure.LocalCharts",
-      "namespaces": [
-        "ManifoldAdventure"
-      ],
-      "openCommands": [
-        "open scoped Topology",
-        "open Filter"
-      ],
-      "declaration": "local_chart_continuous {Stone : Type u} {Drawing : Type v}\n    [TopologicalSpace Stone] [TopologicalSpace Drawing]\n    (chart : OpenPartialHomeomorph Stone Drawing) :\n    ContinuousOn chart chart.source",
-      "declarationKind": "theorem",
-      "referenceTheorem": "ManifoldAdventure.local_chart_continuous"
     },
     "localcharts-3": {
       "sourcePath": "lean/ManifoldAdventure/LocalCharts.lean",
