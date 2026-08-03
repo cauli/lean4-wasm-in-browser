@@ -430,8 +430,8 @@ test('generated world modules are the source of truth for all reference proofs',
   }
 })
 
-test('stale exact conformance cannot attach to the revised numeric level ids', () => {
-  assert.notEqual(conformance.sourceCommit, game.source.commit)
+test('exact conformance covers every level in the current course revision', () => {
+  assert.equal(conformance.sourceCommit, game.source.commit)
   assert.equal(conformance.leanCommit, verifier.leanCommit)
   assert.equal(conformance.leanUpstreamCommit, verifier.leanUpstreamCommit)
   assert.equal(conformance.mathlibCommit, verifier.mathlibCommit)
@@ -441,7 +441,8 @@ test('stale exact conformance cannot attach to the revised numeric level ids', (
   assert.equal(conformance.summary.total, verified.size)
   assert.equal(conformance.summary.kernel, verified.size)
   assert.equal(conformance.summary.partial, 0)
-  assert.ok([...verified].some((id) => !levels.some((level) => level.id === id)))
+  assert.equal(verified.size, levels.length)
+  assert.ok(levels.every((level) => verified.has(level.id)))
 
   const gameData = fs.readFileSync(new URL('../src/game/game-data.ts', import.meta.url), 'utf8')
   assert.match(gameData, /manifoldConformanceMatchesSource/)

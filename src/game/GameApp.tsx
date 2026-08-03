@@ -360,10 +360,10 @@ function VerificationAudit({ game }: { game: LeanGame }) {
     { label: 'Mathlib API unlocks', state: 'ready', detail: 'Levels unlock actual declarations such as Homeomorph.continuous, mem_chart_source, stereographic_source, Circle.exp_add_two_pi, and contMDiff_circleExp.' },
     { label: 'Course theorem unlocks', state: 'ready', detail: 'Each completed exercise also adds its proved ManifoldAdventure theorem to the inventory for later reuse.' },
     { label: 'Reference solutions', state: 'ready', detail: 'The generated BrowserBase contains no course axioms, sorry declarations, or unsafe placeholders.' },
-    { label: 'Pinned source', state: 'partial', detail: 'Compiler, upstream Lean base, and Mathlib revisions are pinned. Revision r3 invalidates the old numeric-ID conformance record until all 44 levels pass the matching Linux i386 CI gate.' },
+    { label: 'Pinned source', state: 'ready', detail: 'Compiler, upstream Lean base, and Mathlib revisions are pinned. All 44 reference solutions passed the matching Linux i386 CI kernel gate for revision r3.' },
     { label: 'Learning prerequisites', state: 'partial', detail: 'The opening worlds introduce Lean notation, but the smooth-manifold worlds assume some topology and linear-algebra vocabulary.' },
     { label: 'Sources', state: 'ready', detail: 'The course links its generated Lean source and recommends Tu, Lee, and Milnor for the surrounding mathematics.' },
-    { label: 'Browser artifacts', state: 'partial', detail: 'The graph-aware packager is ready. Publishing the optional branches requires a new fork artifact rooted at the sphere and circle modules, followed by the documented browser gate.' },
+    { label: 'Browser artifacts', state: 'ready', detail: 'The graph-aware browser package includes the sphere, circle, robot-arm, and reachability branches. Its first proof and persistent offline cache passed the documented Chromium gate.' },
     { label: 'Saved progress', state: 'ready', detail: 'The game keeps answers, attempts, completed levels, locks, and rule settings in its own local save.' },
   ]
   const rows = game.id === nngGame.id

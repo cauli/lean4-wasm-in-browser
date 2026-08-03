@@ -177,7 +177,7 @@ bash scripts/build-manifold-course.sh /tmp/manifold-mathlib4
 MATHLIB_ROOT=/tmp/manifold-mathlib4 node scripts/verify-manifold-references.mjs
 ```
 
-That command checks all 25 reference solutions, an empty live-goal preview,
+That command checks all 44 reference solutions, an empty live-goal preview,
 self-reference rejection, and locked-declaration rejection. A local compiler
 whose commit differs from the browser pin may run these checks, but it does not
 overwrite the pinned conformance record. The exact native-i386 compiler in
@@ -208,7 +208,7 @@ only the level's policy as eight newline-delimited strings and a call to
 checker for every edit. The first world layer must contain
 `BrowserPolicy.olean`, `BrowserPolicy.ir`, and `BrowserPolicy.ir.sig`.
 
-Native validation compiles all 25 reference solutions, an empty goal preview,
+Native validation compiles all 44 reference solutions, an empty goal preview,
 and the self-reference and locked-declaration rejection cases. That protects
 the policy contract, but it does not replace this browser gate. A rebuilt,
 commit-matched i386 course layer must still complete the first proof in

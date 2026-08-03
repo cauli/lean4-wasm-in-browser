@@ -1,9 +1,9 @@
 {
-  "sourceCommit": "mathlib-manifolds-de3a9cf330",
+  "sourceCommit": "mathlib-manifolds-de3a9cf330-r3",
   "leanCommit": "62b6a2291302d4bbeace37642a066b7510d0145c",
   "leanUpstreamCommit": "ecf55de08b9d855e749f80c491c6f294dd307e60",
   "mathlibCommit": "de3a9cf33016bbb6d15880d7680643f7ca2d25ba",
-  "testedAt": "2026-08-01T11:13:36.824Z",
+  "testedAt": "2026-08-02T23:51:52.256Z",
   "rules": "regular",
   "validation": {
     "kind": "pinned-mathlib-native-kernel",
@@ -11,14 +11,16 @@
     "targetBrowserLeanCommit": "62b6a2291302d4bbeace37642a066b7510d0145c",
     "referenceModule": "ManifoldAdventure.BrowserBase",
     "semanticInventoryPolicy": true,
+    "policyImplementation": "precompiled-course-module",
+    "goalPreviewCheck": "empty-proof",
     "negativePolicyChecks": [
       "self-reference",
       "locked-declaration"
     ]
   },
   "summary": {
-    "total": 25,
-    "kernel": 25,
+    "total": 44,
+    "kernel": 44,
     "partial": 0
   },
   "verifiedReferenceSolutions": [
@@ -30,6 +32,7 @@
     "localcharts-2",
     "localcharts-3",
     "localcharts-4",
+    "localcharts-5",
     "chartedspaces-1",
     "chartedspaces-2",
     "chartedspaces-3",
@@ -39,13 +42,31 @@
     "canonicalcharts-2",
     "canonicalcharts-3",
     "canonicalcharts-4",
+    "canonicalcharts-5",
     "smoothmanifolds-1",
     "smoothmanifolds-2",
     "smoothmanifolds-3",
     "smoothmanifolds-4",
+    "smoothmanifolds-5",
     "tangentspaces-1",
     "tangentspaces-2",
     "tangentspaces-3",
-    "tangentspaces-4"
+    "mapprojections-1",
+    "mapprojections-2",
+    "mapprojections-3",
+    "mapprojections-4",
+    "mapprojections-5",
+    "circlemotion-1",
+    "circlemotion-2",
+    "circlemotion-3",
+    "circlemotion-4",
+    "robotarm-1",
+    "robotarm-2",
+    "robotarm-3",
+    "robotarm-4",
+    "robotreachability-1",
+    "robotreachability-2",
+    "robotreachability-3",
+    "robotreachability-4"
   ]
 }
