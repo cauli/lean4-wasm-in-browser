@@ -36,6 +36,7 @@ import {
   type StagedArtifactPack,
 } from './artifact-pack-stager'
 import {
+  fetchCachedArtifactPack,
   prepareArtifactPackCache,
   requestArtifactStoragePersistence,
   type ArtifactPackCacheDescriptor,
@@ -321,6 +322,8 @@ export function useLeanGameVerifier() {
   const preparedContextKeysRef = useRef(new Set<string>())
   const contextPreparationPromisesRef = useRef<Map<string, Promise<void>>>(new Map())
   const runtimePrefetchStartedRef = useRef(false)
+  const layerCacheWarmedRef = useRef(new Set<string>())
+  const layerStagingStartedRef = useRef(new Set<string>())
 
   const advanceLoadPercent = useCallback((next: number) => {
     setLoadPercent((current) => Math.max(current, Math.min(100, Math.round(next))))
@@ -388,6 +391,10 @@ export function useLeanGameVerifier() {
       } else if (message.type === 'progress' && message.data) {
         compilePendingRef.current?.watchdog.pulse()
         setProgress(String(message.data))
+      } else if (message.type === 'activity') {
+        // Heartbeat from otherwise-filtered debug output: no user-visible
+        // text, but proof the compile is alive during its silent stretches.
+        compilePendingRef.current?.watchdog.pulse()
       } else if (message.type === 'error') {
         const error = new Error(String(message.error || message.data || 'Lean worker error'))
         bootPendingRef.current?.reject(error)
@@ -410,48 +417,6 @@ export function useLeanGameVerifier() {
       }),
       rejectAfter(300000, 'Lean startup timed out.'),
     ])
-  }, [advanceLoadPercent])
-
-  const addInitFiles = useCallback(async () => {
-    if (initFilesPromiseRef.current) return initFilesPromiseRef.current
-    const promise = (async () => {
-      const worker = workerRef.current
-      if (!worker) throw new Error('Lean worker is unavailable.')
-      const oleanPaths = (await fetchCompleteFileList())
-        .filter((name) => name === 'Init.olean' || name.startsWith('Init/'))
-      const paths = [
-        ...oleanPaths,
-        ...oleanPaths.flatMap((name) => [
-          name.replace(/\.olean$/, '.ir'),
-          name.replace(/\.olean$/, '.ir.sig'),
-        ]),
-      ]
-      setProgress(`Downloading ${paths.length} Lean core files...`)
-      const files = await fetchOleanFiles(paths, (loaded, total) => {
-        if (total > 0) advanceLoadPercent(40 + (loaded / total) * 8)
-        setProgress(`Downloading Lean core: ${loaded} / ${total} files`)
-      })
-      const payload: Array<{ name: string; data: ArrayBuffer }> = []
-      const transfer: ArrayBuffer[] = []
-      files.forEach((bytes, name) => {
-        const copy = new ArrayBuffer(bytes.byteLength)
-        new Uint8Array(copy).set(bytes)
-        payload.push({ name, data: copy })
-        transfer.push(copy)
-      })
-      await Promise.race([
-        new Promise<void>((resolve) => {
-          filesPendingRef.current = { resolve }
-          worker.postMessage({ type: 'add_files', files: payload }, transfer)
-        }),
-        rejectAfter(120000, 'Lean core file transfer timed out.'),
-      ])
-    })().catch((error) => {
-      initFilesPromiseRef.current = null
-      throw error
-    })
-    initFilesPromiseRef.current = promise
-    return promise
   }, [advanceLoadPercent])
 
   const loadSnapshot = useCallback(async (
@@ -487,16 +452,23 @@ export function useLeanGameVerifier() {
     libraryRoot,
     label,
     readyMessage,
+    allowSlim = false,
+    percentRange = [60, 85],
   }: {
     manifestFile: string
     libraryRoot: string
     label: string
     readyMessage: string
+    allowSlim?: boolean
+    percentRange?: [number, number]
   }) => {
       const layerStarted = performance.now()
+      // The opportunistic cache warmer stands down once real staging begins;
+      // the stager pool serves cache hits for whatever warming completed.
+      layerStagingStartedRef.current.add(manifestFile)
       const worker = workerRef.current
       if (!worker) throw new Error('Lean worker is unavailable.')
-      if (LEAN_VARIANT === 'slim') {
+      if (LEAN_VARIANT === 'slim' && !allowSlim) {
         throw new Error(`${label} verification requires the desktop full Lean runtime.`)
       }
       setProgress(`Reading the local ${label} package...`)
@@ -586,7 +558,9 @@ export function useLeanGameVerifier() {
             setProgress(
               `Loading ${label}: pack ${index + 1} / ${packs.length}`,
             )
-            advanceLoadPercent(60 + ((index + 1) / packs.length) * 25)
+            advanceLoadPercent(
+              percentRange[0] + ((index + 1) / packs.length) * (percentRange[1] - percentRange[0]),
+            )
             const staged = await pending.get(index)!
             pending.delete(index)
             schedule(index + lookahead)
@@ -649,6 +623,67 @@ export function useLeanGameVerifier() {
       setProgress(readyMessage)
   }, [advanceLoadPercent])
 
+  const addInitFiles = useCallback(async () => {
+    if (initFilesPromiseRef.current) return initFilesPromiseRef.current
+    const promise = (async () => {
+      const worker = workerRef.current
+      if (!worker) throw new Error('Lean worker is unavailable.')
+      // Packed transport: the Init closure as a handful of ~16MB packs instead
+      // of ~3,800 individual artifact requests, through the same pack pipeline
+      // (and Cache API layer) the course layers use.
+      try {
+        await loadArtifactLayer({
+          manifestFile: 'core-layer.json',
+          libraryRoot: 'core-lib',
+          label: 'Lean core',
+          readyMessage: 'Lean core modules are ready.',
+          allowSlim: true,
+          percentRange: [40, 56],
+        })
+        return
+      } catch (error) {
+        // A deployment without the packed core (or a mid-transfer failure)
+        // still starts through the per-file route below; the worker overwrites
+        // any files a partial pack load already staged.
+        console.warn('Packed Lean core unavailable, using per-file transport:', error)
+      }
+      const oleanPaths = (await fetchCompleteFileList())
+        .filter((name) => name === 'Init.olean' || name.startsWith('Init/'))
+      const paths = [
+        ...oleanPaths,
+        ...oleanPaths.flatMap((name) => [
+          name.replace(/\.olean$/, '.ir'),
+          name.replace(/\.olean$/, '.ir.sig'),
+        ]),
+      ]
+      setProgress(`Downloading ${paths.length} Lean core files...`)
+      const files = await fetchOleanFiles(paths, (loaded, total) => {
+        if (total > 0) advanceLoadPercent(40 + (loaded / total) * 8)
+        setProgress(`Downloading Lean core: ${loaded} / ${total} files`)
+      })
+      const payload: Array<{ name: string; data: ArrayBuffer }> = []
+      const transfer: ArrayBuffer[] = []
+      files.forEach((bytes, name) => {
+        const copy = new ArrayBuffer(bytes.byteLength)
+        new Uint8Array(copy).set(bytes)
+        payload.push({ name, data: copy })
+        transfer.push(copy)
+      })
+      await Promise.race([
+        new Promise<void>((resolve) => {
+          filesPendingRef.current = { resolve }
+          worker.postMessage({ type: 'add_files', files: payload }, transfer)
+        }),
+        rejectAfter(120000, 'Lean core file transfer timed out.'),
+      ])
+    })().catch((error) => {
+      initFilesPromiseRef.current = null
+      throw error
+    })
+    initFilesPromiseRef.current = promise
+    return promise
+  }, [advanceLoadPercent, loadArtifactLayer])
+
   const ensureRealAnalysisLayer = useCallback(async () => {
     if (realAnalysisLayerPromiseRef.current) return realAnalysisLayerPromiseRef.current
     const promise = (async () => {
@@ -673,7 +708,7 @@ export function useLeanGameVerifier() {
     return promise
   }, [loadArtifactLayer, loadSnapshot])
 
-  const ensureManifoldLayer = useCallback(async (level: GameLevel) => {
+  const getManifoldLayerIndex = useCallback((): Promise<ManifoldLayerIndex> => {
     if (!manifoldLayerIndexPromiseRef.current) {
       const suffix = LEAN_ASSET_VERSION ? `?v=${encodeURIComponent(LEAN_ASSET_VERSION)}` : ''
       manifoldLayerIndexPromiseRef.current = fetch(
@@ -691,8 +726,67 @@ export function useLeanGameVerifier() {
         throw error
       })
     }
+    return manifoldLayerIndexPromiseRef.current
+  }, [])
 
-    const index = await manifoldLayerIndexPromiseRef.current
+  // Download a layer's packs straight into the Cache API, without touching the
+  // worker. Staging later finds them as cache hits, so the network transfer
+  // overlaps runtime boot, the core transfer, and the Init import instead of
+  // serializing after them. Purely opportunistic: any failure is swallowed and
+  // real staging re-fetches whatever is missing.
+  const warmLayerPackCache = useCallback(async (manifestFile: string, libraryRoot: string) => {
+    if (typeof caches === 'undefined') return
+    if (layerCacheWarmedRef.current.has(manifestFile)) return
+    if (layerStagingStartedRef.current.has(manifestFile)) return
+    layerCacheWarmedRef.current.add(manifestFile)
+    try {
+      const response = await fetch(`${LEAN_WASM_BASE}/${manifestFile}`, { cache: 'no-cache' })
+      if (!response.ok) return
+      const manifest = await response.json() as ArtifactLayerManifest
+      const packs = manifest.packs || []
+      if (packs.length === 0) return
+      const descriptor = artifactPackCacheDescriptor(libraryRoot, manifest)
+      await prepareArtifactPackCache(descriptor)
+      // Same order the stager consumes, so a handover mid-warm leaves the
+      // stager finishing the tail rather than re-downloading the head.
+      const queue = [...packs]
+      const worker = async () => {
+        for (;;) {
+          if (layerStagingStartedRef.current.has(manifestFile)) return
+          const pack = queue.shift()
+          if (!pack) return
+          const url = new URL(
+            `${LEAN_WASM_BASE}/${libraryRoot}/${pack.file}`,
+            window.location.origin,
+          ).href
+          await fetchCachedArtifactPack(url, pack.compressedBytes, descriptor)
+        }
+      }
+      await Promise.all(Array.from({ length: Math.min(4, packs.length) }, worker))
+    } catch {
+      layerCacheWarmedRef.current.delete(manifestFile)
+    }
+  }, [])
+
+  const warmLevelLayerCache = useCallback(async (level: GameLevel) => {
+    if (LEAN_VARIANT === 'slim') return
+    const connection = (navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string }
+    }).connection
+    if (connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || '')) return
+    const verifier = gameForLevel(level).verifier
+    if (verifier === 'real-analysis') {
+      await warmLayerPackCache('real-analysis-layer.json', 'real-analysis-lib')
+    } else if (verifier === 'manifold') {
+      const index = await getManifoldLayerIndex()
+      for (const layer of manifoldLayersForWorld(index, level.world)) {
+        await warmLayerPackCache(layer.manifestFile, layer.libraryRoot)
+      }
+    }
+  }, [getManifoldLayerIndex, warmLayerPackCache])
+
+  const ensureManifoldLayer = useCallback(async (level: GameLevel) => {
+    const index = await getManifoldLayerIndex()
     for (const layer of manifoldLayersForWorld(index, level.world)) {
       let promise = manifoldLayerPromisesRef.current.get(layer.world)
       if (!promise) {
@@ -709,7 +803,7 @@ export function useLeanGameVerifier() {
       }
       await promise
     }
-  }, [loadArtifactLayer])
+  }, [getManifoldLayerIndex, loadArtifactLayer])
 
   const trySnapshot = useCallback(async (): Promise<boolean> => {
     const suffix = LEAN_ASSET_VERSION ? `?v=${encodeURIComponent(LEAN_ASSET_VERSION)}` : ''
@@ -812,6 +906,9 @@ export function useLeanGameVerifier() {
     const promise = (async () => {
       updateStatus('loading')
       if (initializePromiseRef.current) setLoadPercent(58)
+      // Course-layer packs download into the Cache API while the runtime
+      // boots and imports Init, instead of waiting in line behind them.
+      void warmLevelLayerCache(level).catch(() => undefined)
       await initialize()
       setLoadPercent(58)
       updateStatus('loading')
@@ -858,6 +955,7 @@ export function useLeanGameVerifier() {
     initialize,
     markContextPrepared,
     updateStatus,
+    warmLevelLayerCache,
   ])
 
   const prefetchRuntimeAssets = useCallback(() => {

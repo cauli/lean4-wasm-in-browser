@@ -27,6 +27,18 @@ function isDebugLine(text) {
   return /^\s*\[(WASM DEBUG|DEBUG|IFRAME|PROFILE|PWORKER|COMPILE)/.test(text);
 }
 
+// Long compile stretches (extension loading, world elaboration) print only
+// filtered debug lines, so the page would see total silence for minutes. A
+// throttled heartbeat lets the UI distinguish "still computing" from "hung"
+// and keeps the inactivity watchdog honest.
+let lastActivityPost = 0;
+function noteActivity() {
+  const now = Date.now();
+  if (now - lastActivityPost < 1000) return;
+  lastActivityPost = now;
+  self.postMessage({ type: 'activity' });
+}
+
 // "[DEBUG:PROGRESS] N/506" during the import -> a structured progress event so
 // the loading bar can move (and now it actually can, off the main thread).
 function reportImportProgress(text) {
@@ -215,8 +227,8 @@ function startLeanModule() {
     // Tell Emscripten where the runtime script is, so the pthread sub-workers
     // this Worker spawns can load lean.js (the Worker's own script is this file).
     mainScriptUrlOrBlob: assetBase + '/lean.js' + assetQ,
-    print: (text) => { if (reportImportProgress(text)) return; if (isDebugLine(text)) console.log(text); else self.postMessage({ type: 'stdout', data: text }); },
-    printErr: (text) => { if (reportImportProgress(text)) return; if (isDebugLine(text)) console.log(text); else self.postMessage({ type: 'stderr', data: text }); },
+    print: (text) => { noteActivity(); if (reportImportProgress(text)) return; if (isDebugLine(text)) console.log(text); else self.postMessage({ type: 'stdout', data: text }); },
+    printErr: (text) => { noteActivity(); if (reportImportProgress(text)) return; if (isDebugLine(text)) console.log(text); else self.postMessage({ type: 'stderr', data: text }); },
     setStatus: (text) => { if (text) self.postMessage({ type: 'progress', data: text }); },
     noInitialRun: true,
 

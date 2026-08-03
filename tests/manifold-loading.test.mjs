@@ -68,9 +68,18 @@ test('the manifold loader does not stage the Real Analysis course', () => {
   const manifoldLoader = loader.slice(start, end)
   assert.doesNotMatch(manifoldLoader, /ensureRealAnalysisLayer/)
   assert.doesNotMatch(manifoldLoader, /real-analysis/)
-  assert.match(manifoldLoader, /manifold-course-layer-index/)
+  assert.match(manifoldLoader, /getManifoldLayerIndex\(\)/)
   assert.match(manifoldLoader, /manifoldLayersForWorld\(index, level\.world\)/)
   assert.doesNotMatch(manifoldLoader, /index\.layers\.slice/)
+
+  const indexStart = loader.indexOf('const getManifoldLayerIndex')
+  const indexEnd = loader.indexOf('const warmLayerPackCache', indexStart)
+  assert.notEqual(indexStart, -1)
+  assert.notEqual(indexEnd, -1)
+
+  const indexGetter = loader.slice(indexStart, indexEnd)
+  assert.match(indexGetter, /manifold-course-layer-index/)
+  assert.doesNotMatch(indexGetter, /real-analysis/)
 })
 
 test('optional worlds package and load only their graph prerequisites', () => {

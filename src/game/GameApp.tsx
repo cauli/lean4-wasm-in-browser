@@ -212,6 +212,12 @@ function DevelopmentBadge({ game }: { game: LeanGame }) {
   )
 }
 
+function formatStepElapsed(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
+}
+
 function RuntimePreparationBar({
   verifier,
   ready,
@@ -221,8 +227,24 @@ function RuntimePreparationBar({
   ready: boolean
   onRetry: () => void
 }) {
+  // Some preparation steps compute for minutes without a new message (module
+  // finalization, opening a world's definitions). Count seconds since the last
+  // message so silence reads as work, not as a hang.
+  const [stepSeconds, setStepSeconds] = useState(0)
+  const [seenProgress, setSeenProgress] = useState(verifier.progress)
+  if (seenProgress !== verifier.progress) {
+    setSeenProgress(verifier.progress)
+    setStepSeconds(0)
+  }
+  const active = !ready && verifier.status === 'loading'
+  useEffect(() => {
+    if (!active) return
+    const id = window.setInterval(() => setStepSeconds((seconds) => seconds + 1), 1000)
+    return () => window.clearInterval(id)
+  }, [active])
   if (ready && verifier.status !== 'error') return null
   const failed = verifier.status === 'error'
+  const showStall = active && stepSeconds >= 8
   return (
     <section
       className={`game-runtime-status${failed ? ' game-runtime-status-error' : ''}`}
@@ -231,6 +253,12 @@ function RuntimePreparationBar({
       <div className="game-runtime-status-copy">
         <strong>{failed ? 'Lean stopped while preparing' : 'Preparing local Lean'}</strong>
         <span>{verifier.progress}</span>
+        {showStall && (
+          <span className="game-runtime-status-stall">
+            Still working ({formatStepElapsed(stepSeconds)} in this step) — the larger
+            Lean steps run single-threaded and can take a few minutes on first load.
+          </span>
+        )}
       </div>
       {!failed ? (
         <div
@@ -1219,6 +1247,19 @@ export default function GameApp() {
   const isCatalog = !game
   const isWorldMap = Boolean(game && !selectedLevel && !selectedWorld)
   const preparationLevel = selectedLevel && !selectedLevelLocked ? selectedLevel : undefined
+  // The level this player would resume at: reading the world map is dead time
+  // otherwise, so its course packs download and its world opens in Lean while
+  // they read. Game data is module-static, so the reference is render-stable.
+  const resumeCandidates = game
+    ? (selectedWorld ? selectedWorld.levels : game.worlds.flatMap((world) => world.levels))
+    : []
+  const playableLevel = (candidate: GameLevel) => (
+    progress.rules !== 'regular' || canOpenLevel(candidate, completed)
+  )
+  const backgroundLevel = preparationLevel
+    ? undefined
+    : resumeCandidates.find((candidate) => !completed.has(candidate.id) && playableLevel(candidate))
+      ?? resumeCandidates.find(playableLevel)
   const { prepareLevel, prepareRuntime, prefetchRuntimeAssets } = verifier
 
   useEffect(() => {
@@ -1228,10 +1269,12 @@ export default function GameApp() {
     }
     if (preparationLevel) {
       void prepareLevel(preparationLevel).catch(() => undefined)
+    } else if (backgroundLevel) {
+      void prepareLevel(backgroundLevel).catch(() => undefined)
     } else {
       void prepareRuntime().catch(() => undefined)
     }
-  }, [isCatalog, preparationLevel, prefetchRuntimeAssets, prepareLevel, prepareRuntime])
+  }, [isCatalog, preparationLevel, backgroundLevel, prefetchRuntimeAssets, prepareLevel, prepareRuntime])
 
   useEffect(() => {
     const previousTitle = document.title
@@ -1289,6 +1332,8 @@ export default function GameApp() {
   const retryRuntimePreparation = () => {
     if (preparationLevel) {
       void prepareLevel(preparationLevel).catch(() => undefined)
+    } else if (backgroundLevel) {
+      void prepareLevel(backgroundLevel).catch(() => undefined)
     } else {
       void prepareRuntime().catch(() => undefined)
     }

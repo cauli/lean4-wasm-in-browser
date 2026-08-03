@@ -11,6 +11,7 @@
     "import:nng4": "node scripts/import-nng4.mjs",
     "import:real-analysis": "node scripts/import-real-analysis-game.mjs",
     "port:real-analysis": "node scripts/port-real-analysis-lean.mjs",
+    "package:core": "node scripts/package-core-layer.mjs",
     "package:real-analysis": "node scripts/package-real-analysis-layer.mjs",
     "build:manifold-course": "bash scripts/build-manifold-course.sh",
     "verify:manifold-references": "node scripts/verify-manifold-references.mjs",

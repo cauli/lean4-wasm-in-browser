@@ -190,6 +190,15 @@ button {
   white-space: nowrap;
 }
 
+.game-runtime-status-copy .game-runtime-status-stall {
+  grid-column: 1 / -1;
+  overflow: visible;
+  color: var(--game-muted);
+  font: 0.62rem/1.35 var(--game-font, system-ui);
+  text-align: left;
+  white-space: normal;
+}
+
 .game-runtime-progress {
   height: 5px;
   overflow: hidden;

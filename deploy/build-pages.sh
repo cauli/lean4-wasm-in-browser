@@ -49,6 +49,35 @@ cp -L public/lean-wasm/lean-lib-files.json dist/lean-wasm/lean-lib-files.json
 rsync -aL --prune-empty-dirs --include='*/' --include='*.olean' --include='*.ir' --include='*.ir.sig' --exclude='*' \
   public/lean-wasm/lean-lib/ dist/lean-wasm/lean-lib/
 
+# The packed Lean core (Init closure as a few ~16MB packs) replaces ~3,800
+# per-file requests at startup. The app falls back to per-file transport when
+# the layer is absent, but a deploy should never rely on that.
+CORE_MANIFEST=public/lean-wasm/core-layer.json
+CORE_PACKS=public/lean-wasm/core-lib
+if [ ! -f "$CORE_MANIFEST" ] || [ ! -d "$CORE_PACKS" ]; then
+  echo "error: packed Lean core layer is missing." >&2
+  echo "run npm run package:core before building Pages." >&2
+  exit 1
+fi
+node -e '
+const fs = require("fs");
+const manifest = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+if (!Array.isArray(manifest.packs) || manifest.packs.length === 0) {
+  throw new Error("Lean core manifest contains no packs");
+}
+for (const pack of manifest.packs) {
+  const file = `${process.argv[2]}/${pack.file}`;
+  const stat = fs.statSync(file);
+  if (stat.size !== pack.compressedBytes) {
+    throw new Error(`${pack.file} has ${stat.size} bytes; expected ${pack.compressedBytes}`);
+  }
+}
+' "$CORE_MANIFEST" "$CORE_PACKS"
+mkdir -p dist/lean-wasm/core-lib
+cp -L "$CORE_MANIFEST" dist/lean-wasm/core-layer.json
+rsync -aL --delete --include='artifacts-*.pack' --exclude='*' \
+  "$CORE_PACKS/" dist/lean-wasm/core-lib/
+
 # Real Analysis is part of the published catalog, so never silently deploy the
 # UI without its matching compiled Mathlib/course layer.
 REAL_ANALYSIS_MANIFEST=public/lean-wasm/real-analysis-layer.json
