@@ -40,6 +40,7 @@ import {
   requestArtifactStoragePersistence,
   type ArtifactPackCacheDescriptor,
 } from '../artifact-pack-cache'
+import { createInactivityWatchdog, type InactivityWatchdog } from './inactivity-watchdog.js'
 
 export type CheckerStatus = 'idle' | 'loading' | 'ready' | 'checking' | 'error'
 
@@ -311,7 +312,10 @@ export function useLeanGameVerifier() {
   const bootPendingRef = useRef<{ resolve: () => void; reject: (error: Error) => void } | null>(null)
   const filesPendingRef = useRef<{ resolve: () => void } | null>(null)
   const snapshotPendingRef = useRef<{ resolve: (result: WorkerResult) => void } | null>(null)
-  const compilePendingRef = useRef<{ resolve: (result: WorkerResult) => void } | null>(null)
+  const compilePendingRef = useRef<{
+    resolve: (result: WorkerResult) => void
+    watchdog: InactivityWatchdog
+  } | null>(null)
   const outputRef = useRef<WorkerOutput[]>([])
   const compileQueueRef = useRef<Promise<void>>(Promise.resolve())
   const preparedContextKeysRef = useRef(new Set<string>())
@@ -362,9 +366,11 @@ export function useLeanGameVerifier() {
         snapshotPendingRef.current?.resolve(message as WorkerResult)
         snapshotPendingRef.current = null
       } else if (message.type === 'compile_result') {
+        compilePendingRef.current?.watchdog.stop()
         compilePendingRef.current?.resolve(message as WorkerResult)
         compilePendingRef.current = null
       } else if (message.type === 'stdout' || message.type === 'stderr') {
+        compilePendingRef.current?.watchdog.pulse()
         outputRef.current.push({ stream: message.type, data: String(message.data || '') })
       } else if (message.type === 'snapshot_progress') {
         const received = Number(message.received || 0)
@@ -374,16 +380,19 @@ export function useLeanGameVerifier() {
           ? `Loading Lean environment: ${Math.round(received / 1048576)} / ${Math.round(total / 1048576)} MB`
           : `Loading Lean environment: ${Math.round(received / 1048576)} MB`)
       } else if (message.type === 'import_progress') {
+        compilePendingRef.current?.watchdog.pulse()
         const loaded = Number(message.loaded || 0)
         const total = Number(message.total || 0)
         if (total > 0) advanceLoadPercent(48 + (loaded / total) * 10)
-        setProgress(`Importing Lean core: ${message.loaded || 0} / ${message.total || 0} modules`)
+        setProgress(`Importing Lean modules: ${message.loaded || 0} / ${message.total || 0}`)
       } else if (message.type === 'progress' && message.data) {
+        compilePendingRef.current?.watchdog.pulse()
         setProgress(String(message.data))
       } else if (message.type === 'error') {
         const error = new Error(String(message.error || message.data || 'Lean worker error'))
         bootPendingRef.current?.reject(error)
         bootPendingRef.current = null
+        compilePendingRef.current?.watchdog.stop()
         compilePendingRef.current?.resolve({ success: false, error: error.message })
         compilePendingRef.current = null
       }
@@ -716,13 +725,32 @@ export function useLeanGameVerifier() {
     const worker = workerRef.current
     if (!worker) throw new Error('Lean worker is unavailable.')
     outputRef.current = []
-    const result = await Promise.race([
-      new Promise<WorkerResult>((resolve) => {
-        compilePendingRef.current = { resolve }
-        worker.postMessage({ type: 'compile', code, path: '/workspace/GameLevel.lean' })
-      }),
-      resolveAfter<WorkerResult>(600000, { success: false, error: 'Verification timed out.' }),
-    ])
+    const result = await new Promise<WorkerResult>((resolve) => {
+      const watchdog = createInactivityWatchdog(600000, () => {
+        if (compilePendingRef.current?.watchdog !== watchdog) return
+        compilePendingRef.current = null
+
+        // A synchronous WASM compile cannot be interrupted in place. Retire
+        // the worker so a retry cannot consume the late result of this compile.
+        worker.terminate()
+        if (workerRef.current === worker) workerRef.current = null
+        initializePromiseRef.current = null
+        initFilesPromiseRef.current = null
+        realAnalysisLayerPromiseRef.current = null
+        manifoldLayerIndexPromiseRef.current = null
+        manifoldLayerPromisesRef.current.clear()
+        contextPreparationPromisesRef.current.clear()
+        preparedContextKeysRef.current.clear()
+        setPreparedContextKeys(new Set())
+
+        resolve({
+          success: false,
+          error: 'Lean stopped reporting progress for 10 minutes.',
+        })
+      })
+      compilePendingRef.current = { resolve, watchdog }
+      worker.postMessage({ type: 'compile', code, path: '/workspace/GameLevel.lean' })
+    })
     return { result, output: [...outputRef.current] }
   }, [])
 

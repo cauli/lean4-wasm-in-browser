@@ -126,3 +126,11 @@ test('game routes prepare Lean before the player asks to verify', () => {
   assert.match(gameApp, /disabled=\{verifyDisabled\}/)
   assert.match(loader, /compileCode\(`import \$\{contextModule\}\\n`\)/)
 })
+
+test('long Mathlib imports time out only after Lean stops making progress', () => {
+  assert.match(loader, /createInactivityWatchdog\(600000/)
+  assert.match(loader, /message\.type === 'import_progress'[\s\S]*watchdog\.pulse\(\)/)
+  assert.doesNotMatch(loader, /resolveAfter<WorkerResult>\(600000/)
+  assert.match(loader, /worker\.terminate\(\)/)
+  assert.match(loader, /Lean stopped reporting progress for 10 minutes/)
+})
