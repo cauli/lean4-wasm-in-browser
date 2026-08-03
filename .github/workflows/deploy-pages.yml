@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
 
 env:
-  PAGES_ASSETS_URL: https://github.com/cauli/lean4-wasm-in-browser/releases/download/pages-assets-manifold-policy-ccfc081/pages-assets-manifold-policy-ccfc081.tar.gz
+  PAGES_ASSETS_URL: https://github.com/cauli/lean4-wasm-in-browser/releases/download/pages-assets-manifold-v2-0bbf970/pages-assets-manifold-v2-0bbf970.tar.gz
 
 # One deploy at a time; a newer main build supersedes an in-flight one.
 concurrency:
