@@ -1198,12 +1198,34 @@ export function useLeanGameVerifier() {
     }
   }, [compileCode, initializeForLevel, updateStatus])
 
+  // Course authoring aid: compile a whole Lean file in the environment a
+  // level has already opened, so candidate statements and proofs can be tried
+  // in seconds from the dev-only conformance hook instead of paying the
+  // Mathlib import per attempt.
+  const compileInContextOf = useCallback(async (
+    level: GameLevel,
+    code: string,
+  ): Promise<{ success: boolean; messages: string[]; elapsedMs?: number }> => {
+    await initializeForLevel(level)
+    const compiled = await compileCode(code)
+    const messages = compiled.output
+      .map((entry) => entry.data)
+      .filter((line) => !/^\s*\[(WASM DEBUG|DEBUG|PROFILE|COMPILE)/.test(line))
+    const errored = messages.some((line) => /error:|^error|declaration uses 'sorry'/.test(line))
+    return {
+      success: compiled.result.success && !errored,
+      messages,
+      elapsedMs: compiled.result.elapsed,
+    }
+  }, [compileCode, initializeForLevel])
+
   return {
     status,
     progress,
     loadPercent,
     inspectGoals,
     verify,
+    compileInContextOf,
     prepareRuntime,
     prepareLevel,
     prefetchRuntimeAssets,

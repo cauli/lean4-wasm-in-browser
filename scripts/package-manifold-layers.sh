@@ -59,4 +59,5 @@ for INDEX in "${!WORLD_SLUGS[@]}"; do
   node scripts/package-real-analysis-layer.mjs "${ARGS[@]}"
 done
 
+node scripts/package-course-module-layer.mjs "$PWD/lean/.lake/build/lib/lean" "$ASSET_ROOT"
 node scripts/create-manifold-layer-index.mjs "$ASSET_ROOT"

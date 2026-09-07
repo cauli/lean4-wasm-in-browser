@@ -31,26 +31,33 @@ test('the Mathlib-native Manifold Adventure has a core path and optional branche
   assert.deepEqual(
     game.worlds.map((world) => [world.id, world.levels.length]),
     [
-      ['Charts', 5],
+      ['Charts', 4],
+      ['Sphere', 5],
       ['ChartedSpaces', 5],
-      ['CanonicalCharts', 5],
       ['SmoothManifolds', 5],
-      ['TangentSpaces', 3],
-      ['MapProjections', 5],
-      ['CircleMotion', 4],
+      ['TangentSpaces', 5],
+      ['CanonicalCharts', 5],
+      ['SmoothOrders', 3],
+      ['CircleMotion', 5],
       ['RobotArm', 4],
       ['RobotReachability', 4],
     ],
   )
-  assert.equal(levels.length, 40)
-  assert.equal(new Set(levels.map((level) => level.id)).size, 40)
+  assert.equal(levels.length, 45)
+  assert.equal(new Set(levels.map((level) => level.id)).size, 45)
   assert.deepEqual(game.worlds[0].prerequisites, [])
 
-  // The opening world spans two Lean modules but keeps each level's original
+  // Game worlds pick levels from several Lean modules but keep each level's
   // Lean-side id, so conformance records and player progress stay valid.
   assert.deepEqual(
-    game.worlds[0].levels.map((level) => level.id),
-    ['homeomorphisms-1', 'homeomorphisms-4', 'localcharts-3', 'localcharts-4', 'localcharts-5'],
+    game.worlds.slice(0, 5).map((world) => world.levels.map((level) => level.id)),
+    [
+      ['homeomorphisms-1', 'localcharts-3', 'localcharts-4', 'localcharts-5'],
+      ['mapprojections-1', 'mapprojections-2', 'mapprojections-4', 'course-1', 'mapprojections-5'],
+      ['chartedspaces-1', 'chartedspaces-3', 'chartedspaces-5', 'course-2', 'course-3'],
+      ['smoothmanifolds-1', 'course-4', 'course-5', 'course-6', 'smoothmanifolds-5'],
+      ['tangentspaces-1', 'tangentspaces-2', 'course-7', 'course-8', 'course-9'],
+    ],
   )
 
   for (let index = 1; index < 5; index += 1) {
@@ -60,12 +67,51 @@ test('the Mathlib-native Manifold Adventure has a core path and optional branche
       `${game.worlds[index].id} should follow the previous world`,
     )
   }
-  assert.deepEqual(game.worlds[5].prerequisites, ['Charts'])
+  assert.deepEqual(game.worlds[5].prerequisites, ['ChartedSpaces'])
   assert.deepEqual(game.worlds[6].prerequisites, ['SmoothManifolds'])
-  assert.deepEqual(game.worlds[7].prerequisites, ['CircleMotion'])
-  assert.deepEqual(game.worlds[8].prerequisites, ['RobotArm'])
+  assert.deepEqual(game.worlds[7].prerequisites, ['SmoothManifolds'])
+  assert.deepEqual(game.worlds[8].prerequisites, ['CircleMotion'])
+  assert.deepEqual(game.worlds[9].prerequisites, ['RobotArm'])
+  assert.ok(game.worlds.slice(0, 5).every((world) => !world.optional))
   assert.ok(game.worlds.slice(5).every((world) => world.optional))
   assert.ok(game.worlds.every((world) => world.mapPosition))
+})
+
+test('the main path meets the sphere before the general vocabulary', () => {
+  const mainPath = game.worlds.slice(0, 5).flatMap((world) => world.levels)
+  const firstSphere = mainPath.findIndex((level) => /stereographic/.test(level.statement))
+  const firstAtlas = mainPath.findIndex((level) => /\bChartedSpace\b/.test(level.statement))
+  const firstSmooth = mainPath.findIndex((level) => /\bIsManifold\b/.test(level.statement))
+  const firstTangent = mainPath.findIndex((level) => /\bmfderiv\b|\bTangentSpace\b/.test(level.statement))
+  assert.ok(firstSphere > 0 && firstSphere < firstAtlas, 'the sphere must come before charted spaces')
+  assert.ok(firstAtlas < firstSmooth && firstSmooth < firstTangent)
+
+  // The heart of the subject: transition maps are stated in general, spelled
+  // out as differentiability, and checked on the sphere.
+  const byTheorem = Object.fromEntries(mainPath.map((level) => [level.theoremName, level]))
+  assert.match(byTheorem.chart_change_is_smooth.statement, /≫ₕ .* ∈ contDiffGroupoid/)
+  assert.match(byTheorem.chart_change_contDiffOn.statement, /ContDiffOn Scalar order/)
+  assert.match(byTheorem.sphere_chart_change_smooth.statement, /stereographic' dimension pole/)
+  assert.match(byTheorem.tangent_plane_is_orthogonal.statement, /ᗮ$/)
+  assert.match(byTheorem.tangent_vectors_are_vectors.statement, /Function\.Injective/)
+
+  // No main-path level is solved by asking Lean to look up an instance.
+  for (const level of mainPath) {
+    assert.doesNotMatch(level.solution, /infer_instance/, `${level.id} teaches nothing`)
+  }
+
+  // Concept checks sit before the key proofs and never leak a tactic.
+  const prompted = mainPath.filter((level) => level.question)
+  assert.ok(prompted.length >= 6, 'the main path needs think-first prompts')
+  for (const level of levels) {
+    if (!level.question) continue
+    assert.match(level.question.prompt, /\?$/, `${level.id} prompt is not a question`)
+    assert.ok(level.question.answer.length > 20, `${level.id} answer is too thin`)
+    assert.doesNotMatch(
+      `${level.question.prompt} ${level.question.answer}`,
+      /\b(?:exact|apply|intro|rw|simp|rfl|constructor|by_cases)\b/,
+    )
+  }
 })
 
 test('the goals use actual Mathlib manifold structures instead of local stand-ins', () => {
@@ -84,11 +130,7 @@ test('the goals use actual Mathlib manifold structures instead of local stand-in
   for (const [name, pattern] of requiredStructures) {
     assert.match(statements, pattern, `${name} never appears in a goal`)
   }
-  assert.match(
-    game.introduction,
-    /\[Mathlib's manifold API\]\(https:\/\/leanprover-community\.github\.io\/mathlib4_docs\//,
-  )
-  for (const name of requiredStructures.map(([structure]) => structure)) {
+  for (const name of ['atlas', 'IsManifold', 'TangentSpace']) {
     assert.ok(
       game.introduction.includes(
         `[\`${name}\`](https://leanprover-community.github.io/mathlib4_docs/`,
@@ -121,50 +163,37 @@ test('formal goal objects use the names introduced by Ada\'s story', () => {
 
 test('level titles describe moments in Ada\'s story', () => {
   assert.deepEqual(
-    levels.map((level) => level.title),
+    game.worlds.slice(0, 5).flatMap((world) => world.levels.map((level) => level.title)),
     [
       'The drawing matches the trail',
-      'Into the route book',
       'Her mark lands in the drawing',
       'Back to the same spot',
       'The leaf reads back into the patch',
+      'The pole stays off the leaf',
+      'The far pole lands in the middle',
+      'Off the pole, onto the leaf',
+      'One of the two leaves shows her place',
+      'The second leaf covers the hole',
       'A leaf for where she stands',
-      'This leaf is in the atlas',
       'Her place lands on the leaf',
-      'The map works nearby',
       'No place left uncovered',
-      'The reference grid stays put',
-      'The identity is filed in the atlas',
-      'Only the identity is filed there',
-      'Two readings at once',
-      'The paired chart contains her place',
+      'The preferred leaf comes from the far pole',
+      'Every projection is filed in the atlas',
       'Two leaves in conversation',
-      'The reference leaf is ready',
-      'Passing an easier check',
-      'The smooth atlas passes the basic check',
+      'Changing leaves is a smooth move',
+      'The smooth move, spelled out in calculus',
+      'Two drawings of the bead agree smoothly',
       'Two circles make a torus',
       'Ada stands still',
       'Read the location tag',
-      'Standing still anywhere',
-      'The pole stays off the leaf',
-      'The far pole lands in the middle',
-      'Every mark has a place on the bead',
-      'Off the pole, onto the leaf',
-      'The second leaf covers the hole',
-      'No turn leaves the pointer home',
-      'Two turns compose',
-      'One full turn changes nothing',
-      'The pointer turns smoothly',
-      'Find the tip of the arm',
-      'Both bars point forward',
-      'A full shoulder turn reaches the same point',
-      'The arm moves without a jump',
-      'The arm has an outer limit',
-      'The folded arm leaves a gap',
-      'Every pose stays in the ring',
-      'Outside the ring is out of reach',
+      'Leaving the bead for the room around it',
+      'Her velocities are real vectors',
+      'The tangent plane stands square to the radius',
     ],
   )
+  for (const level of levels) {
+    assert.doesNotMatch(level.title, /\b(lemma|theorem|instance|tactic)\b/i, `${level.id} title is a Lean label`)
+  }
 })
 
 test('every lesson moves from Ada to Mathlib, with its objective beside the formal goal', () => {
@@ -229,17 +258,26 @@ test('every lesson moves from Ada to Mathlib, with its objective beside the form
 test('the course explains the main undergraduate notation traps', () => {
   const byTheorem = Object.fromEntries(levels.map((level) => [level.theoremName, level]))
 
+  const worlds = Object.fromEntries(game.worlds.map((world) => [world.id, world]))
   assert.doesNotMatch(byTheorem.point_mem_preferred_chart.introduction, /compatible leaves/)
   assert.match(byTheorem.point_mem_preferred_chart.introduction, /Smooth compatibility.*comes later/)
+  assert.match(byTheorem.point_mem_preferred_chart.introduction, /is a collection of sets/)
+  assert.match(byTheorem.point_mem_preferred_chart.introduction, /contains an open set around/)
   assert.match(byTheorem.preferred_chart_maps_to_target.introduction, /\(chartAt Coordinates place\) place/)
-  assert.match(byTheorem.preferred_chart_source_is_neighborhood.introduction, /filter is a collection of sets/)
-  assert.match(byTheorem.preferred_chart_source_is_neighborhood.introduction, /contains an open set around/)
   assert.match(byTheorem.smooth_manifold_is_topological.introduction, /not the dimension/)
-  assert.match(byTheorem.tangent_bundle_has_zero.introduction, /does not yet define the zero section as a function/)
+  assert.match(byTheorem.tangent_zero.introduction, /does not yet define the zero section as a function/)
+  // The three words that stop newcomers get a plain reading where they first appear.
+  assert.match(worlds.SmoothManifolds.introduction, /read it as `ℝ`/)
+  assert.match(worlds.SmoothManifolds.introduction, /corners only matter for manifolds with boundary/)
+  assert.match(worlds.SmoothManifolds.introduction, /how many derivatives are required/)
+  assert.match(byTheorem.sphere_preferred_chart.introduction, /`dimension`-dimensional/)
+  assert.match(byTheorem.same_point_iff_full_turns.introduction, /local chart rather than a global one/)
+  assert.match(worlds.Charts.introduction, /Glossary for this course/)
 })
 
 test('the unlock ladder exposes real Mathlib declarations and Lean tactics', () => {
-  const introducedTactics = [...new Set(levels.flatMap((level) => [
+  const mainPath = game.worlds.slice(0, 5).flatMap((world) => world.levels)
+  const introducedTactics = [...new Set(mainPath.flatMap((level) => [
     ...level.newTactics,
     ...(level.completionTactics || []),
   ]))]
@@ -248,17 +286,26 @@ test('the unlock ladder exposes real Mathlib declarations and Lean tactics', () 
     'apply',
     'constructor',
     '·',
+    'simp',
+    'by_cases',
+    'left',
+    'right',
+    'intro',
+    'ext',
+    'rfl',
+    'rw',
+    'have',
+  ])
+  const optionalTactics = [...new Set(game.worlds.slice(5).flatMap((world) => world.levels).flatMap((level) => [
+    ...level.newTactics,
+    ...(level.completionTactics || []),
+  ]))]
+  assert.deepEqual(optionalTactics, [
     'rw',
     'simpa',
     'simp',
     'infer_instance',
     'intro',
-    'rfl',
-    'refine',
-    'ext',
-    'by_cases',
-    'left',
-    'right',
     'unfold',
     'fun_prop',
     'calc',
@@ -267,60 +314,44 @@ test('the unlock ladder exposes real Mathlib declarations and Lean tactics', () 
     'rcases',
   ])
 
-  const introducedTheorems = levels.flatMap((level) => level.newTheorems)
+  const introducedTheorems = mainPath.flatMap((level) => level.newTheorems)
   const expectedTheorems = [
+    // The opening level grants its cut siblings' lemmas as inventory asides.
     'Homeomorph.continuous',
-    // The route-book and mark-lands levels grant their cut siblings' lemmas
-    // as inventory asides, so those unlock alongside the surfaced theorem.
-    'Homeomorph.trans_apply',
     'Homeomorph.continuous_symm',
     'Homeomorph.symm_apply_apply',
+    'Homeomorph.trans_apply',
     'OpenPartialHomeomorph.map_source',
     'OpenPartialHomeomorph.open_source',
     'OpenPartialHomeomorph.continuousOn',
     'OpenPartialHomeomorph.left_inv',
     'OpenPartialHomeomorph.map_target',
     'OpenPartialHomeomorph.right_inv',
-    'mem_chart_source',
-    'chart_mem_atlas',
-    'mem_chart_target',
-    'chart_source_mem_nhds',
-    'iUnion_source_chartAt',
-    'chartAt_self_eq',
-    'chartedSpaceSelf_atlas',
-    'prodChartedSpace_chartAt',
-    'OpenPartialHomeomorph.trans_source',
-    'OpenPartialHomeomorph.symm_source',
-    'instIsManifoldModelSpace',
-    'IsManifold.of_le',
-    'IsManifold.prod',
     'stereographic_source',
+    'surjective_stereographic',
     'stereographic_apply_neg',
     'norm_eq_of_mem_sphere',
-    'surjective_stereographic',
     'Set.mem_compl_iff',
     'Set.mem_singleton_iff',
+    'Eq.symm',
+    'Eq.trans',
     'Set.mem_union',
     'Set.mem_univ',
     'iff_true',
-    'Eq.symm',
-    'Eq.trans',
-    'Circle.exp_zero',
-    'Circle.exp_add',
-    'Circle.exp_add_two_pi',
-    'contMDiff_circleExp',
-    'continuous_const',
-    'continuous_subtype_val',
-    'continuous_fst',
-    'continuous_snd',
-    'Continuous.comp',
-    'Continuous.mul',
-    'Continuous.add',
-    'norm_add_le',
-    'Circle.norm_coe',
-    'norm_sub_norm_le',
-    'abs_sub_le_iff',
-    'not_lt_of_ge',
+    'mem_chart_source',
+    'chart_mem_atlas',
+    'chart_source_mem_nhds',
+    'mem_chart_target',
+    'iUnion_source_chartAt',
+    'OpenPartialHomeomorph.trans_source',
+    'OpenPartialHomeomorph.symm_source',
+    'instIsManifoldModelSpace',
+    'HasGroupoid.compatible',
+    'mem_groupoid_of_pregroupoid',
+    'IsManifold.prod',
+    'contMDiff_coe_sphere',
+    'mfderiv_coe_sphere_injective',
+    'range_mfderiv_coe_sphere',
   ]
   assert.deepEqual(introducedTheorems, expectedTheorems)
 
@@ -332,6 +363,9 @@ test('the unlock ladder exposes real Mathlib declarations and Lean tactics', () 
     'ChartedSpace',
     'ModelWithCorners',
     'IsManifold',
+    'contDiffGroupoid',
+    'ContMDiff',
+    'mfderiv',
     'TangentSpace',
     'TangentBundle',
     'Circle',
@@ -349,8 +383,8 @@ test('each level creates a reusable course declaration without placeholders', ()
     assert.doesNotMatch(level.solution, /\b(sorry|admit|unsafe)\b/, `${level.id} uses a placeholder`)
   }
 
-  const tangentFinal = levels.find((level) => level.theoremName === 'tangent_bundle_has_zero')
-  assert.match(tangentFinal.solution, /\btangent_zero model place\b/)
+  const sphereTransition = levels.find((level) => level.theoremName === 'sphere_chart_change_smooth')
+  assert.match(sphereTransition.solution, /\bsphere_chart_in_atlas pole\b/)
   const robotFinal = levels.find((level) => level.theoremName === 'robot_arm_tip_continuous')
   assert.equal(robotFinal.theoremName, 'robot_arm_tip_continuous')
   assert.match(robotFinal.solution, /continuous_subtype_val/)
@@ -386,9 +420,9 @@ test('generated world modules are the source of truth for all reference proofs',
   const contextModules = [...new Set(
     levels.map((level) => verifier.levels[level.id].contextModule),
   )]
-  // One Lean module per original world: the merged opening game world spans
-  // two of them.
-  assert.equal(contextModules.length, 10)
+  // One Lean module per original world plus the r5 Course module; game
+  // worlds pick across them.
+  assert.equal(contextModules.length, 11)
   for (const moduleName of contextModules) {
     assert.match(browserBase, new RegExp(`public import ${moduleName.replaceAll('.', '\\.')}`))
   }
@@ -407,29 +441,33 @@ test('generated world modules are the source of truth for all reference proofs',
   assert.match(browserPolicy, /syntax \(name := manifoldBrowserUser\)/)
   assert.match(browserPolicy, /private meta partial def checkInventory/)
   assert.match(browserPolicy, /Lean\.Elab\.Tactic\.evalTactic tactics/)
-  const worldsById = new Map(game.worlds.map((world) => [world.id, world]))
-  for (const world of game.worlds) {
-    const moduleName = verifier.levels[world.levels[0].id].contextModule
-    for (const prerequisite of world.prerequisites) {
-      // A game world may span several Lean modules; its deepest module is the
-      // one dependents must import to retain earlier unlocks.
-      const prerequisiteModule = verifier.levels[
-        worldsById.get(prerequisite).levels.at(-1).id
-      ].contextModule
-      assert.match(
-        worldSources.get(moduleName),
-        new RegExp(`public import ${prerequisiteModule.replaceAll('.', '\\.')}`),
-        `${moduleName} must retain declarations unlocked in ${prerequisite}`,
-      )
+  // Every level compiles against the single Course header, which imports the
+  // leaves of the earlier module graph, so every module's declarations stay
+  // citable from every level.
+  assert.deepEqual(verifier.contextImports, ['ManifoldAdventure.Course'])
+  const courseSource = worldSources.get('ManifoldAdventure.Course')
+  for (const moduleName of contextModules) {
+    if (moduleName === 'ManifoldAdventure.Course') continue
+    const reachable = new Set()
+    const visit = (name) => {
+      if (reachable.has(name)) return
+      reachable.add(name)
+      for (const match of worldSources.get(name).matchAll(/^public import (ManifoldAdventure\.\w+)$/gm)) {
+        if (worldSources.has(match[1])) visit(match[1])
+      }
     }
+    visit('ManifoldAdventure.Course')
+    assert.ok(reachable.has(moduleName), `${moduleName} is not reachable from the Course header`)
   }
-  // The modules keep every original declaration (44): four are granted as
-  // inventory asides rather than surfaced as levels.
+  assert.match(courseSource, /^public import ManifoldAdventure\.MapProjections$/m)
+  // The ten earlier modules keep every declaration compiled into the deployed
+  // layers (44); the Course module adds the ten r5 levels.
   assert.equal(
     [...allSources.matchAll(/^(?:theorem|(?:noncomputable )?def) /gm)].length,
-    44,
+    54,
   )
-  assert.equal(levels.length, 40)
+  assert.equal([...courseSource.matchAll(/^theorem /gm)].length, 10)
+  assert.equal(levels.length, 45)
   assert.equal([...allSources.matchAll(/^(?:noncomputable )?def /gm)].length, 2)
   assert.doesNotMatch(allSources, /\b(sorry|admit|axiom|unsafe)\b/)
 

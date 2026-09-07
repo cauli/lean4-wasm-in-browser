@@ -61,7 +61,7 @@ test('the first manifold level imports only its homeomorphism world', () => {
 
 test('the manifold loader does not stage the Real Analysis course', () => {
   const start = loader.indexOf('const ensureManifoldLayer')
-  const end = loader.indexOf('const trySnapshot', start)
+  const end = loader.indexOf('const runCompile', start)
   assert.notEqual(start, -1)
   assert.notEqual(end, -1)
 
@@ -91,7 +91,9 @@ test('optional worlds package and load only their graph prerequisites', () => {
   assert.match(layerIndexer, /\['CircleMotion',[\s\S]*\['SmoothManifolds'\]/)
   assert.match(layerIndexer, /\['RobotArm',[\s\S]*\['CircleMotion'\]/)
   assert.match(layerIndexer, /\['RobotReachability',[\s\S]*\['RobotArm'\]/)
+  assert.match(layerIndexer, /\['Course',[\s\S]*\['TangentSpaces', 'MapProjections', 'RobotReachability'\]/)
   assert.match(manifoldPackager, /map-projections circle-motion robot-arm robot-reachability/)
+  assert.match(manifoldPackager, /package-course-module-layer\.mjs/)
   assert.match(
     manifoldPackager,
     /homeomorphisms,local-charts,charted-spaces,canonical-charts,smooth-manifolds,circle-motion/,
@@ -102,16 +104,19 @@ test('optional worlds package and load only their graph prerequisites', () => {
     manifoldWorkflow,
     /mathlib_layer_run_id:[\s\S]{0,180}default: "30693760471"/,
   )
-  assert.match(manifoldWorkflow, /index\.layers\.length !== 10/)
-  assert.match(manifoldWorkflow, /verifiedReferenceSolutions\?\.length !== 44/)
-  assert.match(pagesBuilder, /map-projections circle-motion robot-arm robot-reachability/)
-  assert.match(pagesAssetPackager, /map-projections circle-motion robot-arm robot-reachability/)
+  assert.match(manifoldWorkflow, /index\.layers\.length !== 11/)
+  assert.match(manifoldWorkflow, /verifiedReferenceSolutions\?\.length !== c\.summary\?\.total/)
+  assert.match(pagesBuilder, /map-projections circle-motion robot-arm robot-reachability course/)
+  assert.match(pagesBuilder, /layers\?\.length !== 11/)
+  assert.match(pagesAssetPackager, /map-projections circle-motion robot-arm robot-reachability course/)
 })
 
 test('the first course layer retains Init files needed by Lean module resolution', () => {
   assert.doesNotMatch(packager, /providedByRuntimeInitialization/)
   assert.doesNotMatch(packager, /runtimeProvidedModules/)
-  assert.match(loader, /await trySnapshot\(\)[\s\S]*await addInitFiles\(\)/)
+  // Init comes from the packed core, not the 230 MB init.snap download.
+  assert.doesNotMatch(loader, /snapshots\/init\.snap/)
+  assert.match(loader, /await ensureWorker\(\)[\s\S]{0,600}await addInitFiles\(\)/)
 })
 
 test('the artifact staging experiment keeps one Lean worker and bounds helper workers', () => {

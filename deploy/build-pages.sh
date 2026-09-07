@@ -118,7 +118,7 @@ node -e '
 const fs = require("fs");
 const manifest = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
 const base = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
-if (manifest.kind !== "manifold-course-layer-index" || manifest.layers?.length !== 10) {
+if (manifest.kind !== "manifold-course-layer-index" || manifest.layers?.length !== 11) {
   throw new Error("Manifold layer index is invalid");
 }
 if (manifest.leanCommit !== base.leanCommit || manifest.mathlibCommit !== base.mathlibCommit) {
@@ -145,7 +145,7 @@ cp -L "$MANIFOLD_MANIFEST" dist/lean-wasm/manifold-layer.json
 for SLUG in \
   homeomorphisms local-charts charted-spaces \
   canonical-charts smooth-manifolds tangent-spaces \
-  map-projections circle-motion robot-arm robot-reachability
+  map-projections circle-motion robot-arm robot-reachability course
 do
   cp -L \
     "public/lean-wasm/manifold-$SLUG-layer.json" \

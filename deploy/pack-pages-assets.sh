@@ -37,7 +37,7 @@ rsync -aL --include='artifacts-*.pack' --exclude='*' \
 for SLUG in \
   homeomorphisms local-charts charted-spaces \
   canonical-charts smooth-manifolds tangent-spaces \
-  map-projections circle-motion robot-arm robot-reachability
+  map-projections circle-motion robot-arm robot-reachability course
 do
   cp -L \
     "public/lean-wasm/manifold-$SLUG-layer.json" \

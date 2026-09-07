@@ -121,7 +121,7 @@ unfinished upstream proofs contain `sorry`, and four large proofs hit the
 browser call-stack limit even in isolated workers. Branch-sensitive `Hint` /
 `Branch` evaluation remains a separate unported GameServer feature.
 
-The **Manifold Adventure** at `/games/manifold-adventure` has 10 worlds and 44
+The **Manifold Adventure** at `/games/manifold-adventure` has 10 worlds and 45
 short kernel-checked exercises. Its main path follows Ada the ant through
 homeomorphisms, local charts, charted spaces, smooth manifolds, and tangent
 spaces using Mathlib's own structures. Optional paths branch into stereographic

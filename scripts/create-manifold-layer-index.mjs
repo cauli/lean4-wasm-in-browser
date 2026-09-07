@@ -21,6 +21,8 @@ const layers = [
   ['CircleMotion', 'circle-motion', 'circular motion', ['SmoothManifolds'], ['homeomorphisms', 'local-charts', 'charted-spaces', 'canonical-charts', 'smooth-manifolds']],
   ['RobotArm', 'robot-arm', 'robot arm', ['CircleMotion'], ['homeomorphisms', 'local-charts', 'charted-spaces', 'canonical-charts', 'smooth-manifolds', 'circle-motion']],
   ['RobotReachability', 'robot-reachability', 'robot reachability', ['RobotArm'], ['homeomorphisms', 'local-charts', 'charted-spaces', 'canonical-charts', 'smooth-manifolds', 'circle-motion', 'robot-arm']],
+  // The r5 module sits on top of every earlier one and adds no Mathlib files.
+  ['Course', 'course', 'course', ['TangentSpaces', 'MapProjections', 'RobotReachability'], ['homeomorphisms', 'local-charts', 'charted-spaces', 'canonical-charts', 'smooth-manifolds', 'tangent-spaces', 'map-projections', 'circle-motion', 'robot-arm', 'robot-reachability']],
 ].map(([world, slug, label, prerequisites, artifactBases]) => ({
   world,
   module: `ManifoldAdventure.${world}`,
