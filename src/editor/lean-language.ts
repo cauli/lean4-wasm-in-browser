@@ -60,6 +60,15 @@ export function registerLeanLanguage(): void {
     tokenPostfix: '.lean',
     keywords: KEYWORDS,
     commands: COMMANDS,
+    // Monarch resolves the `@brackets` token against this list, not the
+    // language configuration, and its default knows only ASCII brackets.
+    brackets: [
+      { open: '(', close: ')', token: 'delimiter.parenthesis' },
+      { open: '[', close: ']', token: 'delimiter.square' },
+      { open: '{', close: '}', token: 'delimiter.curly' },
+      { open: '⟨', close: '⟩', token: 'delimiter.angle' },
+      { open: '⦃', close: '⦄', token: 'delimiter.angle' },
+    ],
     // Lean identifiers include Greek letters, subscripts, primes, etc.
     symbols: /[=><!~?:&|+\-*/^%∀∃∧∨¬→↔≤≥≠∈∉⊆⊂∪∩λ←↦∘⬝▸･]+/,
     tokenizer: {

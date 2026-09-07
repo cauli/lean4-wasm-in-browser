@@ -795,16 +795,6 @@ export function useLeanGameVerifier() {
     }
   }, [getManifoldLayerIndex, loadArtifactLayer])
 
-  const trySnapshot = useCallback(async (): Promise<boolean> => {
-    const suffix = LEAN_ASSET_VERSION ? `?v=${encodeURIComponent(LEAN_ASSET_VERSION)}` : ''
-    const relativeUrl = `${LEAN_BIN_BASE}/snapshots/init.snap${suffix}`
-    return loadSnapshot(
-      'init.snap',
-      relativeUrl,
-      'Loading the prebuilt Lean core environment...',
-    )
-  }, [loadSnapshot])
-
   const runCompile = useCallback(async (code: string): Promise<{ result: WorkerResult; output: WorkerOutput[] }> => {
     const worker = workerRef.current
     if (!worker) throw new Error('Lean worker is unavailable.')
@@ -862,9 +852,10 @@ export function useLeanGameVerifier() {
         throw new Error(`Lean WASM was not found at ${LEAN_WASM_BASE}.`)
       }
       await ensureWorker()
-      await trySnapshot()
-      // A restored environment does not replace the module resolver's files:
-      // later Mathlib imports still traverse Init's .olean dependency tree.
+      // Init is imported from the packed core below rather than restored from
+      // the 230 MB init.snap: with indexed symbol lookup in the runtime glue
+      // the import takes seconds, while the snapshot download takes minutes
+      // through the Pages function on a cold cache.
       await addInitFiles()
       setProgress('Warming the local kernel...')
       const warm = await compileCode('')
@@ -880,7 +871,7 @@ export function useLeanGameVerifier() {
     })
     initializePromiseRef.current = promise
     return promise
-  }, [addInitFiles, advanceLoadPercent, compileCode, ensureWorker, trySnapshot, updateStatus])
+  }, [addInitFiles, advanceLoadPercent, compileCode, ensureWorker, updateStatus])
 
   const prepareRuntime = useCallback(async () => {
     await initialize()

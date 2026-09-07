@@ -29,6 +29,10 @@ fi
 # Lean githash read from Init.olean's header.
 VER=$(node -e "const b=require('fs').readFileSync('public/lean-wasm/lean-lib/Init.olean'); const m=b.subarray(0,120).toString('latin1').match(/[0-9a-f]{40}/); process.stdout.write(m?m[0]:'')")
 [ -n "$VER" ] || { echo "error: could not read the Lean githash from Init.olean" >&2; exit 1; }
+# A relinked lean.js with the same lean.wasm keeps the githash but must get a
+# new key: the serving function marks these objects immutable for a year, so
+# overwriting a key leaves returning browsers on the old glue.
+VER="$VER${LEAN_ASSET_TAG:+-$LEAN_ASSET_TAG}"
 echo "Build version (R2 prefix): $VER"
 
 put() { # <key> <file> <content-type>

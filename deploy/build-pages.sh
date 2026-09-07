@@ -26,6 +26,8 @@ export VITE_LEAN_WASM_BASE=/lean-wasm
 # reusing the cached lean.js / lean.wasm. Falls back to a timestamp if unreadable.
 VITE_LEAN_ASSET_VERSION=$(node -e "const b=require('fs').readFileSync('public/lean-wasm/lean-lib/Init.olean'); const m=b.subarray(0,120).toString('latin1').match(/[0-9a-f]{40}/); process.stdout.write(m?m[0]:'')" 2>/dev/null || true)
 export VITE_LEAN_ASSET_VERSION="${VITE_LEAN_ASSET_VERSION:-$(date -u +%Y%m%d%H%M%S)}"
+# Same optional tag as deploy/upload-r2.sh, for a relinked glue on an unchanged wasm.
+export VITE_LEAN_ASSET_VERSION="$VITE_LEAN_ASSET_VERSION${LEAN_ASSET_TAG:+-$LEAN_ASSET_TAG}"
 echo "Asset version (lean.js/lean.wasm ?v=): $VITE_LEAN_ASSET_VERSION"
 
 STASH="$(mktemp -d)"
