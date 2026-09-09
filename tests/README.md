@@ -5,15 +5,15 @@ browser) and check it compiles a suite of Lean snippets correctly — famous
 Natural Number Game–style induction proofs, computation checks, and error cases
 that must be rejected.
 
-There's no smaller "unit" to test: the thing under test *is* the Lean WASM
-binary, so the test runs it. It's a pthread build, but the Emscripten glue speaks
-Node (`worker_threads` + `SharedArrayBuffer`), so it runs under `node --test` with
-no browser.
+The compiler integration suite runs the actual pthread binary through Node
+(`worker_threads` + `SharedArrayBuffer`). Separate unit suites check release
+pins, fixture integrity, immutable uploads, versioned R2 serving, deployment
+destinations, and static packaging without booting WASM.
 
 ## Running
 
 ```bash
-# One-off: fetch the deployed artifacts (lean.js, lean.wasm, Init-closure oleans)
+# 🤖 Fetch the checked-in candidate release, not whatever is currently deployed
 npm run test:fetch        # -> tests/.artifacts/  (gitignored)
 
 npm test                  # node --test tests/*.test.mjs
@@ -23,10 +23,23 @@ Locally, if the `public/lean-wasm` dev symlinks point at a full artifact, `npm
 test` uses those directly and you can skip the fetch. First run is ~50s (a
 one-time Init import); every case after is milliseconds.
 
-CI (`.github/workflows/playground-tests.yml`) does exactly `test:fetch` then
-`node --test`, against **the deployed `lean.cau.li` artifacts** — so it also
-smoke-tests the live playground. Runs on push to `main`, on a daily schedule, and
-on demand.
+CI reads `deploy/runtime-release.json`. It checks the fixture archive SHA-256
+before extraction, then checks every runtime object's bytes and the Node
+`lib/lean/Init.olean` commit. Node mounts that library through
+`FS.filesystems.NODEFS`; fixtures must contain `bin/` and `lib/lean/`, not the
+browser's `lean-lib/` layout. The `bin/` glue loads as CommonJS for pthreads.
+
+The required CI gate runs both Node tests and Chromium Manifold/NNG proof
+checks. It runs on pushes to `main` and `release/**`, pull requests to `main`,
+and manual dispatch. A manual run does not promote production. See
+[deployment safety](../deploy/DEPLOY.md).
+
+For light release tests without the compiler:
+
+```bash
+node --test tests/runtime-release.test.mjs tests/runtime-serving.test.mjs \
+  tests/deploy-target.test.mjs tests/static-assets.test.mjs
+```
 
 ## Files
 
@@ -35,7 +48,7 @@ on demand.
 | `cases.mjs` | the test cases: `{ name, code, expect }` |
 | `lean-node.mjs` | boots the Lean WASM binary in Node, exposes `compile(code) -> { tag, diagnostics }` |
 | `playground.test.mjs` | `node --test` runner: boots once, one test per case |
-| `fetch-artifacts.mjs` | downloads the deployed artifacts into `tests/.artifacts/` |
+| `fetch-artifacts.mjs` | authenticates and installs the pinned candidate into `tests/.artifacts/` |
 
 `expect` is `'ok'` (compiles clean), `'error'` (reports ≥1 error-severity
 diagnostic), or `{ has: 's' }` (some diagnostic's JSON contains `s` — checks

@@ -1,45 +1,21 @@
 name: playground tests
 
-# Integration tests that boot the real Lean WASM compiler headless in Node and
-# check it compiles a suite of Lean snippets correctly. The multi-GB wasm/oleans
-# aren't in the repo, so fetch-artifacts.mjs pulls them from a GitHub release
-# fixture (GitHub-hosted — the live deploy behind Cloudflare 403s CI IPs).
-#
-# A green run on main triggers the deploy-pages workflow.
-
+# 🤖 The required release gate tests the pinned candidate in Node and Chromium.
+# 🤖 Only a successful push-to-main run can trigger automatic production deploy.
 on:
   push:
+    branches: [main, 'release/**']
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
-# One run at a time; a newer trigger cancels an in-flight one.
+permissions:
+  contents: read
+
 concurrency:
-  group: playground-tests
+  group: playground-tests-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          # Node 24+: earlier V8 caps WASM exports at 100k, but the -sEXPORT_ALL
-          # lean.wasm has ~201k exports and won't instantiate below that.
-          node-version: 24
-          cache: npm
-
-      # The game-data suites bundle the browser verifier with esbuild and render
-      # lesson markdown with the real react-markdown pipeline.
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Fetch deployed Lean artifacts
-        run: node tests/fetch-artifacts.mjs
-        env:
-          LEAN_URL: https://lean.cau.li
-
-      - name: Run compiler integration tests
-        run: node --test tests/*.test.mjs
+  runtime-gate:
+    uses: ./.github/workflows/runtime-release-gate.yml

@@ -37,7 +37,7 @@ export async function onRequest(context) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return next()
   const key = Array.isArray(params.path) ? params.path.join('/') : params.path
 
-  if (!fromR2(key)) return next()
+  if (typeof key !== 'string' || !fromR2(key)) return next()
 
   // Serve raw bytes; Cloudflare compresses on the fly. Pre-gzipping in R2 +
   // content-encoding does NOT survive Cloudflare here: with default compression
@@ -47,14 +47,14 @@ export async function onRequest(context) {
   // Function, so raw it is. (A true fix needs the files on an R2 custom domain
   // served directly, not proxied through a Worker.)
   //
-  // The app requests these with `?v=<lean githash>`; builds are stored under
-  // that prefix (`<githash>/lean.wasm`), so several builds coexist in the
-  // bucket and uploading a new one never changes the bytes an already-open
-  // session gets. The bare key is the fallback for pre-versioning sessions.
-  const version = new URL(request.url).searchParams.get('v')
-  const versionedKey = version && /^[0-9a-zA-Z._-]+$/.test(version) ? `${version}/${key}` : null
-  const obj = (versionedKey && await env.LEAN_ASSETS.get(versionedKey))
-    || await env.LEAN_ASSETS.get(key)
+  // 🤖 Explicit versions must never fall back to a different runtime. Only
+  // 🤖 legacy requests with no `v` parameter can read the unversioned objects.
+  const versions = new URL(request.url).searchParams.getAll('v')
+  if (versions.length > 1 || (versions.length === 1 && (!versions[0] || /[^0-9a-zA-Z._-]/.test(versions[0])))) {
+    return new Response('Invalid asset version', { status: 400 })
+  }
+  const objectKey = versions.length ? `${versions[0]}/${key}` : key
+  const obj = await env.LEAN_ASSETS.get(objectKey)
   if (!obj) return new Response(`Not found: ${key}`, { status: 404 })
 
   const headers = new Headers()
@@ -64,7 +64,7 @@ export async function onRequest(context) {
   headers.set('content-type', TYPES[ext] || 'application/octet-stream')
   // Immutable is safe: each build lives at its own `?v=` URL (and R2 prefix),
   // so a cached response can never be paired with a different build's files.
-  headers.set('cache-control', 'public, max-age=31536000, immutable')
+  headers.set('cache-control', versions.length ? 'public, max-age=31536000, immutable' : 'public, max-age=300')
   headers.set('cross-origin-resource-policy', 'same-origin')
   // lean.js is loaded as a pthread Worker script; the worker only joins the
   // cross-origin-isolated agent cluster (and thus gets SharedArrayBuffer) if its
@@ -76,5 +76,5 @@ export async function onRequest(context) {
   // No Function-level edge cache: browsers cache these immutably (so repeat
   // loads and the pthread pool don't re-fetch), and R2 egress is free. Avoiding
   // the edge cache also sidesteps serving a stale header set after a redeploy.
-  return new Response(obj.body, { headers })
+  return new Response(request.method === 'HEAD' ? null : obj.body, { headers })
 }
