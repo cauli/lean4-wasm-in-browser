@@ -40,18 +40,90 @@ function checkWorkerIdentity(workers, release, base) {
     if (worker.role === 'pthread') assert.equal(worker.targetUrl, expectedScript, 'Wrong pthread entry URL');
   }
 }
-function checkReference(results, firstId) {
-  assert.equal(results.length, 1, 'The smoke must run exactly one reference, not the full matrix');
-  assert.equal(results[0].id, firstId);
-  const result = results[0].result;
+function firstReference(game, base) {
+  const level = game.worlds.flatMap((world) => world.levels)[0];
+  assert.ok(level && typeof level.solution === 'string' && level.solution.trim(), 'Missing first reference solution');
+  const world = level.world.toLowerCase();
+  assert.match(world, /^[a-z0-9-]+$/);
+  assert.ok(Number.isSafeInteger(level.number) && level.number > 0);
+  assert.equal(level.id, `${world}-${level.number}`);
+  return {
+    id: level.id, title: level.title, solution: level.solution,
+    url: new URL(`/games/real-analysis-game/${world}/${level.number}?variant=full`, base).href,
+  };
+}
+function checkReference(results, first) {
+  assert.equal(results.length, 1, 'The smoke must verify exactly one reference');
+  const reference = results[0];
+  assert.equal(reference.mode, 'production-ui');
+  assert.equal(reference.id, first.id);
+  assert.equal(reference.url, first.url);
+  assert.equal(reference.title, first.title);
+  assert.equal(reference.progress.answer, first.solution, 'The editor did not submit the generated reference');
+  assert.equal(reference.progress.rules, 'regular');
+  assert.equal(reference.progress.attempts, 1, 'Expected exactly one Verify answer action');
+  assert.equal(reference.progress.completed, true, 'The selected level was not marked complete');
+  const result = reference.result;
   assert.equal(result.success, true, result.detail);
-  assert.equal(result.kind, 'verified', 'Expected a kernel verification result');
   assert.equal(result.headline, 'Proof accepted by the local Lean kernel.');
-  assert.ok(Number.isFinite(result.elapsedMs) && result.elapsedMs >= 0, 'Missing kernel elapsed time');
-  assert.ok(result.stages.some((stage) => stage.label === 'Kernel' && stage.state === 'passed'));
-  assert.ok(Array.isArray(result.diagnostics), 'Kernel diagnostics must be present, even when empty');
-  assert.ok(!result.diagnostics.some((item) => item.severity === 'error'
-    || /declaration uses 'sorry'|declaration has metavariables/i.test(item.message)));
+  assert.match(result.detail, /^Elaboration and kernel checking completed in \d+ ms\.$/);
+  assert.deepEqual(result.stages.map((stage) => stage.label), ['Answer policy', 'Elaboration', 'Kernel', 'Game rules']);
+  assert.ok(result.stages.every((stage) => stage.state === 'passed'), 'A verification stage did not pass');
+}
+async function verifyReferenceInUi(page, first, remaining, report) {
+  // 🤖 The conformance API is DEV-only. Use the same production editor and
+  // 🤖 Verify answer control as a player, without exposing or changing app hooks.
+  report.phase = 'opening-first-real-analysis-level';
+  await page.goto(first.url, { waitUntil: 'domcontentloaded', timeout: Math.min(60_000, remaining()) });
+  report.crossOriginIsolated = await page.evaluate(() => crossOriginIsolated);
+  assert.equal(report.crossOriginIsolated, true, 'Shared-memory isolation is required');
+  await page.locator('.level-heading h1').waitFor({ state: 'visible', timeout: remaining() });
+  assert.equal(await page.locator('.level-heading h1').textContent(), first.title);
+  const initiallyComplete = await page.evaluate((id) => (
+    JSON.parse(localStorage.getItem('realAnalysisGameLocalProgress') || '{}').completed?.includes(id) || false
+  ), first.id);
+  assert.equal(initiallyComplete, false, 'A fresh context must not start with the reference completed');
+
+  report.phase = 'filling-reference-in-monaco';
+  await page.locator('.game-editor .monaco-editor').click({ timeout: remaining() });
+  await page.keyboard.press('ControlOrMeta+A');
+  await page.keyboard.insertText(first.solution);
+  // 🤖 Reading the persisted editor value confirms actual Monaco input, without
+  // 🤖 depending on the development-only conformance API or an editor test hook.
+  await page.waitForFunction(({ id, solution }) => (
+    JSON.parse(localStorage.getItem('realAnalysisGameLocalProgress') || '{}').answers?.[id] === solution
+  ), first, { timeout: remaining() });
+  report.phase = 'waiting-for-live-goal-preview';
+  await page.locator('.live-goal-complete, .live-goal-error').waitFor({ state: 'visible', timeout: remaining() });
+  report.liveGoal = await page.locator('.live-goal-complete, .live-goal-error').innerText();
+  assert.equal(await page.locator('.live-goal-error').count(), 0, `Reference live-goal inspection failed: ${report.liveGoal}`);
+  assert.match(await page.locator('.live-goal-complete').innerText(), /No goals remain/);
+
+  report.phase = 'verifying-reference-through-ui';
+  await page.getByRole('button', { name: 'Verify answer', exact: true }).click({ timeout: remaining() });
+  const panel = page.locator('.proof-panel > .proof-feedback .verification-result');
+  await panel.waitFor({ state: 'visible', timeout: remaining() });
+  const result = await panel.evaluate((element) => ({
+    success: element.classList.contains('verification-result-success'),
+    headline: element.querySelector('h2')?.textContent || '',
+    detail: element.querySelector('.verification-result-copy > p')?.textContent || '',
+    stages: [...element.querySelectorAll('.verification-stage')].map((stage) => ({
+      label: stage.querySelector('strong')?.textContent || '',
+      state: stage.querySelector('span')?.textContent || '',
+      detail: stage.querySelector('p')?.textContent || '',
+    })),
+  }));
+  report.references = [{ id: first.id, mode: 'production-ui', url: page.url(), title: first.title, result }];
+  assert.equal(result.success, true, result.detail);
+  await page.waitForFunction((id) => (
+    JSON.parse(localStorage.getItem('realAnalysisGameLocalProgress') || '{}').completed?.includes(id)
+  ), first.id, { timeout: remaining() });
+  report.references[0].progress = await page.evaluate((id) => {
+    const progress = JSON.parse(localStorage.getItem('realAnalysisGameLocalProgress') || '{}');
+    return { answer: progress.answers?.[id], attempts: progress.attempts?.[id], completed: progress.completed?.includes(id), rules: progress.rules };
+  }, first.id);
+  assert.match(await page.locator('.game-header-complete').innerText({ timeout: remaining() }), /\bcompleted\b/i);
+  checkReference(report.references, first);
 }
 
 // 🤖 Public CDPSession cannot address arbitrary nested session IDs directly.
@@ -175,15 +247,18 @@ async function smoke() {
   const output = path.resolve(process.env.RELEASE_BROWSER_OUTPUT
     || `/tmp/lean-compact-release/browser-${base.host.replace(/[^a-zA-Z0-9.-]/g, '-')}.json`);
   const game = JSON.parse(await readFile(new URL('../src/game/real-analysis.generated.json', import.meta.url), 'utf8'));
-  const firstId = game.worlds.flatMap((world) => world.levels)[0].id;
+  const first = firstReference(game, base);
+  const firstId = first.id;
   const report = {
     startedAt: new Date().toISOString(), baseUrl: base.href, assetVersion: release.assetVersion,
     leanCommit: release.leanCommit, workers: [], runtimeResponses: [], runtimeWarmups: [], realAnalysisFetches: [],
     wasmIdentityEvidence: 'Separate HTTP body hash plus actual browser request URL/status/headers; no browser response-body hash.',
-    observationErrors: [], pageErrors: [], passed: false,
+    proofEvidence: 'Production UI acceptance, verification stages, and saved level progress; no internal diagnostic API.',
+    observationErrors: [], pageErrors: [], consoleErrors: [], requestFailures: [], passed: false,
   };
   const { chromium } = await import('@playwright/test');
   const browser = await chromium.launch();
+  let page;
   try {
     const context = await browser.newContext({ serviceWorkers: 'block' });
     const networkJobs = [];
@@ -193,6 +268,7 @@ async function smoke() {
       if (record) { record.events.push('requestfinished'); record.finished = true; }
     });
     context.on('requestfailed', (request) => {
+      report.requestFailures.push({ url: request.url(), failure: request.failure() });
       const record = requests.get(request);
       if (record) { record.events.push('requestfailed'); record.requestFailure = request.failure(); }
     });
@@ -218,20 +294,21 @@ async function smoke() {
           record.events.push('response.finished');
         }).catch((error) => { record.error = String(error); }));
     });
-    const page = await context.newPage();
+    page = await context.newPage();
     page.on('pageerror', (error) => report.pageErrors.push(String(error)));
+    page.on('console', (message) => {
+      if (message.type() === 'error' && report.consoleErrors.length < 100) report.consoleErrors.push(message.text());
+    });
     const cdp = await context.newCDPSession(page);
     const observation = await observeWorkers(cdp, report);
+    const endAt = performance.now() + timeout;
+    const remaining = () => Math.max(1, Math.ceil(endAt - performance.now()));
     await deadline(Promise.race([observation.failure, (async () => {
+      report.phase = 'wasm-http-preflight';
       const expectedWasm = new URL(`/lean-wasm/lean.wasm?v=${release.assetVersion}`, base).href;
       report.wasmPreflight = await wasmPreflight(expectedWasm, release.objects['lean.wasm']);
-      // 🤖 One fresh page/context and one [0, 1) reference call. No tracked report is updated.
-      await page.goto(new URL('/games/real-analysis-game?conformance=1&variant=full', base).href, { waitUntil: 'domcontentloaded', timeout: 60_000 });
-      report.crossOriginIsolated = await page.evaluate(() => crossOriginIsolated);
-      assert.equal(report.crossOriginIsolated, true, 'Shared-memory isolation is required');
-      await page.waitForFunction(() => Boolean(window.__leanGameConformance?.runRealAnalysisReferences), null, { timeout: 60_000 });
-      report.references = await page.evaluate(() => window.__leanGameConformance.runRealAnalysisReferences('regular', { start: 0, end: 1 }));
-      checkReference(report.references, firstId);
+      await verifyReferenceInUi(page, first, remaining, report);
+      report.phase = 'checking-worker-and-network-identity';
       await observation.settle();
       await Promise.all(networkJobs);
       checkWorkerIdentity(report.workers, release, base);
@@ -250,9 +327,16 @@ async function smoke() {
       assert.deepEqual(report.pageErrors, []);
       assert.deepEqual(report.observationErrors, []);
       report.passed = true;
+      report.phase = 'complete';
     })()]), timeout, 'Release browser smoke');
   } catch (error) {
     report.error = String(error.stack || error);
+    if (page && !page.isClosed()) {
+      // 🤖 Capture the visible failure before cleanup; never evaluate a pthread.
+      report.failurePage = await deadline(page.evaluate(() => ({
+        url: location.href, text: document.body.innerText.slice(0, 20000),
+      })), 3000, 'Failure page capture').catch((failure) => ({ error: String(failure) }));
+    }
     process.exitCode = 1;
   } finally {
     await deadline(browser.close(), 30_000, 'Browser cleanup').catch((error) => {
@@ -282,12 +366,34 @@ async function selfTest() {
     Object.assign(wrong[4], patch);
     assert.throws(() => checkWorkerIdentity(wrong, release, base));
   }
-  const result = { id: 'first', result: { success: true, kind: 'verified', elapsedMs: 12, headline: 'Proof accepted by the local Lean kernel.', stages: [{ label: 'Kernel', state: 'passed' }], diagnostics: [] } };
-  checkReference([result], 'first');
-  assert.throws(() => checkReference([result, result], 'first'));
-  const bad = structuredClone(result);
-  bad.result.diagnostics.push({ severity: 'error', message: 'kernel error' });
-  assert.throws(() => checkReference([bad], 'first'));
+  const game = { worlds: [{ levels: [{ id: 'realanalysisstory-1', world: 'RealAnalysisStory', number: 1, title: 'Introduction to Lean', solution: 'apply h' }] }] };
+  const first = firstReference(game, base);
+  assert.equal(first.url, `${base}/games/real-analysis-game/realanalysisstory/1?variant=full`);
+  assert.ok(!first.url.includes('conformance'));
+  const result = {
+    id: first.id, mode: 'production-ui', url: first.url, title: first.title,
+    progress: { answer: first.solution, rules: 'regular', attempts: 1, completed: true },
+    result: {
+      success: true, headline: 'Proof accepted by the local Lean kernel.',
+      detail: 'Elaboration and kernel checking completed in 12 ms.',
+      stages: ['Answer policy', 'Elaboration', 'Kernel', 'Game rules'].map((label) => ({ label, state: 'passed' })),
+    },
+  };
+  checkReference([result], first);
+  assert.throws(() => checkReference([result, result], first));
+  for (const mutate of [
+    (wrong) => { wrong.id = 'other-level'; },
+    (wrong) => { wrong.url = `${base}/games/real-analysis-game`; },
+    (wrong) => { wrong.progress.answer = 'sorry'; },
+    (wrong) => { wrong.progress.attempts = 2; },
+    (wrong) => { wrong.progress.completed = false; },
+    (wrong) => { wrong.result.success = false; },
+    (wrong) => { wrong.result.stages[2].state = 'pending'; },
+  ]) {
+    const wrong = structuredClone(result);
+    mutate(wrong);
+    assert.throws(() => checkReference([wrong], first));
+  }
   const parent = new EventEmitter();
   parent.send = async (method, { sessionId, message }) => {
     assert.equal(method, 'Target.sendMessageToTarget');
