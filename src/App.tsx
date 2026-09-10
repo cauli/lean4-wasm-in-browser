@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import {
   fetchCompleteFileList,
+  fetchLeanArtifactPack,
   fetchOleanFiles,
   getRequiredOleanPaths,
   parseUserImports,
   closureDownloadSize,
+  type LeanArtifactPack,
 } from './lean-loader'
+import { prepareArtifactPackCache } from './artifact-pack-cache'
 import { LEAN_WASM_BASE, LEAN_BIN_BASE, LEAN_ASSET_VERSION, LEAN_VARIANT, workerAssetQuery } from './config'
 import { examples } from './examples'
 import { LeanEditor, dropModel, renameModel, type LeanMarker } from './editor/LeanEditor'
@@ -703,6 +706,61 @@ function App() {
     })
   }, [loadOleansFor])
 
+  // Stage the Init closure from the packed core layer (five ~16 MB packs,
+  // Cache API backed, the same files the games stage) straight into the
+  // resident worker. Returns false when no packed core is deployed so the
+  // per-file route below still works on a bare dev tree.
+  const loadPackedCore = useCallback(async (): Promise<boolean> => {
+    const worker = persistentWorkerRef.current
+    if (!worker) return false
+    let manifest: { files?: string[]; packs?: LeanArtifactPack[]; leanCommit?: string; generatedAt?: string; version?: string }
+    try {
+      const response = await fetch(`${LEAN_WASM_BASE}/core-layer.json`, { cache: 'no-cache' })
+      if (!response.ok) return false
+      manifest = await response.json()
+    } catch { return false }
+    const packs = manifest.packs || []
+    if (packs.length === 0) return false
+    // Same cache family and version the game verifier derives for this
+    // manifest, so the playground and the games share one stored copy.
+    const cacheDescriptor = {
+      family: 'core-lib',
+      version: [
+        manifest.leanCommit || LEAN_ASSET_VERSION || 'lean-development',
+        'mathlib-development',
+        manifest.generatedAt || manifest.version || 'development',
+      ].join('-'),
+    }
+    await prepareArtifactPackCache(cacheDescriptor)
+    let added = 0
+    for (const [index, pack] of packs.entries()) {
+      setLoadingProgress(`Loading Lean core: pack ${index + 1} / ${packs.length}`)
+      setLoadPercent(10 + Math.round(50 * index / packs.length))
+      const files = await fetchLeanArtifactPack(pack, 'core-lib', undefined, cacheDescriptor)
+      const missing = pack.entries.filter((entry) => !files.has(entry.path))
+      if (missing.length > 0) throw new Error(`Lean core pack ${pack.file} is incomplete (${missing.length} files missing).`)
+      const payload: Array<{ name: string; data: ArrayBuffer }> = []
+      const transfer: ArrayBuffer[] = []
+      files.forEach((bytes, name) => {
+        if (residentOleansRef.current.has(name)) return
+        const data = bytes.byteOffset === 0 && bytes.byteLength === bytes.buffer.byteLength
+          ? bytes.buffer
+          : bytes.slice().buffer
+        payload.push({ name, data })
+        transfer.push(data)
+        residentOleansRef.current.add(name)
+      })
+      if (payload.length === 0) continue
+      await new Promise<void>((resolve) => {
+        residentAddPendingRef.current = { resolve }
+        worker.postMessage({ type: 'add_files', files: payload }, transfer)
+      })
+      added += payload.length
+    }
+    console.log(`Lean core staged from ${packs.length} packs (${added} files)`)
+    return true
+  }, [])
+
   // Seed the resident worker's environment cache from the baked Init snapshot
   // (`--incr-header-save`, produced by scripts/bake-snapshots.sh with the same
   // wasm binary). One download replaces both the Init olean set and the
@@ -783,21 +841,20 @@ function App() {
       await ensurePersistentWorker()
       setLoadPercent(10)
 
-      let warmed = false
-      // The snapshot predates the native module-init exports, which cut the
-      // in-WASM Init import from ~5 minutes to ~4 seconds — the olean route
-      // below (76MB) now beats the 240MB snapshot download outright on slim.
-      // On iOS specifically, holding the snapshot in MEMFS while a ~1GB wasm
-      // memory is reserved is what pushed the tab over the jetsam limit.
-      if (LEAN_VARIANT !== 'slim') {
-        try {
-          warmed = await tryLoadInitSnapshot()
-        } catch (e) {
-          console.warn('snapshot preload failed, falling back to import:', e)
-        }
+      // Init is imported from the packed core (31 MB compressed, Cache API
+      // backed) rather than restored from the 240 MB init.snap: with indexed
+      // symbol lookup in the runtime glue the import takes seconds, while the
+      // snapshot download takes minutes through the Pages function on a cold
+      // cache. The snapshot loader stays available for experiments.
+      let staged = false
+      try {
+        staged = await loadPackedCore()
+      } catch (e) {
+        console.warn('packed Lean core unavailable, using per-file transport:', e)
       }
+      void tryLoadInitSnapshot
 
-      if (!warmed) {
+      if (!staged) {
         // Download Init's closure (the `Init` namespace) plus the sibling
         // `.ir` parts (`#eval` on library code), write them into the worker,
         // and let the warm compile below run the real import.
@@ -816,12 +873,11 @@ function App() {
           fetched.forEach((d, p) => cached.set(p, d))
         }
         await ensureResidentOleans(['Init'])
-        setLoadPercent(70)
-        setLoadingProgress('Importing Lean core (one-time, several minutes)…')
       }
+      setLoadPercent(70)
+      setLoadingProgress('Importing Lean core…')
 
-      // Warm compile: with a snapshot this is a cache hit (milliseconds) and
-      // doubles as verification; on the fallback path it runs the Init import.
+      // Warm compile: runs the Init import once and doubles as verification.
       await runPersistent('')
       setOutput('')
       setError('')
@@ -855,7 +911,7 @@ function App() {
       setStatus('error')
       loadStartedRef.current = false  // allow Retry
     }
-  }, [manifestLoaded, loadFileList, ensurePersistentWorker, tryLoadInitSnapshot, runPersistent, ensureResidentOleans])
+  }, [manifestLoaded, loadFileList, ensurePersistentWorker, loadPackedCore, tryLoadInitSnapshot, runPersistent, ensureResidentOleans])
 
   // Test with --version (simplest test)
   const testVersion = useCallback(async () => {
@@ -967,7 +1023,15 @@ function App() {
         appendOutput(`\nExit code: ${exitCode}`)
       } catch (err2) {
         const msg = err2 instanceof Error ? err2.message : String(err2)
-        setError(prev => prev ? `${prev}\n${msg}` : msg)
+        // A JavaScript stack overflow inside the wasm kernel: deep kernel
+        // reduction (typically `decide` on a large computation) exceeds the
+        // worker's fixed JS stack, which native Lean does not have.
+        const overflow = /Maximum call stack size exceeded/.test(msg)
+          || (err instanceof Error && /Maximum call stack size exceeded/.test(err.message))
+        const explained = overflow
+          ? 'This file needs deeper recursion than the browser worker allows (it overflowed the JavaScript stack inside the Lean kernel, usually a `decide` over a large computation). Native Lean would accept it. In the browser, replace that check with `#eval`, `native_decide`, or a smaller instance.'
+          : msg
+        setError(prev => prev ? `${prev}\n${explained}` : explained)
       }
     } finally {
       setLoadingProgress('')

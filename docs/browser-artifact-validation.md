@@ -17,7 +17,19 @@ Changes that require this check include:
 ## Record the artifact identity
 
 Before running the browser, record what is actually under test. Do not rely on
-the branch name or the name of a downloaded archive.
+the branch name or the name of a downloaded archive. The release manifest is
+the authority for runtime object bytes and the browser asset version:
+
+```bash
+node deploy/runtime-release.mjs verify-runtime
+export VITE_LEAN_ASSET_VERSION=$(node deploy/runtime-release.mjs build-version)
+export VITE_LEAN_WASM_BASE=/lean-wasm
+```
+
+The required `runtime release gate` workflow runs the Manifold check below and
+the NNG browser acceptance test after checksum verification. Production accepts
+only a successful push-to-main gate for the deployed commit. Manual dispatch
+validates a preview; it does not authorize automatic production promotion.
 
 ```bash
 readlink public/lean-wasm/lean.wasm
@@ -28,7 +40,8 @@ jq '{leanCommit, mathlibCommit, layers}' public/lean-wasm/manifold-layer.json
 Confirm that the binary, snapshot, base library, and Manifold layer use the
 same Lean commit. Confirm the Mathlib commit separately. A snapshot is paired
 with the exact linked WebAssembly function table; rebake it after relinking,
-even if the Lean githash did not change.
+even if the Lean githash did not change. A release that retains snapshots must
+establish that their table pairing remains unchanged and pin their exact bytes.
 
 ## Run the browser gate
 
@@ -177,7 +190,7 @@ bash scripts/build-manifold-course.sh /tmp/manifold-mathlib4
 MATHLIB_ROOT=/tmp/manifold-mathlib4 node scripts/verify-manifold-references.mjs
 ```
 
-That command checks all 44 reference solutions, an empty live-goal preview,
+That command checks all 45 reference solutions, an empty live-goal preview,
 self-reference rejection, and locked-declaration rejection. A local compiler
 whose commit differs from the browser pin may run these checks, but it does not
 overwrite the pinned conformance record. The exact native-i386 compiler in
@@ -208,7 +221,7 @@ only the level's policy as eight newline-delimited strings and a call to
 checker for every edit. The first world layer must contain
 `BrowserPolicy.olean`, `BrowserPolicy.ir`, and `BrowserPolicy.ir.sig`.
 
-Native validation compiles all 44 reference solutions, an empty goal preview,
+Native validation compiles all 45 reference solutions, an empty goal preview,
 and the self-reference and locked-declaration rejection cases. That protects
 the policy contract, but it does not replace this browser gate. A rebuilt,
 commit-matched i386 course layer must still complete the first proof in

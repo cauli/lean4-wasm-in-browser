@@ -795,16 +795,6 @@ export function useLeanGameVerifier() {
     }
   }, [getManifoldLayerIndex, loadArtifactLayer])
 
-  const trySnapshot = useCallback(async (): Promise<boolean> => {
-    const suffix = LEAN_ASSET_VERSION ? `?v=${encodeURIComponent(LEAN_ASSET_VERSION)}` : ''
-    const relativeUrl = `${LEAN_BIN_BASE}/snapshots/init.snap${suffix}`
-    return loadSnapshot(
-      'init.snap',
-      relativeUrl,
-      'Loading the prebuilt Lean core environment...',
-    )
-  }, [loadSnapshot])
-
   const runCompile = useCallback(async (code: string): Promise<{ result: WorkerResult; output: WorkerOutput[] }> => {
     const worker = workerRef.current
     if (!worker) throw new Error('Lean worker is unavailable.')
@@ -862,9 +852,10 @@ export function useLeanGameVerifier() {
         throw new Error(`Lean WASM was not found at ${LEAN_WASM_BASE}.`)
       }
       await ensureWorker()
-      await trySnapshot()
-      // A restored environment does not replace the module resolver's files:
-      // later Mathlib imports still traverse Init's .olean dependency tree.
+      // Init is imported from the packed core below rather than restored from
+      // the 230 MB init.snap: with indexed symbol lookup in the runtime glue
+      // the import takes seconds, while the snapshot download takes minutes
+      // through the Pages function on a cold cache.
       await addInitFiles()
       setProgress('Warming the local kernel...')
       const warm = await compileCode('')
@@ -880,7 +871,7 @@ export function useLeanGameVerifier() {
     })
     initializePromiseRef.current = promise
     return promise
-  }, [addInitFiles, advanceLoadPercent, compileCode, ensureWorker, trySnapshot, updateStatus])
+  }, [addInitFiles, advanceLoadPercent, compileCode, ensureWorker, updateStatus])
 
   const prepareRuntime = useCallback(async () => {
     await initialize()
@@ -1198,12 +1189,34 @@ export function useLeanGameVerifier() {
     }
   }, [compileCode, initializeForLevel, updateStatus])
 
+  // Course authoring aid: compile a whole Lean file in the environment a
+  // level has already opened, so candidate statements and proofs can be tried
+  // in seconds from the dev-only conformance hook instead of paying the
+  // Mathlib import per attempt.
+  const compileInContextOf = useCallback(async (
+    level: GameLevel,
+    code: string,
+  ): Promise<{ success: boolean; messages: string[]; elapsedMs?: number }> => {
+    await initializeForLevel(level)
+    const compiled = await compileCode(code)
+    const messages = compiled.output
+      .map((entry) => entry.data)
+      .filter((line) => !/^\s*\[(WASM DEBUG|DEBUG|PROFILE|COMPILE)/.test(line))
+    const errored = messages.some((line) => /error:|^error|declaration uses 'sorry'/.test(line))
+    return {
+      success: compiled.result.success && !errored,
+      messages,
+      elapsedMs: compiled.result.elapsed,
+    }
+  }, [compileCode, initializeForLevel])
+
   return {
     status,
     progress,
     loadPercent,
     inspectGoals,
     verify,
+    compileInContextOf,
     prepareRuntime,
     prepareLevel,
     prefetchRuntimeAssets,

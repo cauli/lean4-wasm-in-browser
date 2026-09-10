@@ -19,13 +19,10 @@ cd "$(dirname "$0")/.."
 
 export VITE_LEAN_WASM_BASE=/lean-wasm
 
-# Per-build asset version = the Lean githash (baked into every olean/lean.wasm at
-# build time). The app appends it as `?v=<hash>` to the lean.js / lean.wasm URLs
-# so each build is a unique, safely-immutable CDN cache key: a redeploy is picked
-# up without a cache purge, and app-only redeploys (same binary → same hash) keep
-# reusing the cached lean.js / lean.wasm. Falls back to a timestamp if unreadable.
-VITE_LEAN_ASSET_VERSION=$(node -e "const b=require('fs').readFileSync('public/lean-wasm/lean-lib/Init.olean'); const m=b.subarray(0,120).toString('latin1').match(/[0-9a-f]{40}/); process.stdout.write(m?m[0]:'')" 2>/dev/null || true)
-export VITE_LEAN_ASSET_VERSION="${VITE_LEAN_ASSET_VERSION:-$(date -u +%Y%m%d%H%M%S)}"
+# 🤖 The checked-in release is the only asset version source. A missing or
+# 🤖 mismatched Init header or manual environment override aborts the build.
+VITE_LEAN_ASSET_VERSION=$(node deploy/runtime-release.mjs build-version)
+export VITE_LEAN_ASSET_VERSION
 echo "Asset version (lean.js/lean.wasm ?v=): $VITE_LEAN_ASSET_VERSION"
 
 STASH="$(mktemp -d)"
@@ -59,20 +56,7 @@ if [ ! -f "$CORE_MANIFEST" ] || [ ! -d "$CORE_PACKS" ]; then
   echo "run npm run package:core before building Pages." >&2
   exit 1
 fi
-node -e '
-const fs = require("fs");
-const manifest = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
-if (!Array.isArray(manifest.packs) || manifest.packs.length === 0) {
-  throw new Error("Lean core manifest contains no packs");
-}
-for (const pack of manifest.packs) {
-  const file = `${process.argv[2]}/${pack.file}`;
-  const stat = fs.statSync(file);
-  if (stat.size !== pack.compressedBytes) {
-    throw new Error(`${pack.file} has ${stat.size} bytes; expected ${pack.compressedBytes}`);
-  }
-}
-' "$CORE_MANIFEST" "$CORE_PACKS"
+node deploy/static-assets.mjs verify-core public/lean-wasm
 mkdir -p dist/lean-wasm/core-lib
 cp -L "$CORE_MANIFEST" dist/lean-wasm/core-layer.json
 rsync -aL --delete --include='artifacts-*.pack' --exclude='*' \
@@ -118,7 +102,7 @@ node -e '
 const fs = require("fs");
 const manifest = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
 const base = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
-if (manifest.kind !== "manifold-course-layer-index" || manifest.layers?.length !== 10) {
+if (manifest.kind !== "manifold-course-layer-index" || manifest.layers?.length !== 11) {
   throw new Error("Manifold layer index is invalid");
 }
 if (manifest.leanCommit !== base.leanCommit || manifest.mathlibCommit !== base.mathlibCommit) {
@@ -145,7 +129,7 @@ cp -L "$MANIFOLD_MANIFEST" dist/lean-wasm/manifold-layer.json
 for SLUG in \
   homeomorphisms local-charts charted-spaces \
   canonical-charts smooth-manifolds tangent-spaces \
-  map-projections circle-motion robot-arm robot-reachability
+  map-projections circle-motion robot-arm robot-reachability course
 do
   cp -L \
     "public/lean-wasm/manifold-$SLUG-layer.json" \

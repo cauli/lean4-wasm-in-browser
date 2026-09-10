@@ -25,8 +25,12 @@ import {
   type VerificationSupport,
 } from './game-data'
 import { GameMarkdown } from './GameMarkdown'
+import { manifoldContextImports } from './manifold-verification-source'
 import type { TopoModelId } from './topo-models'
 import type { RobotWorkspaceFocus } from './RobotWorkspaceLab'
+import type { StereographicFocus } from './StereographicLab'
+import type { AngleChartFocus } from './AngleChartLab'
+import type { TangentPlaneFocus } from './TangentPlaneLab'
 import { CourseWorldTree, GameInventoryOverview, NaturalNumberWorldTree } from './WorldTree'
 import {
   useLeanGameVerifier,
@@ -39,6 +43,9 @@ import './GameApp.css'
 
 const ManifoldObjectLab = lazy(() => import('./ManifoldObjectLab'))
 const RobotWorkspaceLab = lazy(() => import('./RobotWorkspaceLab'))
+const StereographicLab = lazy(() => import('./StereographicLab'))
+const AngleChartLab = lazy(() => import('./AngleChartLab'))
+const TangentPlaneLab = lazy(() => import('./TangentPlaneLab'))
 const TopoScene = lazy(() => import('./TopoScene'))
 
 declare global {
@@ -50,7 +57,15 @@ declare global {
       ) => Promise<Array<{ id: string; result: GameVerificationResult }>>
       runManifoldReferences: (
         rules?: GameRules,
+        ids?: string[],
       ) => Promise<Array<{ id: string; result: GameVerificationResult }>>
+      compileManifoldSource: (
+        code: string,
+      ) => Promise<{ success: boolean; messages: string[]; elapsedMs?: number }>
+      manifoldContextImports: string[]
+      findManifoldLevel: (id: string) => GameLevel
+      verifyManifoldProof: (level: GameLevel, proof: string) => Promise<GameVerificationResult>
+      inspectManifoldGoals: (level: GameLevel, proof: string) => Promise<{ ok: boolean; goals: number; kind: string; detail: string }>
     }
   }
 }
@@ -124,16 +139,6 @@ const topoSceneByLevel: Record<string, LevelTopoScene> = {
     caption: 'A tangent-bundle point keeps the location on the surface together with a velocity from the tangent space attached there.',
     highlight: ['Ada', 'TangentPlane', 'Velocity'],
   },
-  'mapprojections-1': {
-    model: 'sphere-charts',
-    caption: 'A stereographic chart draws every point except its chosen pole. The missing point is the price of flattening the sphere onto one leaf.',
-    highlight: ['NorthChart'],
-  },
-  'mapprojections-5': {
-    model: 'sphere-charts',
-    caption: 'Each colored chart misses one pole. Because the poles differ, the two chart sources cover the whole sphere.',
-    highlight: ['NorthChart', 'SouthChart'],
-  },
   'robotarm-1': {
     model: 'robot-arm',
     caption: 'The orange displacement ends at the elbow. Adding the teal displacement places the red tip on the work plane.',
@@ -154,6 +159,34 @@ const topoSceneByLevel: Record<string, LevelTopoScene> = {
 function topoSceneForLevel(level: GameLevel): LevelTopoScene | undefined {
   if (level.gameId !== manifoldGame.id) return undefined
   return topoSceneByLevel[level.id]
+}
+
+type ConceptLabChoice =
+  | { kind: 'stereographic'; focus: StereographicFocus }
+  | { kind: 'angle'; focus: AngleChartFocus }
+  | { kind: 'tangent'; focus: TangentPlaneFocus }
+
+// The interactive labs shown beside a level's lesson. Each is a small model
+// the reader can drag, tuned to the claim that level proves.
+const conceptLabByLevel: Record<string, ConceptLabChoice> = {
+  'mapprojections-1': { kind: 'stereographic', focus: 'pole' },
+  'mapprojections-2': { kind: 'stereographic', focus: 'antipode' },
+  'course-1': { kind: 'stereographic', focus: 'cover' },
+  'mapprojections-5': { kind: 'stereographic', focus: 'cover' },
+  'course-2': { kind: 'stereographic', focus: 'antipode' },
+  'smoothmanifolds-1': { kind: 'stereographic', focus: 'transition' },
+  'course-6': { kind: 'stereographic', focus: 'transition' },
+  'circlemotion-3': { kind: 'angle', focus: 'turns' },
+  'course-10': { kind: 'angle', focus: 'turns' },
+  'course-7': { kind: 'tangent', focus: 'inclusion' },
+  'course-8': { kind: 'tangent', focus: 'velocity' },
+  'course-9': { kind: 'tangent', focus: 'plane' },
+}
+
+function ConceptLab({ choice, compact }: { choice: ConceptLabChoice; compact?: boolean }) {
+  if (choice.kind === 'stereographic') return <StereographicLab focus={choice.focus} compact={compact} />
+  if (choice.kind === 'angle') return <AngleChartLab focus={choice.focus} compact={compact} />
+  return <TangentPlaneLab focus={choice.focus} compact={compact} />
 }
 
 const robotWorkspaceFocusByLevel: Record<string, RobotWorkspaceFocus> = {
@@ -381,14 +414,15 @@ function VerificationAudit({ game }: { game: LeanGame }) {
     { label: 'Version parity', state: 'partial', detail: `The course targets ${game.source.toolchain}; a reproducible compatibility transform builds it against the exact newer Lean and Mathlib commits used by this browser.` },
   ]
   const manifoldRows: typeof nngRows = [
-    { label: 'Course structure', state: 'ready', detail: 'The course has 10 worlds and 44 levels. A six-world main path is joined by optional branches on stereographic projection, circular motion, robot kinematics, and reachability.' },
-    { label: 'Difficulty ladder', state: 'ready', detail: 'The main path moves from bundled structures to dependent tangent-bundle values. Optional branches turn the same topology into concrete calculations and constructions.' },
+    { label: 'Course structure', state: 'ready', detail: "The course has 10 worlds and 45 levels. A five-world main path (one chart, the sphere, atlases, smooth transitions, tangent vectors) is joined by optional branches on Mathlib's chart instances, regularity orders, circular motion, robot kinematics, and reachability." },
+    { label: 'Difficulty ladder', state: 'ready', detail: 'The main path checks every new word on the sphere before stating it in general, and ends with the tangent plane as a theorem. Optional branches turn the same topology into concrete calculations and constructions.' },
+    { label: 'Interactive labs', state: 'ready', detail: 'Draggable models sit beside the lessons: stereographic projection with both poles and their transition map, angle charts on a dial, and a tangent plane that follows a point around the sphere.' },
     { label: 'Proof elaboration', state: 'ready', detail: 'Every exercise elaborates in the pinned Mathlib manifold context; the statements use Mathlib structures rather than proxy propositions.' },
     { label: 'Kernel verification', state: 'ready', detail: "Lean's local kernel checks every accepted proof. No proof server is involved." },
     { label: 'Mathlib API unlocks', state: 'ready', detail: 'Levels unlock actual declarations such as Homeomorph.continuous, mem_chart_source, stereographic_source, Circle.exp_add_two_pi, and contMDiff_circleExp.' },
     { label: 'Course theorem unlocks', state: 'ready', detail: 'Each completed exercise also adds its proved ManifoldAdventure theorem to the inventory for later reuse.' },
     { label: 'Reference solutions', state: 'ready', detail: 'The generated BrowserBase contains no course axioms, sorry declarations, or unsafe placeholders.' },
-    { label: 'Pinned source', state: 'ready', detail: 'Compiler, upstream Lean base, and Mathlib revisions are pinned. All 44 reference solutions passed the matching Linux i386 CI kernel gate for revision r3.' },
+    { label: 'Pinned source', state: 'ready', detail: 'Compiler, upstream Lean base, and Mathlib revisions are pinned. All 45 reference solutions passed the pinned wasm kernel in one shared course environment for revision r5.' },
     { label: 'Learning prerequisites', state: 'partial', detail: 'The opening worlds introduce Lean notation, but the smooth-manifold worlds assume some topology and linear-algebra vocabulary.' },
     { label: 'Sources', state: 'ready', detail: 'The course links its generated Lean source and recommends Tu, Lee, and Milnor for the surrounding mathematics.' },
     { label: 'Browser artifacts', state: 'ready', detail: 'The graph-aware browser package includes the sphere, circle, robot-arm, and reachability branches. Its first proof and persistent offline cache passed the documented Chromium gate.' },
@@ -447,6 +481,21 @@ function WorldOverview({
           {game.id === manifoldGame.id && world.id === 'CanonicalCharts' && (
             <Suspense fallback={<p>Loading the local 3D model…</p>}>
               <ManifoldObjectLab />
+            </Suspense>
+          )}
+          {game.id === manifoldGame.id && world.id === 'Sphere' && (
+            <Suspense fallback={<p>Loading the projection lab...</p>}>
+              <StereographicLab />
+            </Suspense>
+          )}
+          {game.id === manifoldGame.id && world.id === 'ChartedSpaces' && (
+            <Suspense fallback={<p>Loading the angle lab...</p>}>
+              <AngleChartLab focus="charts" />
+            </Suspense>
+          )}
+          {game.id === manifoldGame.id && world.id === 'TangentSpaces' && (
+            <Suspense fallback={<p>Loading the tangent lab...</p>}>
+              <TangentPlaneLab />
             </Suspense>
           )}
           {game.id === manifoldGame.id && world.id === 'RobotArm' && (
@@ -781,6 +830,7 @@ function LevelWorkspace({
   const world = getWorld(level.world, game)
   const topoScene = topoSceneForLevel(level)
   const robotWorkspaceFocus = robotWorkspaceFocusByLevel[level.id]
+  const conceptLab = level.gameId === manifoldGame.id ? conceptLabByLevel[level.id] : undefined
   const levelCompleted = progress.completed.includes(level.id)
   const levelReady = verifier.isLevelReady(level)
   const isChecking = status === 'checking'
@@ -890,6 +940,20 @@ function LevelWorkspace({
               <Suspense fallback={<p>Loading the reachability lab...</p>}>
                 <RobotWorkspaceLab focus={robotWorkspaceFocus} compact />
               </Suspense>
+            )}
+            {conceptLab && (
+              <Suspense fallback={<p>Loading the lab...</p>}>
+                <ConceptLab choice={conceptLab} compact />
+              </Suspense>
+            )}
+            {level.question && (
+              <details className="level-question">
+                <summary>
+                  <span className="level-question-eyebrow">Think first</span>
+                  <span className="level-question-prompt">{level.question.prompt}</span>
+                </summary>
+                <p>{level.question.answer}</p>
+              </details>
             )}
           </article>
 
@@ -1218,15 +1282,36 @@ export default function GameApp() {
         }
         return results
       },
-      runManifoldReferences: async (rules: GameRules = 'regular') => {
+      runManifoldReferences: async (rules: GameRules = 'regular', ids?: string[]) => {
         const results: Array<{ id: string; result: GameVerificationResult }> = []
+        const wanted = ids ? new Set(ids) : null
         for (const level of manifoldGame.worlds.flatMap((world) => world.levels)) {
+          if (wanted && !wanted.has(level.id)) continue
           results.push({
             id: level.id,
             result: await verifier.verify(level, level.solution, rules),
           })
         }
         return results
+      },
+      compileManifoldSource: (code: string) => (
+        verifier.compileInContextOf(manifoldGame.worlds[0].levels[0], code)
+      ),
+      manifoldContextImports: manifoldContextImports(manifoldGame.worlds[0].levels[0]),
+      findManifoldLevel: (id: string) => {
+        const level = manifoldGame.worlds.flatMap((world) => world.levels).find((candidate) => candidate.id === id)
+        if (!level) throw new Error(`No manifold level ${id}.`)
+        return level
+      },
+      verifyManifoldProof: (level: GameLevel, proof: string) => verifier.verify(level, proof, 'regular'),
+      inspectManifoldGoals: async (level: GameLevel, proof: string) => {
+        const inspection = await verifier.inspectGoals(level, proof, 'regular')
+        return {
+          ok: inspection.kind === 'goals',
+          goals: inspection.goals.length,
+          kind: inspection.kind,
+          detail: inspection.detail,
+        }
       },
     }
     window.__leanGameConformance = api

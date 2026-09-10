@@ -22,6 +22,8 @@ export interface GameLevel {
   theoremName: string | null
   solution: string
   hints: string[]
+  /** A concept check to think about before the proof, with its answer hidden until asked. */
+  question?: { prompt: string; answer: string }
   newTactics: string[]
   completionTactics?: string[]
   hiddenTactics?: string[]

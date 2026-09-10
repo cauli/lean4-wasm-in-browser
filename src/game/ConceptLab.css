@@ -1,0 +1,332 @@
+/* Shared shell for the small SVG labs on the manifold course pages: a heading
+   row, a control strip, the drawing, and a status line. */
+.concept-lab {
+  margin: 1.25rem 0;
+  overflow: hidden;
+  border: 1px solid var(--game-border);
+  border-radius: 0.45rem;
+  background: var(--game-panel);
+  color: var(--game-text);
+}
+
+.concept-lab-heading {
+  display: flex;
+  min-height: 3.6rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid var(--game-border);
+  background: #fbfcfd;
+}
+
+.concept-lab-heading > div:first-child {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.concept-lab-heading span {
+  color: var(--game-dim);
+  font-size: 0.68rem;
+}
+
+.concept-lab-heading strong {
+  font-size: 0.86rem;
+}
+
+.concept-lab-switch {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--game-border);
+  border-radius: 0.28rem;
+}
+
+.concept-lab-switch button {
+  min-height: 2rem;
+  border: 0;
+  border-right: 1px solid var(--game-border);
+  padding: 0.3rem 0.65rem;
+  background: white;
+  color: var(--game-muted);
+  cursor: pointer;
+  font-size: 0.7rem;
+}
+
+.concept-lab-switch button:last-child {
+  border-right: 0;
+}
+
+.concept-lab-switch button[aria-pressed='true'] {
+  background: var(--game-accent);
+  color: var(--game-accent-ink);
+}
+
+.concept-lab-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem 1rem;
+  padding: 0.8rem 0.9rem 0.7rem;
+  border-bottom: 1px solid var(--game-border-soft);
+}
+
+.concept-lab-controls label {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+  color: var(--game-muted);
+  font-size: 0.68rem;
+}
+
+.concept-lab-controls label > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.concept-lab-controls output,
+.concept-lab-readout output {
+  color: var(--game-text);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+.concept-lab-controls input[type='range'] {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--game-accent);
+}
+
+.concept-lab-controls button {
+  min-height: 2rem;
+  align-self: end;
+  border: 1px solid var(--game-border);
+  border-radius: 0.28rem;
+  padding: 0.3rem 0.65rem;
+  background: white;
+  color: var(--game-text);
+  cursor: pointer;
+  font-size: 0.7rem;
+}
+
+.concept-lab-plot {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: linear-gradient(#ffffff, #f8fafc);
+  cursor: grab;
+  touch-action: none;
+}
+
+.concept-lab-plot.is-dragging {
+  cursor: grabbing;
+}
+
+.concept-lab-axis {
+  stroke: var(--game-border-soft);
+  stroke-width: 1;
+}
+
+.concept-lab-label {
+  fill: var(--game-dim);
+  font: 0.68rem Roboto, Arial, sans-serif;
+}
+
+.concept-lab-label.is-strong {
+  fill: var(--game-text);
+  font-weight: 600;
+}
+
+.concept-lab-readout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.4rem 1rem;
+  padding: 0.65rem 0.9rem;
+  border-top: 1px solid var(--game-border-soft);
+  color: var(--game-muted);
+  font-size: 0.72rem;
+}
+
+.concept-lab-readout > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.concept-lab-status {
+  padding: 0.55rem 0.9rem 0.7rem;
+  color: var(--game-muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.concept-lab-status strong {
+  color: var(--game-text);
+  font-weight: 600;
+}
+
+/* Stereographic lab */
+.stereo-sphere {
+  fill: #e9eef5;
+  stroke: #5b6b7f;
+  stroke-width: 2;
+}
+
+.stereo-leaf {
+  stroke: #39885a;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.stereo-ray {
+  fill: none;
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+}
+
+.stereo-ray.is-north {
+  stroke: #c46620;
+}
+
+.stereo-ray.is-south {
+  stroke: #12808a;
+}
+
+.stereo-source {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: butt;
+  opacity: 0.55;
+}
+
+.stereo-source.is-north {
+  stroke: #c46620;
+}
+
+.stereo-source.is-south {
+  stroke: #12808a;
+}
+
+.stereo-pole {
+  stroke: white;
+  stroke-width: 2;
+}
+
+.stereo-pole.is-north {
+  fill: #c46620;
+}
+
+.stereo-pole.is-south {
+  fill: #12808a;
+}
+
+.stereo-mark {
+  stroke: white;
+  stroke-width: 2;
+}
+
+.stereo-mark.is-north {
+  fill: #c46620;
+}
+
+.stereo-mark.is-south {
+  fill: #12808a;
+}
+
+.stereo-ada circle:first-child {
+  fill: #c13d70;
+  opacity: 0.18;
+}
+
+.stereo-ada circle:last-child {
+  fill: #c13d70;
+  stroke: white;
+  stroke-width: 2;
+}
+
+.stereo-offscreen {
+  fill: #c46620;
+  font: 0.68rem Roboto, Arial, sans-serif;
+}
+
+/* Angle chart lab */
+.angle-circle {
+  fill: #eef1f6;
+  stroke: #5b6b7f;
+  stroke-width: 2;
+}
+
+.angle-arc {
+  fill: none;
+  stroke-width: 7;
+  opacity: 0.55;
+  stroke-linecap: butt;
+}
+
+.angle-arc.is-first {
+  stroke: #c46620;
+}
+
+.angle-arc.is-second {
+  stroke: #12808a;
+}
+
+.angle-arc-gap {
+  stroke: white;
+  stroke-width: 3;
+}
+
+.angle-arc-gap.is-first {
+  fill: #c46620;
+}
+
+.angle-arc-gap.is-second {
+  fill: #12808a;
+}
+
+.angle-pointer {
+  stroke: var(--game-text);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.angle-point circle:first-child {
+  fill: #c13d70;
+  opacity: 0.18;
+}
+
+.angle-point circle:last-child {
+  fill: #c13d70;
+  stroke: white;
+  stroke-width: 2;
+}
+
+.angle-line {
+  stroke: #5b6b7f;
+  stroke-width: 2;
+}
+
+.angle-tick {
+  stroke: #5b6b7f;
+  stroke-width: 1.5;
+}
+
+.angle-turn {
+  stroke: #c13d70;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+}
+
+.angle-line-point {
+  fill: #c13d70;
+  stroke: white;
+  stroke-width: 1.5;
+}
+
+.angle-line-point.is-ghost {
+  fill: #e6a5bd;
+}
+
+@media (max-width: 560px) {
+  .concept-lab-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

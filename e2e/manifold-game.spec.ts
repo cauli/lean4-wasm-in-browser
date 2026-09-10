@@ -24,6 +24,9 @@ async function setEditor(page: Page, value: string) {
 }
 
 test('opens the Mathlib-native course and kernel-checks its first proof locally', async ({ page }) => {
+  // Every level shares one union Mathlib environment, so the first level pays
+  // the whole cold import before its live goal can answer.
+  test.setTimeout(coldMathlibTimeout + 300_000)
   const realAnalysisRequests: string[] = []
   page.on('request', (request) => {
     if (/real-analysis(?:-layer\.json|-lib|\.snap)/.test(request.url())) {
@@ -36,15 +39,15 @@ test('opens the Mathlib-native course and kernel-checks its first proof locally'
     name: 'The Manifold Adventure',
   })).toBeVisible()
   await expect(page.locator('.course-world-graph .tree-world')).toHaveCount(10)
-  await expect(page.locator('.course-world-graph .tree-level')).toHaveCount(44)
-  await expect(page.getByText('10 worlds · 44 levels')).toBeVisible()
-  await expect(page.getByText('optional path', { exact: true })).toHaveCount(4)
+  await expect(page.locator('.course-world-graph .tree-level')).toHaveCount(45)
+  await expect(page.getByText('10 worlds · 45 levels')).toBeVisible()
+  await expect(page.getByText('optional path', { exact: true })).toHaveCount(5)
   await expect(page.locator('.game-header').getByLabel('Work in progress')).toBeVisible()
-  await expect(page.getByText(/Mathlib's manifold API/).first()).toBeVisible()
+  await expect(page.getByText(/checked on the sphere before it is stated in general/).first()).toBeVisible()
   await expect(page.locator('.course-world-graph .tree-world').first()).toHaveClass(/unlocked/)
   await expect(page.locator('.course-world-graph .tree-world').nth(1)).toHaveClass(/locked/)
 
-  await page.goto('/games/manifold-adventure/homeomorphisms/1')
+  await page.goto('/games/manifold-adventure/charts/1')
   await expect(page.getByRole('heading', { name: 'The drawing matches the trail' })).toBeVisible()
   await expect(page.locator('.goal-target')).toContainText('Continuous trailMap')
   const verifyButton = page.getByRole('button', { name: 'Verify answer' })
@@ -62,9 +65,9 @@ test('opens the Mathlib-native course and kernel-checks its first proof locally'
   await expect(rewards).toContainText('Prove this course declaration')
   await expect(rewards).toContainText('homeomorph_continuous')
 
-  await setEditor(page, 'exact trailMap.continuous_symm')
+  await setEditor(page, 'exact Continuous.comp continuous_id trailMap.continuous')
   await expect(page.locator('.proof-feedback .live-goal-error')).toContainText(
-    /not unlocked.*continuous_symm/i,
+    /not unlocked.*'(?:comp|continuous_id)'/i,
     { timeout: coldMathlibTimeout },
   )
   await expect(verifyButton).toBeEnabled()
@@ -86,7 +89,7 @@ test('opens the Mathlib-native course and kernel-checks its first proof locally'
   await expect(rewards).toContainText('Level rewards earned')
   await expect(rewards).toContainText('Course declaration earned')
   await expect(page.locator('.game-header-complete')).toContainText('Completed')
-  await expect(page.getByRole('link', { name: 'Next: The drawing leads Ada back' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Next: Her mark lands in the drawing' })).toBeVisible()
   expect(realAnalysisRequests).toEqual([])
 })
 
@@ -99,14 +102,14 @@ test('catalog presents the manifold course as local Mathlib', async ({ page }) =
   const card = page.locator('.game-card-manifold-adventure')
   await expect(card.locator('img')).toHaveAttribute('src', '/game-assets/manifolds/cover.svg')
   await expect(card).toContainText('10 worlds')
-  await expect(card).toContainText('44 levels')
-  await expect(card).toContainText('0 browser-kernel levels · local Mathlib')
+  await expect(card).toContainText('45 levels')
+  await expect(card).toContainText('45 browser-kernel levels · local Mathlib')
   await expect(card.getByLabel('Work in progress')).toContainText('WIP')
   await expect(card).toContainText('By this project')
 })
 
 test('keeps the full solution behind the third explicit hint request', async ({ page }) => {
-  await page.goto('/games/manifold-adventure/homeomorphisms/1')
+  await page.goto('/games/manifold-adventure/charts/1')
   await expect(page.locator('.hint-panel')).toHaveCount(0)
 
   await page.getByRole('button', { name: 'Show a hint' }).click()
@@ -162,27 +165,59 @@ test('the reachability world has a course-native interactive workspace lab', asy
   await expect(lab).toContainText('Unreachable')
 })
 
+test('the sphere, atlas, and tangent worlds open with draggable labs', async ({ page }) => {
+  await page.goto('/games/manifold-adventure')
+  await page.evaluate((key) => {
+    localStorage.setItem(key, JSON.stringify({ answers: {}, completed: [], attempts: {}, rules: 'none' }))
+  }, progressKey)
+
+  await page.goto('/games/manifold-adventure/sphere')
+  const projection = page.locator('.stereographic-lab')
+  await expect(projection.getByRole('img', { name: /Stereographic projection lab/ })).toBeVisible()
+  await expect(projection).toContainText('Product of the two')
+  await projection.getByRole('button', { name: 'Stand on the south pole' }).click()
+  await expect(projection).toContainText('Ada stands on the south pole')
+
+  await page.goto('/games/manifold-adventure/chartedspaces')
+  const angle = page.locator('.angle-chart-lab')
+  await expect(angle.getByRole('img', { name: /Angle chart lab/ })).toBeVisible()
+  await angle.getByLabel(/Angle fed to Circle.exp/).fill('-1')
+  await expect(angle).toContainText('differ by exactly 2π')
+  await angle.getByRole('button', { name: 'Add a full turn' }).click()
+  await expect(angle).toContainText('differ by exactly 2π')
+
+  await page.goto('/games/manifold-adventure/tangentspaces/5')
+  const tangent = page.locator('.tangent-plane-lab')
+  await expect(tangent.getByRole('img', { name: /Interactive tangent plane/ })).toBeVisible()
+  await expect(tangent).toContainText('Velocity · place')
+  await tangent.getByRole('button', { name: 'Stand on the north pole' }).click()
+  await expect(tangent).toContainText('(0.00, 1.00, 0.00)')
+
+  await page.goto('/games/manifold-adventure/sphere/4')
+  const question = page.locator('.level-question')
+  await expect(question).toContainText('Think first')
+  await expect(question.locator('p')).toBeHidden()
+  await question.locator('summary').click()
+  await expect(question.locator('p')).toBeVisible()
+  await expect(question.locator('p')).toContainText('no point is missing from both')
+})
+
 test('level pages embed models alongside matching Mathlib lessons', async ({ page }) => {
   await page.goto('/games/manifold-adventure')
   await page.evaluate((key) => {
     const completed = [
-      'homeomorphisms-1', 'homeomorphisms-2', 'homeomorphisms-3', 'homeomorphisms-4',
-      'localcharts-1', 'localcharts-2', 'localcharts-3', 'localcharts-4',
-      'localcharts-5',
-      'chartedspaces-1', 'chartedspaces-2', 'chartedspaces-3', 'chartedspaces-4',
-      'chartedspaces-5',
-      'canonicalcharts-1', 'canonicalcharts-2', 'canonicalcharts-3', 'canonicalcharts-4',
-      'canonicalcharts-5',
-      'smoothmanifolds-1', 'smoothmanifolds-2', 'smoothmanifolds-3', 'smoothmanifolds-4',
-      'smoothmanifolds-5',
-      'circlemotion-1', 'circlemotion-2', 'circlemotion-3', 'circlemotion-4',
+      'homeomorphisms-1', 'localcharts-3', 'localcharts-4', 'localcharts-5',
+      'mapprojections-1', 'mapprojections-2', 'mapprojections-4', 'course-1', 'mapprojections-5',
+      'chartedspaces-1', 'chartedspaces-3', 'chartedspaces-5', 'course-2', 'course-3',
+      'smoothmanifolds-1', 'course-4', 'course-5', 'course-6', 'smoothmanifolds-5',
+      'circlemotion-1', 'circlemotion-2', 'circlemotion-3', 'course-10', 'circlemotion-4',
     ]
     localStorage.setItem(key, JSON.stringify({
       answers: {}, completed, attempts: {}, rules: 'regular',
     }))
   }, progressKey)
 
-  await page.goto('/games/manifold-adventure/localcharts/4')
+  await page.goto('/games/manifold-adventure/charts/3')
   await expect(page.getByRole('img', { name: /Interactive 3D model of a Sphere with two charts/ }))
     .toBeVisible()
 

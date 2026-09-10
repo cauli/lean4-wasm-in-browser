@@ -1,0 +1,62 @@
+name: runtime release gate
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Fetch and authenticate the pinned candidate fixture
+        run: node tests/fetch-artifacts.mjs
+      - name: Run unit and compiler integration tests
+        run: node --test tests/*.test.mjs
+      - name: Fetch unchanged static Lean assets
+        run: node deploy/static-assets.mjs fetch
+      - name: Stage and check the exact full runtime for Chromium
+        run: |
+          node deploy/runtime-release.mjs stage-fixture tests/.artifacts public/lean-wasm
+          node deploy/runtime-release.mjs verify-runtime
+          echo "VITE_LEAN_ASSET_VERSION=$(node deploy/runtime-release.mjs build-version)" >> "$GITHUB_ENV"
+          echo "VITE_LEAN_WASM_BASE=/lean-wasm" >> "$GITHUB_ENV"
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Required Manifold first-proof gate
+        run: >-
+          npx playwright test e2e/manifold-game.spec.ts
+          --grep 'opens the Mathlib-native course and kernel-checks its first proof locally'
+          --timeout=900000 --reporter=line
+      - name: Required NNG browser gate
+        run: >-
+          npx playwright test e2e/nng-game.spec.ts
+          --grep 'plays multiple lessons through the local Lean kernel and updates the full tree'
+          --reporter=line
+      - name: Keep browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-release-browser-failure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/
+          retention-days: 14
+      - name: Record the validated release identity
+        run: |
+          git rev-parse HEAD > validated-commit.txt
+          cp deploy/runtime-release.json validated-runtime-release.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: validated-runtime-release-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            validated-commit.txt
+            validated-runtime-release.json
+          retention-days: 30

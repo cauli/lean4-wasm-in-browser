@@ -199,12 +199,13 @@ jobs:
           if (c.validation?.compilerCommit !== process.argv[1]) {
             throw new Error("reference matrix did not use the exact Lean fork compiler");
           }
-          if (index.layers.length !== 10) throw new Error("expected ten world layers");
+          if (index.layers.length !== 11) throw new Error("expected ten world layers plus the course module layer");
           if (c.sourceCommit !== course.source.commit) {
             throw new Error("reference matrix belongs to a different course revision");
           }
-          if (c.summary?.total !== 44 || c.verifiedReferenceSolutions?.length !== 44) {
-            throw new Error("reference matrix does not cover all 44 levels");
+          if (c.summary?.total !== course.worlds.flatMap((w) => w.levels).length
+              || c.verifiedReferenceSolutions?.length !== c.summary?.total) {
+            throw new Error("reference matrix does not cover every level");
           }
           for (const layer of index.layers) {
             const m = JSON.parse(fs.readFileSync(`public/lean-wasm/${layer.manifestFile}`));

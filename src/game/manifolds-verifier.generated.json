@@ -4,9 +4,7 @@
   "leanUpstreamCommit": "ecf55de08b9d855e749f80c491c6f294dd307e60",
   "mathlibCommit": "de3a9cf33016bbb6d15880d7680643f7ca2d25ba",
   "contextImports": [
-    "ManifoldAdventure.TangentSpaces",
-    "ManifoldAdventure.MapProjections",
-    "ManifoldAdventure.RobotReachability"
+    "ManifoldAdventure.Course"
   ],
   "levels": {
     "homeomorphisms-1": {
@@ -23,21 +21,6 @@
       "declaration": "homeomorph_continuous {Trail : Type u} {Drawing : Type v}\n    [trailTopology : TopologicalSpace Trail]\n    [drawingTopology : TopologicalSpace Drawing]\n    (trailMap : Trail ≃ₜ Drawing) : Continuous trailMap",
       "declarationKind": "theorem",
       "referenceTheorem": "ManifoldAdventure.homeomorph_continuous"
-    },
-    "homeomorphisms-4": {
-      "sourcePath": "lean/ManifoldAdventure/Homeomorphisms.lean",
-      "fullModule": "ManifoldAdventure.Homeomorphisms",
-      "contextModule": "ManifoldAdventure.Homeomorphisms",
-      "namespaces": [
-        "ManifoldAdventure"
-      ],
-      "openCommands": [
-        "open scoped Topology",
-        "open Filter"
-      ],
-      "declaration": "homeomorph_composition_apply {Trail : Type u} {Drawing : Type v} {RouteBook : Type w}\n    [trailTopology : TopologicalSpace Trail]\n    [drawingTopology : TopologicalSpace Drawing]\n    [routeBookTopology : TopologicalSpace RouteBook]\n    (trailMap : Trail ≃ₜ Drawing) (bookMap : Drawing ≃ₜ RouteBook)\n    (place : Trail) :\n    trailMap.trans bookMap place = bookMap (trailMap place)",
-      "declarationKind": "theorem",
-      "referenceTheorem": "ManifoldAdventure.homeomorph_composition_apply"
     },
     "localcharts-3": {
       "sourcePath": "lean/ManifoldAdventure/LocalCharts.lean",
@@ -84,6 +67,81 @@
       "declarationKind": "theorem",
       "referenceTheorem": "ManifoldAdventure.local_chart_reads_back"
     },
+    "mapprojections-1": {
+      "sourcePath": "lean/ManifoldAdventure/MapProjections.lean",
+      "fullModule": "ManifoldAdventure.MapProjections",
+      "contextModule": "ManifoldAdventure.MapProjections",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology Manifold ContDiff",
+        "open Metric Set Function"
+      ],
+      "declaration": "stereographic_map_misses_pole {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (pole : Space) (unitPole : ‖pole‖ = 1) :\n    (stereographic unitPole).source = {⟨pole, by simp [unitPole]⟩}ᶜ",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.stereographic_map_misses_pole"
+    },
+    "mapprojections-2": {
+      "sourcePath": "lean/ManifoldAdventure/MapProjections.lean",
+      "fullModule": "ManifoldAdventure.MapProjections",
+      "contextModule": "ManifoldAdventure.MapProjections",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology Manifold ContDiff",
+        "open Metric Set Function"
+      ],
+      "declaration": "opposite_pole_is_origin {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (pole : sphere (0 : Space) 1) :\n    stereographic (norm_eq_of_mem_sphere pole) (-pole) = 0",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.opposite_pole_is_origin"
+    },
+    "mapprojections-4": {
+      "sourcePath": "lean/ManifoldAdventure/MapProjections.lean",
+      "fullModule": "ManifoldAdventure.MapProjections",
+      "contextModule": "ManifoldAdventure.MapProjections",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology Manifold ContDiff",
+        "open Metric Set Function"
+      ],
+      "declaration": "stereographic_off_pole {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (north place : sphere (0 : Space) 1) (notNorth : place ≠ north) :\n    place ∈ (stereographic (norm_eq_of_mem_sphere north)).source",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.stereographic_off_pole"
+    },
+    "course-1": {
+      "sourcePath": "lean/ManifoldAdventure/Course.lean",
+      "fullModule": "ManifoldAdventure.Course",
+      "contextModule": "ManifoldAdventure.Course",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology Manifold ContDiff",
+        "open Metric Set Function"
+      ],
+      "declaration": "two_leaves_cover_point {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (north south : sphere (0 : Space) 1) (different : north ≠ south)\n    (place : sphere (0 : Space) 1) :\n    place ∈ (stereographic (norm_eq_of_mem_sphere north)).source ∨\n      place ∈ (stereographic (norm_eq_of_mem_sphere south)).source",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.two_leaves_cover_point"
+    },
+    "mapprojections-5": {
+      "sourcePath": "lean/ManifoldAdventure/MapProjections.lean",
+      "fullModule": "ManifoldAdventure.MapProjections",
+      "contextModule": "ManifoldAdventure.MapProjections",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology Manifold ContDiff",
+        "open Metric Set Function"
+      ],
+      "declaration": "two_stereographic_maps_cover {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (north south : sphere (0 : Space) 1) (different : north ≠ south) :\n    (stereographic (norm_eq_of_mem_sphere north)).source ∪\n      (stereographic (norm_eq_of_mem_sphere south)).source = Set.univ",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.two_stereographic_maps_cover"
+    },
     "chartedspaces-1": {
       "sourcePath": "lean/ManifoldAdventure/ChartedSpaces.lean",
       "fullModule": "ManifoldAdventure.ChartedSpaces",
@@ -98,21 +156,6 @@
       "declaration": "point_mem_preferred_chart {Coordinates : Type u} {Surface : Type v}\n    [TopologicalSpace Coordinates] [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface] (place : Surface) :\n    place ∈ (chartAt Coordinates place).source",
       "declarationKind": "theorem",
       "referenceTheorem": "ManifoldAdventure.point_mem_preferred_chart"
-    },
-    "chartedspaces-2": {
-      "sourcePath": "lean/ManifoldAdventure/ChartedSpaces.lean",
-      "fullModule": "ManifoldAdventure.ChartedSpaces",
-      "contextModule": "ManifoldAdventure.ChartedSpaces",
-      "namespaces": [
-        "ManifoldAdventure"
-      ],
-      "openCommands": [
-        "open scoped Topology",
-        "open Filter"
-      ],
-      "declaration": "preferred_chart_mem_atlas {Coordinates : Type u} {Surface : Type v}\n    [TopologicalSpace Coordinates] [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface] (place : Surface) :\n    chartAt Coordinates place ∈ atlas Coordinates Surface",
-      "declarationKind": "theorem",
-      "referenceTheorem": "ManifoldAdventure.preferred_chart_mem_atlas"
     },
     "chartedspaces-3": {
       "sourcePath": "lean/ManifoldAdventure/ChartedSpaces.lean",
@@ -129,21 +172,6 @@
       "declarationKind": "theorem",
       "referenceTheorem": "ManifoldAdventure.preferred_chart_maps_to_target"
     },
-    "chartedspaces-4": {
-      "sourcePath": "lean/ManifoldAdventure/ChartedSpaces.lean",
-      "fullModule": "ManifoldAdventure.ChartedSpaces",
-      "contextModule": "ManifoldAdventure.ChartedSpaces",
-      "namespaces": [
-        "ManifoldAdventure"
-      ],
-      "openCommands": [
-        "open scoped Topology",
-        "open Filter"
-      ],
-      "declaration": "preferred_chart_source_is_neighborhood {Coordinates : Type u} {Surface : Type v}\n    [TopologicalSpace Coordinates] [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface] (place : Surface) :\n    (chartAt Coordinates place).source ∈ 𝓝 place",
-      "declarationKind": "theorem",
-      "referenceTheorem": "ManifoldAdventure.preferred_chart_source_is_neighborhood"
-    },
     "chartedspaces-5": {
       "sourcePath": "lean/ManifoldAdventure/ChartedSpaces.lean",
       "fullModule": "ManifoldAdventure.ChartedSpaces",
@@ -158,6 +186,186 @@
       "declaration": "preferred_charts_cover {Coordinates : Type u} {Surface : Type v}\n    [TopologicalSpace Coordinates] [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface] :\n    (⋃ place : Surface, (chartAt Coordinates place).source) =\n      (Set.univ : Set Surface)",
       "declarationKind": "theorem",
       "referenceTheorem": "ManifoldAdventure.preferred_charts_cover"
+    },
+    "course-2": {
+      "sourcePath": "lean/ManifoldAdventure/Course.lean",
+      "fullModule": "ManifoldAdventure.Course",
+      "contextModule": "ManifoldAdventure.Course",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology Manifold ContDiff",
+        "open Metric Set Function"
+      ],
+      "declaration": "sphere_preferred_chart {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space] {dimension : ℕ}\n    [Fact (Module.finrank ℝ Space = dimension + 1)]\n    (place : sphere (0 : Space) 1) :\n    chartAt (EuclideanSpace ℝ (Fin dimension)) place = stereographic' dimension (-place)",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.sphere_preferred_chart"
+    },
+    "course-3": {
+      "sourcePath": "lean/ManifoldAdventure/Course.lean",
+      "fullModule": "ManifoldAdventure.Course",
+      "contextModule": "ManifoldAdventure.Course",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology Manifold ContDiff",
+        "open Metric Set Function"
+      ],
+      "declaration": "sphere_chart_in_atlas {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space] {dimension : ℕ}\n    [Fact (Module.finrank ℝ Space = dimension + 1)]\n    (pole : sphere (0 : Space) 1) :\n    stereographic' dimension pole ∈ atlas (EuclideanSpace ℝ (Fin dimension)) (sphere (0 : Space) 1)",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.sphere_chart_in_atlas"
+    },
+    "smoothmanifolds-1": {
+      "sourcePath": "lean/ManifoldAdventure/SmoothManifolds.lean",
+      "fullModule": "ManifoldAdventure.SmoothManifolds",
+      "contextModule": "ManifoldAdventure.SmoothManifolds",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology ContDiff",
+        "open Filter ENat"
+      ],
+      "declaration": "transition_map_source {Stone : Type u} {Drawing : Type v}\n    [TopologicalSpace Stone] [TopologicalSpace Drawing]\n    (chart chart' : OpenPartialHomeomorph Stone Drawing) :\n    (chart.symm.trans chart').source =\n      chart.target ∩ chart.symm ⁻¹' chart'.source",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.transition_map_source"
+    },
+    "course-4": {
+      "sourcePath": "lean/ManifoldAdventure/Course.lean",
+      "fullModule": "ManifoldAdventure.Course",
+      "contextModule": "ManifoldAdventure.Course",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology Manifold ContDiff",
+        "open Metric Set Function"
+      ],
+      "declaration": "chart_change_is_smooth {Scalar : Type u} [NontriviallyNormedField Scalar]\n    {Vectors : Type v} [NormedAddCommGroup Vectors]\n    [NormedSpace Scalar Vectors]\n    {Coordinates : Type w} [TopologicalSpace Coordinates]\n    {model : ModelWithCorners Scalar Vectors Coordinates}\n    {Surface : Type u'} [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface]\n    {order : WithTop ℕ∞} [IsManifold model order Surface]\n    (chart chart' : OpenPartialHomeomorph Surface Coordinates)\n    (inAtlas : chart ∈ atlas Coordinates Surface)\n    (inAtlas' : chart' ∈ atlas Coordinates Surface) :\n    chart.symm ≫ₕ chart' ∈ contDiffGroupoid order model",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.chart_change_is_smooth"
+    },
+    "course-5": {
+      "sourcePath": "lean/ManifoldAdventure/Course.lean",
+      "fullModule": "ManifoldAdventure.Course",
+      "contextModule": "ManifoldAdventure.Course",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology Manifold ContDiff",
+        "open Metric Set Function"
+      ],
+      "declaration": "chart_change_contDiffOn {Scalar : Type u} [NontriviallyNormedField Scalar]\n    {Vectors : Type v} [NormedAddCommGroup Vectors]\n    [NormedSpace Scalar Vectors]\n    {Coordinates : Type w} [TopologicalSpace Coordinates]\n    {model : ModelWithCorners Scalar Vectors Coordinates}\n    {Surface : Type u'} [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface]\n    {order : WithTop ℕ∞} [IsManifold model order Surface]\n    (chart chart' : OpenPartialHomeomorph Surface Coordinates)\n    (inAtlas : chart ∈ atlas Coordinates Surface)\n    (inAtlas' : chart' ∈ atlas Coordinates Surface) :\n    ContDiffOn Scalar order (model ∘ (chart.symm ≫ₕ chart') ∘ model.symm)\n      (model.symm ⁻¹' (chart.symm ≫ₕ chart').source ∩ Set.range model)",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.chart_change_contDiffOn"
+    },
+    "course-6": {
+      "sourcePath": "lean/ManifoldAdventure/Course.lean",
+      "fullModule": "ManifoldAdventure.Course",
+      "contextModule": "ManifoldAdventure.Course",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology Manifold ContDiff",
+        "open Metric Set Function"
+      ],
+      "declaration": "sphere_chart_change_smooth {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space] {dimension : ℕ}\n    [Fact (Module.finrank ℝ Space = dimension + 1)]\n    (pole pole' : sphere (0 : Space) 1) :\n    (stereographic' dimension pole).symm ≫ₕ stereographic' dimension pole' ∈\n      contDiffGroupoid ∞ (𝓡 dimension)",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.sphere_chart_change_smooth"
+    },
+    "smoothmanifolds-5": {
+      "sourcePath": "lean/ManifoldAdventure/SmoothManifolds.lean",
+      "fullModule": "ManifoldAdventure.SmoothManifolds",
+      "contextModule": "ManifoldAdventure.SmoothManifolds",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology ContDiff",
+        "open Filter ENat"
+      ],
+      "declaration": "product_of_manifolds {Scalar : Type u}\n    [NontriviallyNormedField Scalar]\n    {FirstVectors : Type v}\n    [NormedAddCommGroup FirstVectors]\n    [NormedSpace Scalar FirstVectors]\n    {SecondVectors : Type v'}\n    [NormedAddCommGroup SecondVectors]\n    [NormedSpace Scalar SecondVectors]\n    {FirstCoordinates : Type w}\n    [TopologicalSpace FirstCoordinates]\n    {SecondCoordinates : Type w'}\n    [TopologicalSpace SecondCoordinates]\n    {firstModel : ModelWithCorners Scalar FirstVectors FirstCoordinates}\n    {secondModel : ModelWithCorners Scalar SecondVectors SecondCoordinates}\n    {FirstSurface : Type u'}\n    [TopologicalSpace FirstSurface]\n    [ChartedSpace FirstCoordinates FirstSurface]\n    {SecondSurface : Type u''}\n    [TopologicalSpace SecondSurface]\n    [ChartedSpace SecondCoordinates SecondSurface]\n    (order : WithTop ℕ∞)\n    [IsManifold firstModel order FirstSurface]\n    [IsManifold secondModel order SecondSurface] :\n    IsManifold (firstModel.prod secondModel) order (FirstSurface × SecondSurface)",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.product_of_manifolds"
+    },
+    "tangentspaces-1": {
+      "sourcePath": "lean/ManifoldAdventure/TangentSpaces.lean",
+      "fullModule": "ManifoldAdventure.TangentSpaces",
+      "contextModule": "ManifoldAdventure.TangentSpaces",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology ContDiff",
+        "open Filter ENat"
+      ],
+      "declaration": "tangent_zero {Scalar : Type u}\n    [NontriviallyNormedField Scalar]\n    {Vectors : Type v} [NormedAddCommGroup Vectors]\n    [NormedSpace Scalar Vectors]\n    {Coordinates : Type w}\n    [TopologicalSpace Coordinates]\n    (model : ModelWithCorners Scalar Vectors Coordinates)\n    {Surface : Type u'} [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface] (place : Surface) :\n    TangentSpace model place",
+      "declarationKind": "noncomputable def",
+      "referenceTheorem": "ManifoldAdventure.tangent_zero"
+    },
+    "tangentspaces-2": {
+      "sourcePath": "lean/ManifoldAdventure/TangentSpaces.lean",
+      "fullModule": "ManifoldAdventure.TangentSpaces",
+      "contextModule": "ManifoldAdventure.TangentSpaces",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology ContDiff",
+        "open Filter ENat"
+      ],
+      "declaration": "tangent_bundle_base {Scalar : Type u}\n    [NontriviallyNormedField Scalar]\n    {Vectors : Type v} [NormedAddCommGroup Vectors]\n    [NormedSpace Scalar Vectors]\n    {Coordinates : Type w}\n    [TopologicalSpace Coordinates]\n    (model : ModelWithCorners Scalar Vectors Coordinates)\n    {Surface : Type u'} [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface]\n    {place : Surface} (velocity : TangentSpace model place) :\n    (⟨place, velocity⟩ : TangentBundle model Surface).1 = place",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.tangent_bundle_base"
+    },
+    "course-7": {
+      "sourcePath": "lean/ManifoldAdventure/Course.lean",
+      "fullModule": "ManifoldAdventure.Course",
+      "contextModule": "ManifoldAdventure.Course",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology Manifold ContDiff",
+        "open Metric Set Function"
+      ],
+      "declaration": "sphere_inclusion_smooth {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space] {dimension : ℕ}\n    [Fact (Module.finrank ℝ Space = dimension + 1)] :\n    ContMDiff (𝓡 dimension) 𝓘(ℝ, Space) ∞ ((↑) : sphere (0 : Space) 1 → Space)",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.sphere_inclusion_smooth"
+    },
+    "course-8": {
+      "sourcePath": "lean/ManifoldAdventure/Course.lean",
+      "fullModule": "ManifoldAdventure.Course",
+      "contextModule": "ManifoldAdventure.Course",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology Manifold ContDiff",
+        "open Metric Set Function"
+      ],
+      "declaration": "tangent_vectors_are_vectors {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space] {dimension : ℕ}\n    [Fact (Module.finrank ℝ Space = dimension + 1)]\n    (place : sphere (0 : Space) 1) :\n    Function.Injective\n      (mfderiv (𝓡 dimension) 𝓘(ℝ, Space) ((↑) : sphere (0 : Space) 1 → Space) place)",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.tangent_vectors_are_vectors"
+    },
+    "course-9": {
+      "sourcePath": "lean/ManifoldAdventure/Course.lean",
+      "fullModule": "ManifoldAdventure.Course",
+      "contextModule": "ManifoldAdventure.Course",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology Manifold ContDiff",
+        "open Metric Set Function"
+      ],
+      "declaration": "tangent_plane_is_orthogonal {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space] {dimension : ℕ}\n    [Fact (Module.finrank ℝ Space = dimension + 1)]\n    (place : sphere (0 : Space) 1) :\n    LinearMap.range (ContinuousLinearMap.toLinearMap\n      (mfderiv (𝓡 dimension) 𝓘(ℝ, Space) ((↑) : sphere (0 : Space) 1 → Space) place))\n      = (ℝ ∙ (place : Space))ᗮ",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.tangent_plane_is_orthogonal"
     },
     "canonicalcharts-1": {
       "sourcePath": "lean/ManifoldAdventure/CanonicalCharts.lean",
@@ -234,21 +442,6 @@
       "declarationKind": "theorem",
       "referenceTheorem": "ManifoldAdventure.product_point_mem_chart_source"
     },
-    "smoothmanifolds-1": {
-      "sourcePath": "lean/ManifoldAdventure/SmoothManifolds.lean",
-      "fullModule": "ManifoldAdventure.SmoothManifolds",
-      "contextModule": "ManifoldAdventure.SmoothManifolds",
-      "namespaces": [
-        "ManifoldAdventure"
-      ],
-      "openCommands": [
-        "open scoped Topology ContDiff",
-        "open Filter ENat"
-      ],
-      "declaration": "transition_map_source {Stone : Type u} {Drawing : Type v}\n    [TopologicalSpace Stone] [TopologicalSpace Drawing]\n    (chart chart' : OpenPartialHomeomorph Stone Drawing) :\n    (chart.symm.trans chart').source =\n      chart.target ∩ chart.symm ⁻¹' chart'.source",
-      "declarationKind": "theorem",
-      "referenceTheorem": "ManifoldAdventure.transition_map_source"
-    },
     "smoothmanifolds-2": {
       "sourcePath": "lean/ManifoldAdventure/SmoothManifolds.lean",
       "fullModule": "ManifoldAdventure.SmoothManifolds",
@@ -294,141 +487,6 @@
       "declarationKind": "theorem",
       "referenceTheorem": "ManifoldAdventure.smooth_manifold_is_topological"
     },
-    "smoothmanifolds-5": {
-      "sourcePath": "lean/ManifoldAdventure/SmoothManifolds.lean",
-      "fullModule": "ManifoldAdventure.SmoothManifolds",
-      "contextModule": "ManifoldAdventure.SmoothManifolds",
-      "namespaces": [
-        "ManifoldAdventure"
-      ],
-      "openCommands": [
-        "open scoped Topology ContDiff",
-        "open Filter ENat"
-      ],
-      "declaration": "product_of_manifolds {Scalar : Type u}\n    [NontriviallyNormedField Scalar]\n    {FirstVectors : Type v}\n    [NormedAddCommGroup FirstVectors]\n    [NormedSpace Scalar FirstVectors]\n    {SecondVectors : Type v'}\n    [NormedAddCommGroup SecondVectors]\n    [NormedSpace Scalar SecondVectors]\n    {FirstCoordinates : Type w}\n    [TopologicalSpace FirstCoordinates]\n    {SecondCoordinates : Type w'}\n    [TopologicalSpace SecondCoordinates]\n    {firstModel : ModelWithCorners Scalar FirstVectors FirstCoordinates}\n    {secondModel : ModelWithCorners Scalar SecondVectors SecondCoordinates}\n    {FirstSurface : Type u'}\n    [TopologicalSpace FirstSurface]\n    [ChartedSpace FirstCoordinates FirstSurface]\n    {SecondSurface : Type u''}\n    [TopologicalSpace SecondSurface]\n    [ChartedSpace SecondCoordinates SecondSurface]\n    (order : WithTop ℕ∞)\n    [IsManifold firstModel order FirstSurface]\n    [IsManifold secondModel order SecondSurface] :\n    IsManifold (firstModel.prod secondModel) order (FirstSurface × SecondSurface)",
-      "declarationKind": "theorem",
-      "referenceTheorem": "ManifoldAdventure.product_of_manifolds"
-    },
-    "tangentspaces-1": {
-      "sourcePath": "lean/ManifoldAdventure/TangentSpaces.lean",
-      "fullModule": "ManifoldAdventure.TangentSpaces",
-      "contextModule": "ManifoldAdventure.TangentSpaces",
-      "namespaces": [
-        "ManifoldAdventure"
-      ],
-      "openCommands": [
-        "open scoped Topology ContDiff",
-        "open Filter ENat"
-      ],
-      "declaration": "tangent_zero {Scalar : Type u}\n    [NontriviallyNormedField Scalar]\n    {Vectors : Type v} [NormedAddCommGroup Vectors]\n    [NormedSpace Scalar Vectors]\n    {Coordinates : Type w}\n    [TopologicalSpace Coordinates]\n    (model : ModelWithCorners Scalar Vectors Coordinates)\n    {Surface : Type u'} [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface] (place : Surface) :\n    TangentSpace model place",
-      "declarationKind": "noncomputable def",
-      "referenceTheorem": "ManifoldAdventure.tangent_zero"
-    },
-    "tangentspaces-2": {
-      "sourcePath": "lean/ManifoldAdventure/TangentSpaces.lean",
-      "fullModule": "ManifoldAdventure.TangentSpaces",
-      "contextModule": "ManifoldAdventure.TangentSpaces",
-      "namespaces": [
-        "ManifoldAdventure"
-      ],
-      "openCommands": [
-        "open scoped Topology ContDiff",
-        "open Filter ENat"
-      ],
-      "declaration": "tangent_bundle_base {Scalar : Type u}\n    [NontriviallyNormedField Scalar]\n    {Vectors : Type v} [NormedAddCommGroup Vectors]\n    [NormedSpace Scalar Vectors]\n    {Coordinates : Type w}\n    [TopologicalSpace Coordinates]\n    (model : ModelWithCorners Scalar Vectors Coordinates)\n    {Surface : Type u'} [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface]\n    {place : Surface} (velocity : TangentSpace model place) :\n    (⟨place, velocity⟩ : TangentBundle model Surface).1 = place",
-      "declarationKind": "theorem",
-      "referenceTheorem": "ManifoldAdventure.tangent_bundle_base"
-    },
-    "tangentspaces-3": {
-      "sourcePath": "lean/ManifoldAdventure/TangentSpaces.lean",
-      "fullModule": "ManifoldAdventure.TangentSpaces",
-      "contextModule": "ManifoldAdventure.TangentSpaces",
-      "namespaces": [
-        "ManifoldAdventure"
-      ],
-      "openCommands": [
-        "open scoped Topology ContDiff",
-        "open Filter ENat"
-      ],
-      "declaration": "tangent_bundle_has_zero {Scalar : Type u}\n    [NontriviallyNormedField Scalar]\n    {Vectors : Type v} [NormedAddCommGroup Vectors]\n    [NormedSpace Scalar Vectors]\n    {Coordinates : Type w}\n    [TopologicalSpace Coordinates]\n    (model : ModelWithCorners Scalar Vectors Coordinates)\n    {Surface : Type u'} [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface] (place : Surface) :\n    ∃ bundlePoint : TangentBundle model Surface, bundlePoint.1 = place",
-      "declarationKind": "theorem",
-      "referenceTheorem": "ManifoldAdventure.tangent_bundle_has_zero"
-    },
-    "mapprojections-1": {
-      "sourcePath": "lean/ManifoldAdventure/MapProjections.lean",
-      "fullModule": "ManifoldAdventure.MapProjections",
-      "contextModule": "ManifoldAdventure.MapProjections",
-      "namespaces": [
-        "ManifoldAdventure"
-      ],
-      "openCommands": [
-        "open scoped Topology Manifold ContDiff",
-        "open Metric Set Function"
-      ],
-      "declaration": "stereographic_map_misses_pole {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (pole : Space) (unitPole : ‖pole‖ = 1) :\n    (stereographic unitPole).source = {⟨pole, by simp [unitPole]⟩}ᶜ",
-      "declarationKind": "theorem",
-      "referenceTheorem": "ManifoldAdventure.stereographic_map_misses_pole"
-    },
-    "mapprojections-2": {
-      "sourcePath": "lean/ManifoldAdventure/MapProjections.lean",
-      "fullModule": "ManifoldAdventure.MapProjections",
-      "contextModule": "ManifoldAdventure.MapProjections",
-      "namespaces": [
-        "ManifoldAdventure"
-      ],
-      "openCommands": [
-        "open scoped Topology Manifold ContDiff",
-        "open Metric Set Function"
-      ],
-      "declaration": "opposite_pole_is_origin {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (pole : sphere (0 : Space) 1) :\n    stereographic (norm_eq_of_mem_sphere pole) (-pole) = 0",
-      "declarationKind": "theorem",
-      "referenceTheorem": "ManifoldAdventure.opposite_pole_is_origin"
-    },
-    "mapprojections-3": {
-      "sourcePath": "lean/ManifoldAdventure/MapProjections.lean",
-      "fullModule": "ManifoldAdventure.MapProjections",
-      "contextModule": "ManifoldAdventure.MapProjections",
-      "namespaces": [
-        "ManifoldAdventure"
-      ],
-      "openCommands": [
-        "open scoped Topology Manifold ContDiff",
-        "open Metric Set Function"
-      ],
-      "declaration": "every_stereographic_mark_has_source {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (pole : Space) (unitPole : ‖pole‖ = 1) :\n    Function.Surjective (stereographic unitPole)",
-      "declarationKind": "theorem",
-      "referenceTheorem": "ManifoldAdventure.every_stereographic_mark_has_source"
-    },
-    "mapprojections-4": {
-      "sourcePath": "lean/ManifoldAdventure/MapProjections.lean",
-      "fullModule": "ManifoldAdventure.MapProjections",
-      "contextModule": "ManifoldAdventure.MapProjections",
-      "namespaces": [
-        "ManifoldAdventure"
-      ],
-      "openCommands": [
-        "open scoped Topology Manifold ContDiff",
-        "open Metric Set Function"
-      ],
-      "declaration": "stereographic_off_pole {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (north place : sphere (0 : Space) 1) (notNorth : place ≠ north) :\n    place ∈ (stereographic (norm_eq_of_mem_sphere north)).source",
-      "declarationKind": "theorem",
-      "referenceTheorem": "ManifoldAdventure.stereographic_off_pole"
-    },
-    "mapprojections-5": {
-      "sourcePath": "lean/ManifoldAdventure/MapProjections.lean",
-      "fullModule": "ManifoldAdventure.MapProjections",
-      "contextModule": "ManifoldAdventure.MapProjections",
-      "namespaces": [
-        "ManifoldAdventure"
-      ],
-      "openCommands": [
-        "open scoped Topology Manifold ContDiff",
-        "open Metric Set Function"
-      ],
-      "declaration": "two_stereographic_maps_cover {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (north south : sphere (0 : Space) 1) (different : north ≠ south) :\n    (stereographic (norm_eq_of_mem_sphere north)).source ∪\n      (stereographic (norm_eq_of_mem_sphere south)).source = Set.univ",
-      "declarationKind": "theorem",
-      "referenceTheorem": "ManifoldAdventure.two_stereographic_maps_cover"
-    },
     "circlemotion-1": {
       "sourcePath": "lean/ManifoldAdventure/CircleMotion.lean",
       "fullModule": "ManifoldAdventure.CircleMotion",
@@ -473,6 +531,21 @@
       "declaration": "circle_full_turn (angle : ℝ) :\n    Circle.exp (angle + 2 * Real.pi) = Circle.exp angle",
       "declarationKind": "theorem",
       "referenceTheorem": "ManifoldAdventure.circle_full_turn"
+    },
+    "course-10": {
+      "sourcePath": "lean/ManifoldAdventure/Course.lean",
+      "fullModule": "ManifoldAdventure.Course",
+      "contextModule": "ManifoldAdventure.Course",
+      "namespaces": [
+        "ManifoldAdventure"
+      ],
+      "openCommands": [
+        "open scoped Topology Manifold ContDiff",
+        "open Metric Set Function"
+      ],
+      "declaration": "same_point_iff_full_turns (first second : ℝ) :\n    Circle.exp first = Circle.exp second ↔\n      ∃ turns : ℤ, first = second + turns * (2 * Real.pi)",
+      "declarationKind": "theorem",
+      "referenceTheorem": "ManifoldAdventure.same_point_iff_full_turns"
     },
     "circlemotion-4": {
       "sourcePath": "lean/ManifoldAdventure/CircleMotion.lean",

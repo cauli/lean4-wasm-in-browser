@@ -1,8 +1,14 @@
+import { readFileSync } from 'node:fs'
 import { expect, test } from '@playwright/test'
+
+const courseLevelCount = (JSON.parse(
+  readFileSync(new URL('../src/game/manifolds.generated.json', import.meta.url), 'utf8'),
+) as { worlds: Array<{ levels: unknown[] }> }).worlds
+  .reduce((count, world) => count + world.levels.length, 0)
 
 test.skip(
   process.env.UPDATE_MANIFOLD_MATRIX !== '1',
-  'Set UPDATE_MANIFOLD_MATRIX=1 to run all 25 browser-kernel references.',
+  'Set UPDATE_MANIFOLD_MATRIX=1 to run every browser-kernel reference.',
 )
 
 test('Manifold Adventure reference-solution matrix', async ({ page }) => {
@@ -40,6 +46,6 @@ test('Manifold Adventure reference-solution matrix', async ({ page }) => {
     failures,
   }, null, 2))
 
-  expect(results).toHaveLength(25)
+  expect(results).toHaveLength(courseLevelCount)
   expect(failures).toEqual([])
 })

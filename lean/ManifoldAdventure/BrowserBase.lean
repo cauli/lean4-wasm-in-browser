@@ -10,6 +10,7 @@ public import ManifoldAdventure.MapProjections
 public import ManifoldAdventure.CircleMotion
 public import ManifoldAdventure.RobotArm
 public import ManifoldAdventure.RobotReachability
+public import ManifoldAdventure.Course
 
 @[expose] public section
 

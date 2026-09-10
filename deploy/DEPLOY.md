@@ -2,36 +2,103 @@
 
 ## Continuous deployment
 
-Pushes to `main` publish automatically: the `playground tests` workflow runs
-the full headless suite, and a green run triggers `deploy pages`, which builds
-the Pages output and deploys the tested commit. The workflow downloads the
-static Lean assets (base `.olean`/`.ir` tree, `lean-lib-files.json`, Real
-Analysis packs, and the supplemental manifold packs) from the `pages-assets-*`
-GitHub release because the full Lean build tree only exists on a dev machine.
+`deploy/runtime-release.json` pins the runtime release. It records the exact Lean
+commit, Emscripten SDK, immutable R2 prefix, each object's SHA-256 and byte count,
+and the fixture and static bundle identities. Uploads, Pages builds, and CI read
+this same file. Do not add a manual tag or use a timestamp to select a release.
+Conflicting `LEAN_ASSET_TAG`, `VITE_LEAN_ASSET_VERSION`, `LEAN_ARTIFACTS_URL`, or
+`PAGES_ASSETS_URL` values abort instead of selecting different artifacts.
 
-CI needs two repository secrets:
+The `playground tests` workflow calls the required `runtime release gate`. It:
+
+1. Authenticates the pinned fixture archive before extraction.
+2. Checks the Node and browser runtime bytes and the `Init.olean` Lean commit.
+3. Runs the Node tests, including the NNG reference matrix.
+4. Authenticates the static bundle and stages the six pinned runtime objects.
+5. Requires first-attempt Chromium Manifold and NNG kernel acceptance.
+
+A successful **push-to-main** gate run triggers production deployment of that
+exact commit. Production fetches the current `origin/main` and rejects an old
+successful SHA before building and again immediately before deployment. This
+prevents rerunning an old gate to roll back a newer `main`. A manual gate run,
+pull-request run, or release-branch run cannot trigger production. Configure `runtime-gate / validate` as a required branch
+check. Protect the GitHub `production` environment and restrict it to `main`.
+
+Manual `deploy pages` runs require an explicit `preview-...` branch. They run
+the same gate before publishing a Pages preview. They never use the `main`
+Pages branch, even when dispatched from GitHub's `main` branch. For example,
+select `preview-compact1` as the input to review a candidate without promotion.
+
+CI needs these repository or environment secrets:
 
 ```text
-CLOUDFLARE_API_TOKEN   API token with "Cloudflare Pages: Edit" on the account
-CLOUDFLARE_ACCOUNT_ID  the personal account id
+CLOUDFLARE_API_TOKEN   token with Cloudflare Pages edit permission
+CLOUDFLARE_ACCOUNT_ID the intended account id
 ```
 
-After a Lean artifact swap, run `deploy/upload-r2.sh` (as before), then rebuild
-and upload the release asset and point the workflow at it:
+CI cannot use a developer's local Wrangler OAuth login. A missing API token
+blocks deployment, not the artifact checks.
 
-```bash
-# First run "build Manifold Adventure browser layer" in Actions. Its defaults
-# select the exact Lean 62b6 native-i386 artifact and the matching, prebuilt
-# browser Mathlib closure. Copy the downloaded manifold-layer.json, ten world
-# manifests, and ten world library directories into public/lean-wasm/. Copy
-# manifolds.conformance.json into src/game/ so the UI can trust the new IDs.
-bash deploy/pack-pages-assets.sh
-gh release create pages-assets-<ver> --title "Pages static assets" \
-  --notes "Static Pages assets" /tmp/pages-assets.tar.gz
-# update PAGES_ASSETS_URL in .github/workflows/deploy-pages.yml
+## Runtime release procedure
+
+Use a new immutable release name for any binary, glue, or snapshot change.
+Keep the six object entries together: full JS/WASM, slim JS/WASM, and each
+variant's `snapshots/init.snap`. The compact-exports release retains its
+existing slim pair and snapshots; the manifest pins their unchanged bytes.
+
+The fixture archive contains regular files and directories only:
+
+```text
+bin/lean.js
+bin/lean.wasm
+bin/package.json                 { "type": "commonjs" }
+lib/lean/Init.olean              plus the Init .olean/.ir/.ir.sig closure
+runtime/lean.js
+runtime/lean.wasm
+runtime/slim/lean.js
+runtime/slim/lean.wasm
+runtime/snapshots/init.snap
+runtime/slim/snapshots/init.snap
 ```
 
-The manual path below still works and stays the fallback.
+Dereference symlinks and hardlinks when making the tarball. The fetcher rejects
+links and unsafe paths. It verifies the archive before extraction and verifies
+the full JS/WASM twice: the Node `bin/` pair and the browser `runtime/` pair.
+An unsuccessful fetch keeps the previous Node fixture directory intact.
+The browser stager rejects unlisted runtime fixture files and copies only the
+manifest's object keys, so fixtures cannot replace the pinned static packs.
+Its destination must be a real staging tree: symlink files or ancestors abort
+before any copy, including development links to another worktree's artifacts.
+
+Before publishing:
+
+1. Stage the exact local objects and compute their hashes and byte counts.
+2. Package the fixture and static assets. Record their immutable URLs, SHA-256,
+   and byte counts in the release manifest. Do not reuse a release asset URL.
+3. Run the [browser validation gate](../docs/browser-artifact-validation.md) on
+   the candidate and require the CI gate for the candidate commit.
+4. Have one publisher run `bash deploy/upload-r2.sh`. It validates every local
+   object and preflights **all** remote keys before the first write. Identical
+   objects are skipped. Different bytes or unknown read failures abort.
+5. Deploy a preview. Confirm the pinned runtime requests, response headers,
+   and local kernel acceptance before moving the tested change to `main`.
+
+The R2 check is a checksum preflight, not an atomic create-only write. Do not
+run concurrent publishers against the same prefix. Keep incomplete prefixes
+out of production. Do not overwrite existing R2 objects or GitHub release
+assets with `--clobber`.
+
+The Pages bundle includes the base `.olean`/`.ir` tree, `lean-lib-files.json`,
+**`core-layer.json` and `core-lib` packs**, Real Analysis packs, and the Manifold
+layers. `bash deploy/pack-pages-assets.sh` checks that the core packs exist,
+have the declared sizes, and match the base Lean commit. This packaging step
+does not rebuild Lean or Mathlib.
+
+Requests with an explicit `?v=` read only that R2 prefix. A missing versioned
+object returns 404, never bytes from a different release. Only old requests
+without a `v` parameter can read the bare legacy objects. Invalid or repeated
+version parameters return 400. Audit any old version prefixes before changing
+the serving function; old explicit versions also require their own objects.
 
 ## Browser Mathlib artifact
 
@@ -193,26 +260,29 @@ manifold-robot-arm-layer.json
 manifold-robot-arm-lib/artifacts-000.pack ...
 ```
 
-The optional `slim/` and `snapshots/` directories are uploaded when present.
+The pinned `slim/` and `snapshots/` objects are required. Missing files abort
+the upload; the uploader never silently skips a release object.
 The Pages build validates every Real Analysis and manifold pack against its
 manifest and fails if either layer is absent, incomplete, or pinned to a
 different Lean/Mathlib pair.
 
-## Deploy
+## Local preview
+
+After the required candidate checks, an authorized release publisher can use
+Wrangler OAuth for a local preview when CI deployment credentials are absent:
 
 ```bash
 export CLOUDFLARE_ACCOUNT_ID=<your-account-id>
-
-bash deploy/upload-r2.sh
+node deploy/runtime-release.mjs verify-runtime
 bash deploy/build-pages.sh
-npx wrangler pages deploy dist \
+npx wrangler@4 pages deploy dist \
   --project-name lean-playground \
-  --branch main
+  --branch preview-compact1
 ```
 
-Run `upload-r2.sh` only when the Lean binaries or snapshots change. Run
-`build-pages.sh` for every app or game deployment because the Real Analysis
-manifest and packs are part of the atomic Pages output.
+This does not promote production. Production follows the gated workflow above.
+Upload R2 objects only when the runtime release changes. Build Pages for every
+app deployment so its static manifests and packs ship with the matching UI.
 
 ## Verify
 

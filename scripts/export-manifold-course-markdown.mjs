@@ -59,6 +59,28 @@ const models = {
   },
 }
 
+// Draggable labs beside lessons (see conceptLabByLevel in GameApp.tsx) and on
+// world overviews.
+const conceptLabByLevel = {
+  'mapprojections-1': 'projection lab',
+  'mapprojections-2': 'projection lab',
+  'course-1': 'projection lab',
+  'mapprojections-5': 'projection lab',
+  'course-2': 'projection lab',
+  'smoothmanifolds-1': 'projection lab',
+  'course-6': 'projection lab',
+  'circlemotion-3': 'angle lab',
+  'course-10': 'angle lab',
+  'course-7': 'tangent lab',
+  'course-8': 'tangent lab',
+  'course-9': 'tangent lab',
+}
+const conceptLabByWorld = {
+  Sphere: 'projection lab',
+  ChartedSpaces: 'angle lab',
+  TangentSpaces: 'tangent lab',
+}
+
 const modelByLevel = {
   'localcharts-4': 'sphere-charts',
   'chartedspaces-5': 'sphere-charts',
@@ -66,8 +88,6 @@ const modelByLevel = {
   'canonicalcharts-5': 'torus-loops',
   'tangentspaces-1': 'tangent-plane',
   'tangentspaces-2': 'tangent-plane',
-  'mapprojections-1': 'sphere-charts',
-  'mapprojections-5': 'sphere-charts',
   'robotarm-1': 'robot-arm',
   'robotarm-3': 'robot-arm',
   'robotarm-4': 'robot-arm',
@@ -130,16 +150,30 @@ const lines = [
   '',
   `**Caption:** ${course.caption}`,
   '',
-  '## Revision notes (r3)',
+  '## Revision notes (r5)',
   '',
-  '- Every level now has a conceptual hint, a tool hint, and a hidden solution hint.',
-  '- New levels exercise the inverse side of a partial chart, both directions of the self-atlas equivalence, an actual transition map, and stereographic source membership.',
+  '- The main path was rebuilt around understanding rather than API coverage: one chart, then the sphere that no single chart covers, then atlases, smooth transitions, and tangent vectors, each checked on the sphere before it is stated in general.',
+  '- Ten new levels (module `ManifoldAdventure.Course`): the pointwise covering of the sphere, the sphere\'s preferred chart and atlas, chart changes as groupoid membership and as `ContDiffOn`, the smooth transition between two stereographic charts, the smooth inclusion of the sphere, and the tangent plane as the orthogonal complement of the radius.',
+  '- Eight bookkeeping levels left the main path: chart membership facts are granted as inventory asides, the identity-chart world and the regularity-order levels became optional worlds.',
+  '- No main-path level is closed by `infer_instance`.',
+  '- Three interactive labs sit beside the lessons: a draggable stereographic projection with both poles and the transition map, an angle-chart dial, and a tangent plane that follows a point around the sphere.',
+  '- Key levels carry a "Think first" prompt with a hidden answer.',
+  '',
+  '### Earlier (r4)',
+  '',
+  '- Homeomorphisms and Open partial homeomorphisms merged into one five-level opening world. The lemmas of the cut levels are granted as inventory from a neighbouring lesson instead.',
+  '- Every level compiles against one shared Lean environment, so the Mathlib import runs once per session and moving between worlds is instant.',
+  '- Level identifiers are unchanged, so earlier conformance records and saved player progress carry over.',
+  '',
+  '### Earlier (r3)',
+  '',
+  '- Every level has a conceptual hint, a tool hint, and a hidden solution hint.',
+  '- Levels exercise the inverse side of a partial chart, both directions of the self-atlas equivalence, an actual transition map, and stereographic source membership.',
   '- Definition-only exercises that accepted any well-typed term were removed from Tangent Spaces and Robot Arm.',
-  '- Repeated 3D assets now use different named-object highlights, and the robot arm opens its own world.',
+  '- Repeated 3D assets use different named-object highlights, and the robot arm has its own world.',
   '- Completing the final robot proof grants `fun_prop`; it is not available while solving that level.',
-  '- A new optional reachability world proves the two radial obstructions for a planar two-link arm and includes an interactive annulus lab in every lesson.',
+  '- The optional reachability world proves the two radial obstructions for a planar two-link arm and includes an interactive annulus lab in every lesson.',
   '- The world overview lets reviewers compare two and three links. The three-link mode is explicitly marked as an outlook rather than part of the four Lean goals.',
-  '- The course revision changed, so the old numeric-ID conformance record is ignored until exact pinned CI checks r3.',
   '',
   '## Course map',
   '',
@@ -149,7 +183,10 @@ const lines = [
     const modelLevels = world.levels.filter((level) => modelByLevel[level.id])
     const lab = world.id === 'CanonicalCharts'
     const robotWorkspaceLab = world.id === 'RobotReachability'
+    const labLevels = world.levels.filter((level) => conceptLabByLevel[level.id])
     const modelSummary = [
+      ...(conceptLabByWorld[world.id] ? [`${conceptLabByWorld[world.id]} in overview`] : []),
+      ...(labLevels.length > 0 ? [`${labLevels.length} lesson lab${labLevels.length === 1 ? '' : 's'}`] : []),
       ...(lab ? ['seven-model explorer'] : []),
       ...(world.id === 'RobotArm' ? ['1 world scene'] : []),
       ...(robotWorkspaceLab ? ['reachability lab in overview and 4 lessons'] : []),
@@ -163,7 +200,7 @@ const lines = [
   '',
   '## 3D model index',
   '',
-  'World 4 opens with a seven-model explorer, World 9 opens with the robot arm, and World 10 contains an interactive reachability lab. Individual lessons also embed models:',
+  'The identity-and-product-charts world opens with a seven-model explorer, the robot-arm world opens with the arm itself, and the reachability world contains an interactive workspace lab. The sphere, atlas, and tangent worlds open with draggable labs described in the course map. Individual lessons also embed models:',
   '',
   '| Location | Model | Asset |',
   '| --- | --- | --- |',
@@ -173,7 +210,7 @@ const lines = [
   }),
   `| RobotArm, world overview: Where the arm can reach | ${models['robot-arm'].label} | [\`robot-arm.glb\`](${modelPath('robot-arm')}) |`,
   '',
-  'The World 4 explorer additionally includes:',
+  'The seven-model explorer additionally includes:',
   '',
   ...Object.entries(models).filter(([model]) => model !== 'robot-arm').map(([model, info]) => (
     `- **${info.label}**${info.outlook ? ' *(outlook, beyond this course)*' : ''}: ${info.caption} ([\`${model}.glb\`](${modelPath(model)}))`
@@ -245,6 +282,12 @@ for (const [worldIndex, world] of course.worlds.entries()) {
       '',
     )
 
+    if (conceptLabByLevel[level.id]) {
+      lines.push(
+        `> **INTERACTIVE LAB:** the ${conceptLabByLevel[level.id]} appears after the lesson introduction, tuned to this level's claim.`,
+        '',
+      )
+    }
     if (model) {
       lines.push(
         modelCallout(
@@ -273,6 +316,9 @@ for (const [worldIndex, world] of course.worlds.entries()) {
       '',
       level.statementText,
       '',
+      ...(level.question
+        ? ['#### Think first', '', `> **${level.question.prompt}**`, '>', `> ${level.question.answer}`, '']
+        : []),
       '#### Goal',
       '',
       codeBlock('lean', `${level.declarationKind} ${level.statement} := by\n  -- Write your proof here.`),

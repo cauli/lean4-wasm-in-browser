@@ -1,22 +1,22 @@
 {
   "source": {
     "repository": "https://github.com/cauli/lean4-wasm-in-browser",
-    "commit": "mathlib-manifolds-de3a9cf330-r4",
+    "commit": "mathlib-manifolds-de3a9cf330-r5",
     "license": "Apache-2.0 for Mathlib; original course text in this repository",
     "toolchain": "cauli/lean4@62b6a22913 (upstream ecf55de08b)",
     "mathlibCommit": "de3a9cf33016bbb6d15880d7680643f7ca2d25ba",
     "importedAt": "2026-07-29T00:00:00.000Z"
   },
   "title": "The Manifold Adventure",
-  "introduction": "# The Manifold Adventure\n\nAda is an ant, so she can only inspect her world from the inside. Manifold theory takes the same point of view: understand the whole space through local coordinates.\n\nThe main path uses [Mathlib's manifold API](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html) from the start. First come [`Homeomorph`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html#Homeomorph) and [`OpenPartialHomeomorph`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph). A [`ChartedSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#ChartedSpace) supplies an [`atlas`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#atlas) and a [`chartAt`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#chartAt) for each point. A [`ModelWithCorners`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#ModelWithCorners) lets [`IsManifold`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold) express smooth compatibility, leading to [`TangentSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentSpace) and [`TangentBundle`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentBundle). Optional paths apply the same structures to stereographic maps, circular motion, and a two-joint arm.",
-  "information": "The formal sources are in `lean/ManifoldAdventure/`. Each world imports the smallest Mathlib area it needs, from homeomorphisms through smooth manifolds, at pinned Mathlib commit `de3a9cf33016bbb6d15880d7680643f7ca2d25ba`.\n\nHints are staged. The first gives a conceptual nudge, the second names the tool, and the third contains the full solution. A tactic may appear as new in more than one level when optional branches make the first encounter order-dependent.\n\nFor the mathematics, continue with Loring Tu's *An Introduction to Manifolds*, John Lee's *Introduction to Smooth Manifolds*, or John Milnor's *Topology from the Differentiable Viewpoint*.",
+  "introduction": "# The Manifold Adventure\n\nAda is an ant, so she can only inspect her world from the inside. Manifold theory takes the same point of view: understand the whole space through local coordinates.\n\nThe main path is short and concrete. It starts with one chart, moves at once to a sphere that no single chart can cover, then builds the general words: an [`atlas`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#atlas) of charts, smooth changes between them ([`IsManifold`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold)), and the [`TangentSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentSpace) of velocities at a point. Every word is checked on the sphere before it is stated in general. Optional paths go deeper into Mathlib's chart instances, regularity orders, circular motion, and a two-joint robot arm whose configuration space is a torus.",
+  "information": "The formal sources are in `lean/ManifoldAdventure/`. Each world module imports the smallest Mathlib area it needs, from homeomorphisms through smooth manifolds, at pinned Mathlib commit `de3a9cf33016bbb6d15880d7680643f7ca2d25ba`. The browser loads their union once, so every level shares one Lean environment and switching worlds costs nothing.\n\nHints are staged. The first gives a conceptual nudge, the second names the tool, and the third contains the full solution. A tactic may appear as new in more than one level when optional branches make the first encounter order-dependent.\n\nFor the mathematics, continue with Loring Tu's *An Introduction to Manifolds*, John Lee's *Introduction to Smooth Manifolds*, or John Milnor's *Topology from the Differentiable Viewpoint*.",
   "caption": "A kernel-checked course on Mathlib topology and manifolds, with optional paths through map projections and robot motion.",
   "coverImage": "images/cover.svg",
   "worlds": [
     {
       "id": "Charts",
-      "title": "Homeomorphisms and local charts",
-      "introduction": "# One path, two descriptions\n\nAda begins on a single trail. She can copy the whole route onto one leaf, matching every place on the trail with one place in the drawing. A [`Homeomorph`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html#Homeomorph) is Mathlib's bundled version of such a correspondence: an equivalence together with continuity proofs in both directions.\n\nThe trail soon climbs onto a rounded stone. From where Ada stands she can survey only the patch around her, and no single leaf can record the whole closed surface, so she draws just the part she can see. Mathlib represents one local chart by [`OpenPartialHomeomorph`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph): it has a `source` on the stone, a `target` in the drawing, and inverse laws that apply inside the patch.\n\nThe first two levels name their instance assumptions, such as `trailTopology`, so the lessons can point at them. The chart levels leave them anonymous, which is ordinary Lean style.",
+      "title": "One trail, one leaf",
+      "introduction": "# One path, two descriptions\n\nAda begins on a single trail. She can copy the whole route onto one leaf, matching every place on the trail with one place in the drawing. A [`Homeomorph`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html#Homeomorph) is Mathlib's bundled version of such a correspondence: an equivalence together with continuity proofs in both directions.\n\nThe trail soon climbs onto a rounded stone. From where Ada stands she can survey only the patch around her, so she draws just the part she can see. Mathlib represents one local chart by [`OpenPartialHomeomorph`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph): it has a `source` on the stone, a `target` in the drawing, and inverse laws that apply inside the patch.\n\nGlossary for this course: a leaf is a chart, the shaded patch is its `source`, the drawing is its `target`, a stack of leaves is an atlas, and the stone or bead is the manifold. The first level names its instance assumptions, such as `trailTopology`, so the lesson can point at them. Later levels leave them anonymous, which is ordinary Lean style.",
       "prerequisites": [],
       "optional": false,
       "mapPosition": {
@@ -31,7 +31,7 @@
           "leanWorld": "Homeomorphisms",
           "number": 1,
           "title": "The drawing matches the trail",
-          "introduction": "Ada stands midway along a path. North leads back to the nest; south leads to a patch of berries. She copies the path onto a leaf. As she moves a little along the trail, her mark should move only a little on the drawing. There can be no sudden jump.\n\nHere `Trail` is the actual path and `Drawing` is the line Ada drew. The objects `trailTopology` and `drawingTopology` tell Lean what it means for points to be nearby in each space. Then `trailMap : Trail ≃ₜ Drawing` matches their points homeomorphically. It already contains a proof that its forward function is continuous, exposed as [`Homeomorph.continuous`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html#Homeomorph.continuous) or `trailMap.continuous`.",
+          "introduction": "Ada stands midway along a path. North leads back to the nest; south leads to a patch of berries. She copies the path onto a leaf. As she moves a little along the trail, her mark should move only a little on the drawing. There can be no sudden jump.\n\nHere `Trail` is the actual path and `Drawing` is the line Ada drew. The objects `trailTopology` and `drawingTopology` tell Lean what it means for points to be nearby in each space. Then `trailMap : Trail ≃ₜ Drawing` matches their points homeomorphically. It already contains a proof that its forward function is continuous, exposed as [`Homeomorph.continuous`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html#Homeomorph.continuous) or `trailMap.continuous`.\n\nThree more facts about `trailMap` ride along in the same bundle and join the inventory now: the reverse map `trailMap.symm` is continuous, [`Homeomorph.continuous_symm`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html#Homeomorph.continuous_symm); the round trip `trailMap.symm (trailMap place) = place` is [`Homeomorph.symm_apply_apply`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html#Homeomorph.symm_apply_apply); and composing two such maps applies them in order, [`Homeomorph.trans_apply`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html#Homeomorph.trans_apply).",
           "conclusion": "Ada's drawing now moves continuously with the trail.",
           "statementText": "**Objective:** Prove that the map from the actual trail to Ada's drawing is continuous.",
           "statement": "homeomorph_continuous {Trail : Type u} {Drawing : Type v}\n    [trailTopology : TopologicalSpace Trail]\n    [drawingTopology : TopologicalSpace Drawing]\n    (trailMap : Trail ≃ₜ Drawing) : Continuous trailMap",
@@ -49,48 +49,17 @@
           "completionTactics": [],
           "hiddenTactics": [],
           "newTheorems": [
-            "Homeomorph.continuous"
+            "Homeomorph.continuous",
+            "Homeomorph.continuous_symm",
+            "Homeomorph.symm_apply_apply",
+            "Homeomorph.trans_apply"
           ],
           "newDefinitions": [
             "TopologicalSpace",
             "Homeomorph",
-            "Continuous"
-          ],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/Homeomorphisms.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "homeomorphisms-4",
-          "world": "Charts",
-          "leanWorld": "Homeomorphisms",
-          "number": 2,
-          "title": "Into the route book",
-          "introduction": "Ada copies the trail onto a leaf, then copies the leaf into the nest's larger route book. Her position passes through the first map and then the second.\n\nHere `trailMap` goes from the actual `Trail` to the `Drawing`, while `bookMap` transfers that drawing into the `RouteBook`. Mathlib composes them with `trailMap.trans bookMap`. The pointwise rule is [`Homeomorph.trans_apply`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html#Homeomorph.trans_apply), and in dot notation it reads `trailMap.trans_apply bookMap place`. The equation also holds by definition, so Lean accepts `rfl` here. The named lemma is the habit that keeps working once definitional unfolding stops.\n\nAda will not stop to prove the other directions, but they ride along in the same bundle: `trailMap.symm` reads the drawing back onto the trail, its continuity is [`Homeomorph.continuous_symm`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html#Homeomorph.continuous_symm), and the round trip law `trailMap.symm (trailMap place) = place` is stored as [`Homeomorph.symm_apply_apply`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/Homeomorph/Defs.html#Homeomorph.symm_apply_apply). All three are in the inventory from here on.",
-          "conclusion": "The two drawings now behave like one map from the trail to the route book.",
-          "statementText": "**Objective:** Show that the composed map sends `place` first through `trailMap` and then through `bookMap`.",
-          "statement": "homeomorph_composition_apply {Trail : Type u} {Drawing : Type v} {RouteBook : Type w}\n    [trailTopology : TopologicalSpace Trail]\n    [drawingTopology : TopologicalSpace Drawing]\n    [routeBookTopology : TopologicalSpace RouteBook]\n    (trailMap : Trail ≃ₜ Drawing) (bookMap : Drawing ≃ₜ RouteBook)\n    (place : Trail) :\n    trailMap.trans bookMap place = bookMap (trailMap place)",
-          "theoremName": "homeomorph_composition_apply",
-          "declarationKind": "theorem",
-          "solution": "exact trailMap.trans_apply bookMap place",
-          "hints": [
-            "Composition has a named pointwise rule.",
-            "Use `trailMap.trans_apply` with the second map and the point. A plain `rfl` also works here.",
-            "*(hidden)* `exact trailMap.trans_apply bookMap place`"
-          ],
-          "newTactics": [],
-          "completionTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [
-            "Homeomorph.trans_apply",
-            "Homeomorph.continuous_symm",
-            "Homeomorph.symm_apply_apply"
-          ],
-          "newDefinitions": [
-            "Homeomorph.trans",
+            "Continuous",
             "Homeomorph.symm",
+            "Homeomorph.trans",
             "Eq"
           ],
           "disabledTactics": [],
@@ -103,7 +72,7 @@
           "id": "localcharts-3",
           "world": "Charts",
           "leanWorld": "LocalCharts",
-          "number": 3,
+          "number": 2,
           "title": "Her mark lands in the drawing",
           "introduction": "Ada chooses a point inside the shaded patch and places its mark on the leaf. Since the point is in the part she mapped, the mark must lie in the drawn coordinate region.\n\nLean names Ada's chosen point `place`. The hypothesis `inPatch : place ∈ chart.source` says that it lies in the shaded part of the stone. Mathlib's [`OpenPartialHomeomorph.map_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph.map_source) then concludes that `chart place` lies in the drawn target. Type `\\in` for `∈`.\n\nTwo chart facts come along without their own levels: the shaded patch `chart.source` is open, stored as [`OpenPartialHomeomorph.open_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph.open_source), and the chart is continuous on that patch, stored as [`OpenPartialHomeomorph.continuousOn`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph.continuousOn). Both are in the inventory.",
           "conclusion": "Once Lean knows that `place` is in the source, its coordinates belong to the target.",
@@ -117,6 +86,10 @@
             "The remaining goal is the hypothesis `inPatch`.",
             "*(hidden)* `apply chart.map_source`, then `exact inPatch`"
           ],
+          "question": {
+            "prompt": "Before proving it: why does a chart need a source at all? What goes wrong if Ada tries to draw the whole stone on one leaf?",
+            "answer": "A leaf is flat and the stone is closed, so no single continuous one-to-one drawing of the whole stone fits on a leaf. Restricting to a patch is what makes the chart possible."
+          },
           "newTactics": [
             "apply"
           ],
@@ -145,7 +118,7 @@
           "id": "localcharts-4",
           "world": "Charts",
           "leanWorld": "LocalCharts",
-          "number": 4,
+          "number": 3,
           "title": "Back to the same spot",
           "introduction": "Ada marks a place in her local drawing and traces it back onto the stone. The round trip is reliable only because that place lies inside the patch she drew.\n\nFor a partial homeomorphism, the inverse law needs `inPatch : place ∈ chart.source`. This is the formal bridge between \"Ada drew this place\" and the side condition in Mathlib's [`OpenPartialHomeomorph.left_inv`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph.left_inv).",
           "conclusion": "Inside her patch, Ada can move from stone to leaf and back without losing her place.",
@@ -178,7 +151,7 @@
           "id": "localcharts-5",
           "world": "Charts",
           "leanWorld": "LocalCharts",
-          "number": 5,
+          "number": 4,
           "title": "The leaf reads back into the patch",
           "introduction": "Ada picks a mark inside the drawn region and reads it back onto the stone. Two things should hold at once: the recovered point lies in her shaded patch, and pressing it forward again reproduces the mark she chose.\n\nYou have met `chart.map_source` and `chart.left_inv`. Mathlib names their mirror images predictably: [`OpenPartialHomeomorph.map_target`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph.map_target) and [`OpenPartialHomeomorph.right_inv`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph.right_inv). Guessing a lemma's name from this convention is a useful Mathlib skill. The goal is a conjunction, written `∧` (type `\\and`). The `constructor` tactic splits it into two parts, and a focus dot `·` (type `\\.`) gives each part its own proof.",
           "conclusion": "Both directions of the chart now behave, and Ada guessed the lemma names herself.",
@@ -214,9 +187,9 @@
       ]
     },
     {
-      "id": "ChartedSpaces",
-      "title": "Charted spaces and atlases",
-      "introduction": "# A stack of maps\n\nThe stone is larger than one patch. Ada carries a stack of leaves, each covering a different part, and keeps them together as her atlas.\n\nThe class [`ChartedSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#ChartedSpace) equips a surface with an atlas. The goals call the actual world `Surface`, the shared coordinate space `Coordinates`, and Ada's location `place`. Mathlib often writes the same three objects as `M`, `H`, and `x`.",
+      "id": "Sphere",
+      "title": "One pole is missing",
+      "introduction": "# A round world on a flat leaf\n\nAda finds a glass bead near the trail. She wants to copy its surface onto a leaf, but one drawing cannot include the point where she holds the bead. She makes a second drawing from the other pole to cover the gap. This is the whole reason manifolds need atlases, so the course meets it before it meets the general words.\n\nMathlib builds the drawing as [`stereographic`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#stereographic), an `OpenPartialHomeomorph` from the unit sphere to a flat plane. Try the projection lab below: drag Ada around the bead and watch her mark race off the leaf as she nears the pole, then switch poles and compare the two readings of the same point. The levels prove what the lab shows, and introduce the case-splitting tactics they need on the way to the covering proof.",
       "prerequisites": [
         "Charts"
       ],
@@ -228,12 +201,220 @@
       "verification": "kernel",
       "levels": [
         {
+          "id": "mapprojections-1",
+          "world": "Sphere",
+          "leanWorld": "MapProjections",
+          "number": 1,
+          "title": "The pole stays off the leaf",
+          "introduction": "Ada presses one point of the bead between her feet while she draws. That point is the pole of the projection, so it cannot appear in this chart.\n\nThe source of `stereographic unitPole` is the sphere with the pole removed. Mathlib states this as [`stereographic_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#stereographic_source). The complement notation `{⟨pole, ...⟩}ᶜ` means every sphere point except that one.\n\nThe singleton's element appears as `⟨pole, by simp [unitPole]⟩`. A sphere point is a vector paired with a certificate that its norm is one. Read the embedded proof as Mathlib filling in that certificate from `unitPole`.\n\nOne more fact rides along: every mark on the leaf comes from some point of the bead, [`surjective_stereographic`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#surjective_stereographic), so no coordinate on the drawing is wasted. It is in the inventory.",
+          "conclusion": "The first drawing now has an exact missing point.",
+          "statementText": "**Objective:** Show that the stereographic chart covers the sphere except for its chosen pole.",
+          "statement": "stereographic_map_misses_pole {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (pole : Space) (unitPole : ‖pole‖ = 1) :\n    (stereographic unitPole).source = {⟨pole, by simp [unitPole]⟩}ᶜ",
+          "theoremName": "stereographic_map_misses_pole",
+          "declarationKind": "theorem",
+          "solution": "exact stereographic_source unitPole",
+          "hints": [
+            "Mathlib states the source of a stereographic chart directly.",
+            "Use `stereographic_source unitPole`.",
+            "*(hidden)* `exact stereographic_source unitPole`"
+          ],
+          "question": {
+            "prompt": "Before proving it: as Ada walks toward the pole she is projecting from, what happens to her mark on the leaf?",
+            "answer": "It runs off toward infinity. The pole itself has no mark, which is why it must be removed from the chart's source."
+          },
+          "newTactics": [],
+          "completionTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [
+            "stereographic_source",
+            "surjective_stereographic"
+          ],
+          "newDefinitions": [
+            "Metric.sphere",
+            "stereographic",
+            "Set.compl"
+          ],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "lean/ManifoldAdventure/MapProjections.lean",
+          "verification": "kernel"
+        },
+        {
+          "id": "mapprojections-2",
+          "world": "Sphere",
+          "leanWorld": "MapProjections",
+          "number": 2,
+          "title": "The far pole lands in the middle",
+          "introduction": "Ada marks the point opposite the missing pole. On her flat drawing, that point sits at the center.\n\nThe value `-pole` is the antipodal point on the sphere. Mathlib's [`stereographic_apply_neg`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#stereographic_apply_neg) computes its stereographic coordinate as the zero vector in the flat model space.\n\nThe pole has changed representation since the previous level. There it was a raw vector plus `‖pole‖ = 1`. Here it is already a point of the sphere subtype, and `norm_eq_of_mem_sphere pole` recovers the norm certificate from membership.",
+          "conclusion": "Ada can use the opposite pole as the center of her coordinates.",
+          "statementText": "**Objective:** Prove that the antipodal point maps to the origin of the drawing.",
+          "statement": "opposite_pole_is_origin {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (pole : sphere (0 : Space) 1) :\n    stereographic (norm_eq_of_mem_sphere pole) (-pole) = 0",
+          "theoremName": "opposite_pole_is_origin",
+          "declarationKind": "theorem",
+          "solution": "exact stereographic_apply_neg pole",
+          "hints": [
+            "The antipode's coordinate is a named computation.",
+            "Apply `stereographic_apply_neg` to `pole`.",
+            "*(hidden)* `exact stereographic_apply_neg pole`"
+          ],
+          "newTactics": [],
+          "completionTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [
+            "stereographic_apply_neg",
+            "norm_eq_of_mem_sphere"
+          ],
+          "newDefinitions": [
+            "Neg.neg"
+          ],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "lean/ManifoldAdventure/MapProjections.lean",
+          "verification": "kernel"
+        },
+        {
+          "id": "mapprojections-4",
+          "world": "Sphere",
+          "leanWorld": "MapProjections",
+          "number": 3,
+          "title": "Off the pole, onto the leaf",
+          "introduction": "Ada checks a point that is not the pinned pole. Every such point earned a mark on the first leaf.\n\nMembership in the source is membership in a complement. The condition `place ∈ {north}ᶜ` becomes `place ∉ {north}`, and singleton membership becomes equality, so the whole condition is `place ≠ north`. The tactic `simp only [h₁, h₂, …]` rewrites with exactly the listed lemmas. Here those lemmas include [`stereographic_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#stereographic_source), `Set.mem_compl_iff`, and `Set.mem_singleton_iff`.",
+          "conclusion": "Only the pinned pole is missing. Everything else already has coordinates on the first leaf.",
+          "statementText": "**Objective:** Show that any point other than the pole lies in that pole's chart source.",
+          "statement": "stereographic_off_pole {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (north place : sphere (0 : Space) 1) (notNorth : place ≠ north) :\n    place ∈ (stereographic (norm_eq_of_mem_sphere north)).source",
+          "theoremName": "stereographic_off_pole",
+          "declarationKind": "theorem",
+          "solution": "simp only [stereographic_source, Set.mem_compl_iff, Set.mem_singleton_iff]\nexact notNorth",
+          "hints": [
+            "Unwind the chart source and the two membership statements.",
+            "Use `simp only [stereographic_source, Set.mem_compl_iff, Set.mem_singleton_iff]`; the result is `notNorth`.",
+            "*(hidden)* `simp only [stereographic_source, Set.mem_compl_iff, Set.mem_singleton_iff]`, then `exact notNorth`"
+          ],
+          "newTactics": [
+            "simp"
+          ],
+          "completionTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [
+            "Set.mem_compl_iff",
+            "Set.mem_singleton_iff"
+          ],
+          "newDefinitions": [],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "lean/ManifoldAdventure/MapProjections.lean",
+          "verification": "kernel"
+        },
+        {
+          "id": "course-1",
+          "world": "Sphere",
+          "leanWorld": "Course",
+          "number": 4,
+          "title": "One of the two leaves shows her place",
+          "introduction": "Ada holds two drawings of the bead, one made from the north pole and one from the south pole. She picks any point of the bead and asks which drawing shows it. If the point is the north pole, the south drawing has it. Otherwise the north drawing does.\n\nEach source is the sphere with one pole removed, so after [`stereographic_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#stereographic_source) and the membership lemmas from the previous level, the goal reads \"`place ≠ north` or `place ≠ south`\". A proof by cases on `place = north` (the tactic `by_cases`) splits the world in two. In each half, `left` or `right` chooses which side of the `∨` to prove. To prove `place ≠ south`, which means `place = south → False`, use `intro` to assume the equality and derive the contradiction with `different`, chaining the two equalities as `atNorth.symm.trans atSouth`.",
+          "conclusion": "Every point of the bead appears on at least one of Ada's two leaves.",
+          "statementText": "**Objective:** Show that every point of the bead lies in the source of the north chart or in the source of the south chart.",
+          "statement": "two_leaves_cover_point {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (north south : sphere (0 : Space) 1) (different : north ≠ south)\n    (place : sphere (0 : Space) 1) :\n    place ∈ (stereographic (norm_eq_of_mem_sphere north)).source ∨\n      place ∈ (stereographic (norm_eq_of_mem_sphere south)).source",
+          "theoremName": "two_leaves_cover_point",
+          "declarationKind": "theorem",
+          "solution": "simp only [stereographic_source, Set.mem_compl_iff, Set.mem_singleton_iff]\nby_cases atNorth : place = north\n· right\n  intro atSouth\n  exact different (atNorth.symm.trans atSouth)\n· left\n  exact atNorth",
+          "hints": [
+            "Split on whether the point is the north pole. In each case one of the two leaves must show it.",
+            "After `simp only` with the source and membership lemmas, use `by_cases atNorth : place = north`, then `right` or `left`; the north case needs `intro` and `different (atNorth.symm.trans atSouth)`.",
+            "*(hidden)* `simp only [stereographic_source, Set.mem_compl_iff, Set.mem_singleton_iff]`, then `by_cases atNorth : place = north`, then `· right`, then `  intro atSouth`, then `  exact different (atNorth.symm.trans atSouth)`, then `· left`, then `  exact atNorth`"
+          ],
+          "question": {
+            "prompt": "Before proving it: which single point of the bead is missing from the north drawing, and why can the south drawing not miss that same point?",
+            "answer": "The north drawing misses exactly the north pole. The south drawing misses exactly the south pole, and the two poles are different points, so no point is missing from both."
+          },
+          "newTactics": [
+            "by_cases",
+            "left",
+            "right",
+            "intro"
+          ],
+          "completionTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [
+            "Eq.symm",
+            "Eq.trans"
+          ],
+          "newDefinitions": [
+            "Or",
+            "Ne",
+            "Not"
+          ],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "lean/ManifoldAdventure/Course.lean",
+          "verification": "kernel"
+        },
+        {
+          "id": "mapprojections-5",
+          "world": "Sphere",
+          "leanWorld": "MapProjections",
+          "number": 5,
+          "title": "The second leaf covers the hole",
+          "introduction": "Ada makes a second drawing from a different pole. The first leaf misses only the north point, and the second misses only the south point. Since those points differ, every place appears on at least one leaf.\n\nThe proof starts from [`stereographic_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#stereographic_source) and has a useful shape. `ext place` turns the set equation into a statement about one point. `simp only` with the membership lemmas from the previous level reduces it to a disjunction: the point differs from north, or it differs from south. `by_cases atNorth : place = north` splits the situations, while `left` and `right` choose a side. At north, assume `place = south` with `intro` and chain equalities as `atNorth.symm.trans atSouth` to contradict `different`.",
+          "conclusion": "Two leaves are enough to record every point on the bead. This pair is the atlas Mathlib uses to make the sphere a `ChartedSpace`, which the next world states in general.",
+          "statementText": "**Objective:** Prove that two stereographic charts with different poles cover the whole sphere.",
+          "statement": "two_stereographic_maps_cover {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (north south : sphere (0 : Space) 1) (different : north ≠ south) :\n    (stereographic (norm_eq_of_mem_sphere north)).source ∪\n      (stereographic (norm_eq_of_mem_sphere south)).source = Set.univ",
+          "theoremName": "two_stereographic_maps_cover",
+          "declarationKind": "theorem",
+          "solution": "ext place\nsimp only [stereographic_source, Set.mem_union, Set.mem_compl_iff,\n  Set.mem_singleton_iff, Set.mem_univ, iff_true]\nby_cases atNorth : place = north\n· right\n  intro atSouth\n  exact different (atNorth.symm.trans atSouth)\n· left\n  exact atNorth",
+          "hints": [
+            "Reduce the set equality to one point, expose the disjunction, then split on whether that point is north.",
+            "Use `ext`, `simp only`, and `by_cases`. Choose branches with `left` or `right`.",
+            "*(hidden)* `ext place`, then `simp only [stereographic_source, Set.mem_union, Set.mem_compl_iff,`, then `  Set.mem_singleton_iff, Set.mem_univ, iff_true]`, then `by_cases atNorth : place = north`, then `· right`, then `  intro atSouth`, then `  exact different (atNorth.symm.trans atSouth)`, then `· left`, then `  exact atNorth`"
+          ],
+          "newTactics": [
+            "ext"
+          ],
+          "completionTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [
+            "Set.mem_union",
+            "Set.mem_univ",
+            "iff_true"
+          ],
+          "newDefinitions": [
+            "Set.union",
+            "Set.univ",
+            "Or"
+          ],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "lean/ManifoldAdventure/MapProjections.lean",
+          "verification": "kernel"
+        }
+      ]
+    },
+    {
+      "id": "ChartedSpaces",
+      "title": "A stack of maps",
+      "introduction": "# A stack of maps\n\nThe bead needed two leaves; a rougher stone may need many. Ada keeps her leaves together as her atlas, and for every place she stands she has a preferred leaf that shows it.\n\nThe class [`ChartedSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#ChartedSpace) equips a surface with an atlas and a preferred chart `chartAt` for each point. The goals call the actual world `Surface`, the shared coordinate space `Coordinates`, and Ada's location `place`. Mathlib often writes the same three objects as `M`, `H`, and `x`. The last two levels return to the bead and identify its preferred leaves with the projections of the previous world. The angle lab below shows the same idea on a circle: two arcs, each with its own angle reading, and an overlap where the readings differ by a fixed shift.",
+      "prerequisites": [
+        "Sphere"
+      ],
+      "optional": false,
+      "mapPosition": {
+        "x": 500,
+        "y": 600
+      },
+      "verification": "kernel",
+      "levels": [
+        {
           "id": "chartedspaces-1",
           "world": "ChartedSpaces",
           "leanWorld": "ChartedSpaces",
           "number": 1,
           "title": "A leaf for where she stands",
-          "introduction": "Wherever Ada stops, she selects a leaf whose shaded patch contains her current position. A preferred map that missed her would be useless.\n\nThe instance `[ChartedSpace Coordinates Surface]` is Ada's collection of local leaves. Mathlib's [`mem_chart_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#mem_chart_source) says that `chartAt Coordinates place`, the leaf chosen at her current location, contains `place` in its source. Smooth compatibility between overlapping leaves comes later, with `IsManifold`.",
+          "introduction": "Wherever Ada stops, she selects a leaf whose shaded patch contains her current position. A preferred map that missed her would be useless.\n\nThe instance `[ChartedSpace Coordinates Surface]` is Ada's collection of local leaves. Mathlib's [`mem_chart_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#mem_chart_source) says that `chartAt Coordinates place`, the leaf chosen at her current location, contains `place` in its source. Smooth compatibility between overlapping leaves comes later, with `IsManifold`.\n\nTwo neighbouring facts join the inventory here: the preferred leaf is one of the leaves in the atlas, [`chart_mem_atlas`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#chart_mem_atlas), and its shaded patch contains a whole neighbourhood of `place`, [`chart_source_mem_nhds`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#chart_source_mem_nhds). The second is stated with the neighbourhood filter `𝓝 place`, which is a collection of sets, so `source ∈ 𝓝 place` says that the source contains an open set around `place`.",
           "conclusion": "Ada can always choose a chart that contains where she stands.",
           "statementText": "**Objective:** Show that `place` lies in the source of the chart chosen there.",
           "statement": "point_mem_preferred_chart {Coordinates : Type u} {Surface : Type v}\n    [TopologicalSpace Coordinates] [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface] (place : Surface) :\n    place ∈ (chartAt Coordinates place).source",
@@ -249,44 +430,15 @@
           "completionTactics": [],
           "hiddenTactics": [],
           "newTheorems": [
-            "mem_chart_source"
+            "mem_chart_source",
+            "chart_mem_atlas",
+            "chart_source_mem_nhds"
           ],
           "newDefinitions": [
             "ChartedSpace",
-            "chartAt"
-          ],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/ChartedSpaces.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "chartedspaces-2",
-          "world": "ChartedSpaces",
-          "leanWorld": "ChartedSpaces",
-          "number": 2,
-          "title": "This leaf is in the atlas",
-          "introduction": "Ada checks the leaf she chose and files it back with the others. A preferred map must be one of the maps in her atlas.\n\nIn Lean, Ada's stack is `atlas Coordinates Surface`, and her chosen leaf is `chartAt Coordinates place`. Mathlib's [`chart_mem_atlas`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#chart_mem_atlas) proves that the chosen chart belongs to that atlas.",
-          "conclusion": "The leaf chosen at `place` really is one of the leaves in the atlas.",
-          "statementText": "**Objective:** Show that the chart chosen at `place` belongs to the atlas.",
-          "statement": "preferred_chart_mem_atlas {Coordinates : Type u} {Surface : Type v}\n    [TopologicalSpace Coordinates] [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface] (place : Surface) :\n    chartAt Coordinates place ∈ atlas Coordinates Surface",
-          "theoremName": "preferred_chart_mem_atlas",
-          "declarationKind": "theorem",
-          "solution": "exact chart_mem_atlas Coordinates place",
-          "hints": [
-            "The preferred chart came from the atlas.",
-            "Use `chart_mem_atlas Coordinates place`.",
-            "*(hidden)* `exact chart_mem_atlas Coordinates place`"
-          ],
-          "newTactics": [],
-          "completionTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [
-            "chart_mem_atlas"
-          ],
-          "newDefinitions": [
-            "atlas"
+            "chartAt",
+            "atlas",
+            "nhds"
           ],
           "disabledTactics": [],
           "disabledTheorems": [],
@@ -298,9 +450,9 @@
           "id": "chartedspaces-3",
           "world": "ChartedSpaces",
           "leanWorld": "ChartedSpaces",
-          "number": 3,
+          "number": 2,
           "title": "Her place lands on the leaf",
-          "introduction": "Ada presses her current position through the chosen chart. Its mark lands inside the coordinate patch drawn on the leaf.\n\nRead `chartAt Coordinates place place` as `(chartAt Coordinates place) place`. The first `place` selects Ada's chart, and the second is the point drawn in `Coordinates`. No new lemma is needed. World 2's `map_source` sends a source point into its chart's target, and level 3.1 put `place` in this chart's source. Mathlib also packages the combination as [`mem_chart_target`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#mem_chart_target), which joins your book after this proof.",
+          "introduction": "Ada presses her current position through the chosen chart. Its mark lands inside the coordinate patch drawn on the leaf.\n\nRead `chartAt Coordinates place place` as `(chartAt Coordinates place) place`. The first `place` selects Ada's chart, and the second is the point drawn in `Coordinates`. No new lemma is needed. The first world's `map_source` sends a source point into its chart's target, and the first level of this world put `place` in this chart's source. Mathlib also packages the combination as [`mem_chart_target`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#mem_chart_target), which joins your book after this proof.",
           "conclusion": "Ada built the target fact from parts she already owned. Mathlib's one-step `mem_chart_target` is now in her book too.",
           "statementText": "**Objective:** Show that the coordinates of `place` lie inside the chosen chart's target.",
           "statement": "preferred_chart_maps_to_target {Coordinates : Type u} {Surface : Type v}\n    [TopologicalSpace Coordinates] [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface] (place : Surface) :\n    chartAt Coordinates place place ∈ (chartAt Coordinates place).target",
@@ -308,7 +460,7 @@
           "declarationKind": "theorem",
           "solution": "apply (chartAt Coordinates place).map_source\nexact mem_chart_source Coordinates place",
           "hints": [
-            "Combine a World 2 fact about arbitrary charts with level 3.1.",
+            "Combine the chart law `map_source` with the fact that the preferred chart contains its point.",
             "Apply `(chartAt Coordinates place).map_source`; the remaining goal is `mem_chart_source Coordinates place`.",
             "*(hidden)* `apply (chartAt Coordinates place).map_source`, then `exact mem_chart_source Coordinates place`"
           ],
@@ -326,44 +478,10 @@
           "verification": "kernel"
         },
         {
-          "id": "chartedspaces-4",
-          "world": "ChartedSpaces",
-          "leanWorld": "ChartedSpaces",
-          "number": 4,
-          "title": "The map works nearby",
-          "introduction": "The chosen leaf covers a patch around Ada's footprint. Throughout that neighborhood, the same coordinates remain valid.\n\nMathlib writes the neighborhood filter at Ada's location as `𝓝 place`; type `\\nhds` for `𝓝`. This filter is a collection of sets. Thus `source ∈ 𝓝 place` says that the source contains an open set around `place`, not that a point belongs to a set. The theorem [`chart_source_mem_nhds`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#chart_source_mem_nhds) supplies exactly that fact for `chartAt Coordinates place`.",
-          "conclusion": "The chosen coordinates work throughout a neighborhood of `place`.",
-          "statementText": "**Objective:** Show that the chosen chart is valid on a whole neighborhood of `place`.",
-          "statement": "preferred_chart_source_is_neighborhood {Coordinates : Type u} {Surface : Type v}\n    [TopologicalSpace Coordinates] [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface] (place : Surface) :\n    (chartAt Coordinates place).source ∈ 𝓝 place",
-          "theoremName": "preferred_chart_source_is_neighborhood",
-          "declarationKind": "theorem",
-          "solution": "exact chart_source_mem_nhds Coordinates place",
-          "hints": [
-            "Upgrade point membership to a whole neighborhood.",
-            "Use `chart_source_mem_nhds Coordinates place`.",
-            "*(hidden)* `exact chart_source_mem_nhds Coordinates place`"
-          ],
-          "newTactics": [],
-          "completionTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [
-            "chart_source_mem_nhds"
-          ],
-          "newDefinitions": [
-            "Filter",
-            "nhds"
-          ],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/ChartedSpaces.lean",
-          "verification": "kernel"
-        },
-        {
           "id": "chartedspaces-5",
           "world": "ChartedSpaces",
           "leanWorld": "ChartedSpaces",
-          "number": 5,
+          "number": 3,
           "title": "No place left uncovered",
           "introduction": "Ada spreads every preferred leaf across the stone. No point remains uncovered; wherever she stands, at least one local map is ready.\n\nThe indexed union `⋃ place : Surface, (chartAt Coordinates place).source` spreads out the preferred leaf at every possible location. Mathlib proves in [`iUnion_source_chartAt`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#iUnion_source_chartAt) that their sources equal all of `Surface`.",
           "conclusion": "Together, Ada's leaves cover the whole space.",
@@ -392,6 +510,474 @@
           "disabledDefinitions": [],
           "sourcePath": "lean/ManifoldAdventure/ChartedSpaces.lean",
           "verification": "kernel"
+        },
+        {
+          "id": "course-2",
+          "world": "ChartedSpaces",
+          "leanWorld": "Course",
+          "number": 4,
+          "title": "The preferred leaf comes from the far pole",
+          "introduction": "Ada stands on the bead and asks for the leaf her atlas prefers at her location. Mathlib hands her the projection made from the point directly opposite her, so that her own place lands near the middle of the drawing.\n\nThe sphere's [`ChartedSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#ChartedSpace) instance in Mathlib chooses `chartAt` to be [`stereographic'`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#stereographic') from the antipodal point `-place`. Here `stereographic'` is the same projection as before, rewritten to land in `EuclideanSpace ℝ (Fin dimension)`, the ordinary coordinate space of the right dimension. The assumption `Fact (Module.finrank ℝ Space = dimension + 1)` records that a sphere inside a space of dimension `dimension + 1` is itself `dimension`-dimensional. Because this is how the instance is defined, the two sides are equal by definition, and `rfl` closes the goal.",
+          "conclusion": "The abstract `chartAt` and the concrete projection are the same leaf.",
+          "statementText": "**Objective:** Show that the chart Mathlib prefers at `place` is the stereographic projection from the opposite point.",
+          "statement": "sphere_preferred_chart {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space] {dimension : ℕ}\n    [Fact (Module.finrank ℝ Space = dimension + 1)]\n    (place : sphere (0 : Space) 1) :\n    chartAt (EuclideanSpace ℝ (Fin dimension)) place = stereographic' dimension (-place)",
+          "theoremName": "sphere_preferred_chart",
+          "declarationKind": "theorem",
+          "solution": "rfl",
+          "hints": [
+            "The instance was defined by this very formula.",
+            "Definitional equalities close with `rfl`.",
+            "*(hidden)* `rfl`"
+          ],
+          "question": {
+            "prompt": "Before proving it: if Ada stands at the north pole, which point is the pole of her preferred chart, and where does she herself land on that drawing?",
+            "answer": "Her preferred chart projects from the south pole. She stands opposite that pole, so her own position lands at the origin of the drawing."
+          },
+          "newTactics": [
+            "rfl"
+          ],
+          "completionTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [],
+          "newDefinitions": [
+            "stereographic'",
+            "EuclideanSpace",
+            "Fact",
+            "Module.finrank"
+          ],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "lean/ManifoldAdventure/Course.lean",
+          "verification": "kernel"
+        },
+        {
+          "id": "course-3",
+          "world": "ChartedSpaces",
+          "leanWorld": "Course",
+          "number": 5,
+          "title": "Every projection is filed in the atlas",
+          "introduction": "Ada can project the bead from any pole she likes. Each such drawing belongs in her atlas, not only the two she happened to make first.\n\nMathlib defines the sphere's atlas as the set of all charts of the form `stereographic' dimension pole` for some pole: in Lean, membership in [`atlas`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#atlas) unfolds to the statement \"there exists a `pole` with `stereographic' dimension pole = stereographic' dimension pole`\". An existence statement is proved by supplying a witness and a proof, written with angle brackets as `⟨pole, rfl⟩`.",
+          "conclusion": "Ada's atlas holds one leaf for every pole she could choose.",
+          "statementText": "**Objective:** Show that the projection from any pole belongs to the sphere's atlas.",
+          "statement": "sphere_chart_in_atlas {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space] {dimension : ℕ}\n    [Fact (Module.finrank ℝ Space = dimension + 1)]\n    (pole : sphere (0 : Space) 1) :\n    stereographic' dimension pole ∈ atlas (EuclideanSpace ℝ (Fin dimension)) (sphere (0 : Space) 1)",
+          "theoremName": "sphere_chart_in_atlas",
+          "declarationKind": "theorem",
+          "solution": "exact ⟨pole, rfl⟩",
+          "hints": [
+            "The atlas is defined as \"all projections from some pole\", so exhibit the pole.",
+            "Use the anonymous constructor `⟨pole, rfl⟩` with `exact`.",
+            "*(hidden)* `exact ⟨pole, rfl⟩`"
+          ],
+          "newTactics": [],
+          "completionTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [],
+          "newDefinitions": [
+            "Exists"
+          ],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "lean/ManifoldAdventure/Course.lean",
+          "verification": "kernel"
+        }
+      ]
+    },
+    {
+      "id": "SmoothManifolds",
+      "title": "Smooth manifolds",
+      "introduction": "# When chart changes are smooth\n\nAda's leaves overlap, so she can compare two coordinate drawings of the same place. Continuity keeps nearby points nearby, but calculus also needs the change between drawings to have controlled derivatives. That change is the only place where \"smooth\" can be defined, because the surface itself has no coordinates.\n\nMathlib's [`IsManifold`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold) adds exactly this condition to a `ChartedSpace`. Three words appear in the goals and deserve a plain reading. `Scalar` is the number field; read it as `ℝ`. `ModelWithCorners` connects the coordinate space to the vector space where derivatives live; for ordinary Euclidean coordinates it is the identity, written `𝓡 n` or `𝓘(ℝ, E)`, and corners only matter for manifolds with boundary. `order : WithTop ℕ∞` is how many derivatives are required: a number, `∞` for all finite orders, or `ω` for analytic. The world states the definition in general, checks it on the bead, and ends with the torus as a product.",
+      "prerequisites": [
+        "ChartedSpaces"
+      ],
+      "optional": false,
+      "mapPosition": {
+        "x": 500,
+        "y": 840
+      },
+      "verification": "kernel",
+      "levels": [
+        {
+          "id": "smoothmanifolds-1",
+          "world": "SmoothManifolds",
+          "leanWorld": "SmoothManifolds",
+          "number": 1,
+          "title": "Two leaves in conversation",
+          "introduction": "Ada holds two overlapping leaves of the same stone. She reads a mark from the first leaf back onto the stone, then presses that point through the second. This is the transition map between the drawings.\n\nFormally, the transition map is `chart.symm.trans chart'`: invert one chart, then apply the other. Its domain contains marks in the first chart's target whose read-back lands in the second chart's source. The preimage `chart.symm ⁻¹' chart'.source` collects those marks. Mathlib computes the domain with [`OpenPartialHomeomorph.trans_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph.trans_source), while [`OpenPartialHomeomorph.symm_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph.symm_source) renames the inverse chart's source to `chart.target`.\n\nTwo related facts join the inventory: a smooth atlas is also a continuous atlas, so `IsManifold model 0 Surface` follows from any higher order, and the model coordinate space is itself a manifold at every order, [`instIsManifoldModelSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#instIsManifoldModelSpace). The optional \"How smooth is smooth\" world proves these.",
+          "conclusion": "The transition map now has an explicit home: the overlap as seen from the first leaf.",
+          "statementText": "**Objective:** Compute the transition map's domain from the two charts.",
+          "statement": "transition_map_source {Stone : Type u} {Drawing : Type v}\n    [TopologicalSpace Stone] [TopologicalSpace Drawing]\n    (chart chart' : OpenPartialHomeomorph Stone Drawing) :\n    (chart.symm.trans chart').source =\n      chart.target ∩ chart.symm ⁻¹' chart'.source",
+          "theoremName": "transition_map_source",
+          "declarationKind": "theorem",
+          "solution": "rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source]",
+          "hints": [
+            "Unfold the source of the composite, then rename the inverse chart's source.",
+            "Rewrite with `OpenPartialHomeomorph.trans_source` and `OpenPartialHomeomorph.symm_source`.",
+            "*(hidden)* `rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source]`"
+          ],
+          "newTactics": [
+            "rw"
+          ],
+          "completionTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [
+            "OpenPartialHomeomorph.trans_source",
+            "OpenPartialHomeomorph.symm_source",
+            "instIsManifoldModelSpace"
+          ],
+          "newDefinitions": [
+            "OpenPartialHomeomorph.trans",
+            "Set.inter",
+            "Set.preimage"
+          ],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "lean/ManifoldAdventure/SmoothManifolds.lean",
+          "verification": "kernel"
+        },
+        {
+          "id": "course-4",
+          "world": "SmoothManifolds",
+          "leanWorld": "Course",
+          "number": 2,
+          "title": "Changing leaves is a smooth move",
+          "introduction": "Ada compares two leaves from her atlas over the region where both apply. Reading a mark from the first leaf back onto the surface and then onto the second leaf is the transition between the two drawings. On a smooth manifold, this transition never creases.\n\nThis level is the definition of a smooth manifold. [`IsManifold`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold) says the atlas has a structure groupoid: every change of charts `chart.symm ≫ₕ chart'` between atlas members belongs to [`contDiffGroupoid`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#contDiffGroupoid), the collection of local maps of the coordinate space that are differentiable to the given `order`. The symbol `≫ₕ` composes partial homeomorphisms. The field [`HasGroupoid.compatible`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#HasGroupoid.compatible) states exactly this, given the two atlas memberships.",
+          "conclusion": "The transition between any two of Ada's leaves is as smooth as the manifold promises.",
+          "statementText": "**Objective:** Show that the change of coordinates between two atlas charts belongs to the smooth groupoid.",
+          "statement": "chart_change_is_smooth {Scalar : Type u} [NontriviallyNormedField Scalar]\n    {Vectors : Type v} [NormedAddCommGroup Vectors]\n    [NormedSpace Scalar Vectors]\n    {Coordinates : Type w} [TopologicalSpace Coordinates]\n    {model : ModelWithCorners Scalar Vectors Coordinates}\n    {Surface : Type u'} [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface]\n    {order : WithTop ℕ∞} [IsManifold model order Surface]\n    (chart chart' : OpenPartialHomeomorph Surface Coordinates)\n    (inAtlas : chart ∈ atlas Coordinates Surface)\n    (inAtlas' : chart' ∈ atlas Coordinates Surface) :\n    chart.symm ≫ₕ chart' ∈ contDiffGroupoid order model",
+          "theoremName": "chart_change_is_smooth",
+          "declarationKind": "theorem",
+          "solution": "exact HasGroupoid.compatible inAtlas inAtlas'",
+          "hints": [
+            "A smooth manifold is, by definition, an atlas whose chart changes are smooth.",
+            "The instance field `HasGroupoid.compatible` takes the two atlas memberships.",
+            "*(hidden)* `exact HasGroupoid.compatible inAtlas inAtlas'`"
+          ],
+          "question": {
+            "prompt": "Before proving it: the surface itself has no coordinates. Where does the derivative that \"smooth\" talks about actually live?",
+            "answer": "In the coordinate space. Smoothness is a property of the transition maps between charts, which are maps between open sets of the coordinate space, where derivatives make sense."
+          },
+          "newTactics": [],
+          "completionTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [
+            "HasGroupoid.compatible"
+          ],
+          "newDefinitions": [
+            "contDiffGroupoid",
+            "OpenPartialHomeomorph.trans",
+            "IsManifold",
+            "ModelWithCorners",
+            "WithTop"
+          ],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "lean/ManifoldAdventure/Course.lean",
+          "verification": "kernel"
+        },
+        {
+          "id": "course-5",
+          "world": "SmoothManifolds",
+          "leanWorld": "Course",
+          "number": 3,
+          "title": "The smooth move, spelled out in calculus",
+          "introduction": "Ada wants the previous level in plain calculus. Membership in the smooth groupoid was a label; now she unpacks it into the sentence \"this function is differentiable `order` times on this set\".\n\n[`ContDiffOn`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Analysis/Calculus/ContDiff/Defs.html#ContDiffOn) is Mathlib's differentiability on a set. The function is the transition map wrapped by the `model`, which converts the abstract coordinate space `Coordinates` into the vector space `Vectors` where derivatives live; for ordinary Euclidean coordinates the model is the identity and can be ignored. The set is the transition's domain, seen through that model. Unpacking uses [`mem_groupoid_of_pregroupoid`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#mem_groupoid_of_pregroupoid), an `↔` statement: membership in the groupoid is equivalent to the conjunction of this condition for the map and for its inverse. An `↔` has two directions, `.mp` (left to right) and `.mpr` (right to left), and a conjunction's first part is `.1`. The tactic `have` names an intermediate fact so the next line can use it.",
+          "conclusion": "The word \"smooth\" now means a concrete differentiability statement about a concrete map.",
+          "statementText": "**Objective:** Show that the change of coordinates between two atlas charts is differentiable to the manifold's order on its domain.",
+          "statement": "chart_change_contDiffOn {Scalar : Type u} [NontriviallyNormedField Scalar]\n    {Vectors : Type v} [NormedAddCommGroup Vectors]\n    [NormedSpace Scalar Vectors]\n    {Coordinates : Type w} [TopologicalSpace Coordinates]\n    {model : ModelWithCorners Scalar Vectors Coordinates}\n    {Surface : Type u'} [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface]\n    {order : WithTop ℕ∞} [IsManifold model order Surface]\n    (chart chart' : OpenPartialHomeomorph Surface Coordinates)\n    (inAtlas : chart ∈ atlas Coordinates Surface)\n    (inAtlas' : chart' ∈ atlas Coordinates Surface) :\n    ContDiffOn Scalar order (model ∘ (chart.symm ≫ₕ chart') ∘ model.symm)\n      (model.symm ⁻¹' (chart.symm ≫ₕ chart').source ∩ Set.range model)",
+          "theoremName": "chart_change_contDiffOn",
+          "declarationKind": "theorem",
+          "solution": "have compatible := HasGroupoid.compatible (G := contDiffGroupoid order model) inAtlas inAtlas'\nexact (mem_groupoid_of_pregroupoid.mp compatible).1",
+          "hints": [
+            "Groupoid membership is a pair of differentiability facts, one for the map and one for its inverse.",
+            "Name the membership with `have`, then take the first component of `mem_groupoid_of_pregroupoid.mp`.",
+            "*(hidden)* `have compatible := HasGroupoid.compatible (G := contDiffGroupoid order model) inAtlas inAtlas'`, then `exact (mem_groupoid_of_pregroupoid.mp compatible).1`"
+          ],
+          "newTactics": [
+            "have"
+          ],
+          "completionTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [
+            "mem_groupoid_of_pregroupoid"
+          ],
+          "newDefinitions": [
+            "ContDiffOn",
+            "Set.range",
+            "Set.preimage",
+            "Set.inter",
+            "And",
+            "Iff",
+            "Iff.mp",
+            "Iff.mpr"
+          ],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "lean/ManifoldAdventure/Course.lean",
+          "verification": "kernel"
+        },
+        {
+          "id": "course-6",
+          "world": "SmoothManifolds",
+          "leanWorld": "Course",
+          "number": 4,
+          "title": "Two drawings of the bead agree smoothly",
+          "introduction": "Ada returns to the bead with the general fact in hand. Two of her projections, from any two poles, overlap on most of the bead. Reading one drawing into the other must be a smooth map of the plane.\n\nMathlib proves that the sphere is a smooth manifold, and that instance is enough. The model here is `𝓡 dimension`, Mathlib's notation for the identity model on `EuclideanSpace ℝ (Fin dimension)`, and `∞` asks for derivatives of every finite order. The general fact [`HasGroupoid.compatible`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#HasGroupoid.compatible) applies once both projections are known to be atlas members, which is the course theorem `sphere_chart_in_atlas` from the atlas world. Coordinates for the projection change are computed by [`stereographic'_symm_apply`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#stereographic'_symm_apply), but no computation is needed here.",
+          "conclusion": "Ada's two drawings of the bead translate into each other without a crease, which is what makes the bead a smooth manifold.",
+          "statementText": "**Objective:** Show that the coordinate change between two stereographic projections of the sphere is smooth.",
+          "statement": "sphere_chart_change_smooth {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space] {dimension : ℕ}\n    [Fact (Module.finrank ℝ Space = dimension + 1)]\n    (pole pole' : sphere (0 : Space) 1) :\n    (stereographic' dimension pole).symm ≫ₕ stereographic' dimension pole' ∈\n      contDiffGroupoid ∞ (𝓡 dimension)",
+          "theoremName": "sphere_chart_change_smooth",
+          "declarationKind": "theorem",
+          "solution": "exact HasGroupoid.compatible (sphere_chart_in_atlas pole) (sphere_chart_in_atlas pole')",
+          "hints": [
+            "The sphere is a smooth manifold, so the general fact about atlas members applies.",
+            "Feed `HasGroupoid.compatible` the two memberships `sphere_chart_in_atlas pole` and `sphere_chart_in_atlas pole'`.",
+            "*(hidden)* `exact HasGroupoid.compatible (sphere_chart_in_atlas pole) (sphere_chart_in_atlas pole')`"
+          ],
+          "question": {
+            "prompt": "Before proving it: in the plane, the change between the north and south drawings sends a point at distance r from the origin to a point at distance 4/r (with Mathlib's scaling). Where does that formula fail, and why does it not matter?",
+            "answer": "It fails at r = 0, the image of the far pole. That point is missing from the other drawing anyway, so it is not in the overlap where the transition is defined."
+          },
+          "newTactics": [],
+          "completionTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [],
+          "newDefinitions": [
+            "modelWithCornersSelf"
+          ],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "lean/ManifoldAdventure/Course.lean",
+          "verification": "kernel"
+        },
+        {
+          "id": "smoothmanifolds-5",
+          "world": "SmoothManifolds",
+          "leanWorld": "SmoothManifolds",
+          "number": 5,
+          "title": "Two circles make a torus",
+          "introduction": "Ada's two circular readings describe the torus together. If each circle has smooth coordinate changes, pairing the readings should preserve that smoothness.\n\nRead the final line of the goal first: it asks for a manifold structure on `FirstSurface × SecondSurface`. In Ada's torus, those surfaces are circles. The instance lines above provide their two manifold structures, and Mathlib's [`IsManifold.prod`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold.prod) combines them with `firstModel.prod secondModel` at the same `order`.",
+          "conclusion": "Two smooth circles now give the torus its smooth manifold structure.",
+          "statementText": "**Objective:** Build the manifold structure on `FirstSurface × SecondSurface` from its two factors.",
+          "statement": "product_of_manifolds {Scalar : Type u}\n    [NontriviallyNormedField Scalar]\n    {FirstVectors : Type v}\n    [NormedAddCommGroup FirstVectors]\n    [NormedSpace Scalar FirstVectors]\n    {SecondVectors : Type v'}\n    [NormedAddCommGroup SecondVectors]\n    [NormedSpace Scalar SecondVectors]\n    {FirstCoordinates : Type w}\n    [TopologicalSpace FirstCoordinates]\n    {SecondCoordinates : Type w'}\n    [TopologicalSpace SecondCoordinates]\n    {firstModel : ModelWithCorners Scalar FirstVectors FirstCoordinates}\n    {secondModel : ModelWithCorners Scalar SecondVectors SecondCoordinates}\n    {FirstSurface : Type u'}\n    [TopologicalSpace FirstSurface]\n    [ChartedSpace FirstCoordinates FirstSurface]\n    {SecondSurface : Type u''}\n    [TopologicalSpace SecondSurface]\n    [ChartedSpace SecondCoordinates SecondSurface]\n    (order : WithTop ℕ∞)\n    [IsManifold firstModel order FirstSurface]\n    [IsManifold secondModel order SecondSurface] :\n    IsManifold (firstModel.prod secondModel) order (FirstSurface × SecondSurface)",
+          "theoremName": "product_of_manifolds",
+          "declarationKind": "theorem",
+          "solution": "exact IsManifold.prod FirstSurface SecondSurface",
+          "hints": [
+            "The product theorem wants the two surface types.",
+            "Supply them as `FirstSurface` and `SecondSurface`.",
+            "*(hidden)* `exact IsManifold.prod FirstSurface SecondSurface`"
+          ],
+          "newTactics": [],
+          "completionTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [
+            "IsManifold.prod"
+          ],
+          "newDefinitions": [
+            "ModelWithCorners.prod",
+            "Prod"
+          ],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "lean/ManifoldAdventure/SmoothManifolds.lean",
+          "verification": "kernel"
+        }
+      ]
+    },
+    {
+      "id": "TangentSpaces",
+      "title": "A direction at every point",
+      "introduction": "# A direction at every point\n\nAda's atlas tells her where she is. At one point on the surface, she now asks which directions she could move without leaving it. On the bead the answer is visible: a plane touching the bead at her feet, square to the radius. The world builds that picture as theorems.\n\nMathlib assigns a [`TangentSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentSpace) to every point, and the derivative of a smooth map between manifolds, [`mfderiv`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/MFDeriv/Defs.html#mfderiv), carries velocities from one tangent space to another. In the goals, `Surface` is Ada's world, `place` is her location, `model` describes its coordinates, and `velocity` is a tangent vector there. Drag the point in the tangent lab below to see the plane follow it around the bead.",
+      "prerequisites": [
+        "SmoothManifolds"
+      ],
+      "optional": false,
+      "mapPosition": {
+        "x": 500,
+        "y": 1080
+      },
+      "verification": "kernel",
+      "levels": [
+        {
+          "id": "tangentspaces-1",
+          "world": "TangentSpaces",
+          "leanWorld": "TangentSpaces",
+          "number": 1,
+          "title": "Ada stands still",
+          "introduction": "Ada stands still at `place`. Even without choosing a direction, staying still is a valid tangent velocity.\n\nThe [`TangentSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentSpace) `TangentSpace model place` is the intrinsic space of velocities available at Ada's current location. The plane in the 3D scene pictures this tangent space; it is not an arbitrary plane floating beside the surface. The space inherits an additive group structure from `Vectors`, so it contains a zero vector. The expected type tells Lean which `0` is intended.\n\nThis is a definition level, so the kernel accepts any well-typed term. Only one velocity here is canonical, and later levels reuse the course's official `tangent_zero`, so make it the zero vector.\n\nThe [`TangentBundle`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentBundle) collects each place together with one of its velocities as a dependent pair `⟨place, velocity⟩`. This level constructs one velocity at one point; it does not yet define the zero section as a function of the point.",
+          "conclusion": "Standing still is now a genuine vector in `TangentSpace model place`.",
+          "statementText": "**Objective:** Construct the zero tangent vector at `place`.",
+          "statement": "tangent_zero {Scalar : Type u}\n    [NontriviallyNormedField Scalar]\n    {Vectors : Type v} [NormedAddCommGroup Vectors]\n    [NormedSpace Scalar Vectors]\n    {Coordinates : Type w}\n    [TopologicalSpace Coordinates]\n    (model : ModelWithCorners Scalar Vectors Coordinates)\n    {Surface : Type u'} [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface] (place : Surface) :\n    TangentSpace model place",
+          "theoremName": "tangent_zero",
+          "declarationKind": "noncomputable def",
+          "solution": "exact 0",
+          "hints": [
+            "The tangent space has a zero instance.",
+            "The expected type is enough for Lean to understand `0`.",
+            "*(hidden)* `exact 0`"
+          ],
+          "newTactics": [],
+          "completionTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [],
+          "newDefinitions": [
+            "TangentSpace",
+            "Zero.zero"
+          ],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "lean/ManifoldAdventure/TangentSpaces.lean",
+          "verification": "kernel"
+        },
+        {
+          "id": "tangentspaces-2",
+          "world": "TangentSpaces",
+          "leanWorld": "TangentSpaces",
+          "number": 2,
+          "title": "Read the location tag",
+          "introduction": "Ada records both where she is and the direction she is moving, then reads the record's location tag. A direction without its point would be ambiguous because the available tangent plane changes from place to place. The tag must give back the point she stored.\n\nA point of the [`TangentBundle`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentBundle) is the dependent pair `⟨place, velocity⟩` (angle brackets: type `\\<` and `\\>`). The tangent space may change with `place`, so `velocity : TangentSpace model place` remembers where the velocity belongs. The first projection `.1` reduces by definition to `place`, and the `rfl` tactic checks that reduction.",
+          "conclusion": "Reading the bundle point's location tag returns `place`.",
+          "statementText": "**Objective:** Show that projecting the base point from `⟨place, velocity⟩` returns `place`.",
+          "statement": "tangent_bundle_base {Scalar : Type u}\n    [NontriviallyNormedField Scalar]\n    {Vectors : Type v} [NormedAddCommGroup Vectors]\n    [NormedSpace Scalar Vectors]\n    {Coordinates : Type w}\n    [TopologicalSpace Coordinates]\n    (model : ModelWithCorners Scalar Vectors Coordinates)\n    {Surface : Type u'} [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface]\n    {place : Surface} (velocity : TangentSpace model place) :\n    (⟨place, velocity⟩ : TangentBundle model Surface).1 = place",
+          "theoremName": "tangent_bundle_base",
+          "declarationKind": "theorem",
+          "solution": "rfl",
+          "hints": [
+            "The first projection reduces to `place` by definition.",
+            "A reflexivity proof closes such a goal.",
+            "*(hidden)* `rfl`"
+          ],
+          "newTactics": [],
+          "completionTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [],
+          "newDefinitions": [
+            "TangentBundle",
+            "Bundle.TotalSpace",
+            "Sigma",
+            "Sigma.fst"
+          ],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "lean/ManifoldAdventure/TangentSpaces.lean",
+          "verification": "kernel"
+        },
+        {
+          "id": "course-7",
+          "world": "TangentSpaces",
+          "leanWorld": "Course",
+          "number": 3,
+          "title": "Leaving the bead for the room around it",
+          "introduction": "Ada has only ever measured positions on the bead. The bead also sits in the room, and each of her positions is a point of the room. Forgetting the bead and remembering only the room point should be a smooth operation.\n\n[`ContMDiff`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ContMDiff/Defs.html#ContMDiff) is smoothness for a map between two manifolds, each with its own model: `𝓡 dimension` for the sphere and `𝓘(ℝ, Space)`, the identity model, for the surrounding vector space. The map `(↑)` is the inclusion that forgets the constraint `‖place‖ = 1`. Mathlib records its smoothness as [`contMDiff_coe_sphere`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#contMDiff_coe_sphere).",
+          "conclusion": "Ada's first smooth map between manifolds sends the bead into the room without a kink.",
+          "statementText": "**Objective:** Show that the inclusion of the sphere into the surrounding space is smooth as a map between manifolds.",
+          "statement": "sphere_inclusion_smooth {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space] {dimension : ℕ}\n    [Fact (Module.finrank ℝ Space = dimension + 1)] :\n    ContMDiff (𝓡 dimension) 𝓘(ℝ, Space) ∞ ((↑) : sphere (0 : Space) 1 → Space)",
+          "theoremName": "sphere_inclusion_smooth",
+          "declarationKind": "theorem",
+          "solution": "exact contMDiff_coe_sphere",
+          "hints": [
+            "Mathlib proves that the inclusion of the sphere is a smooth map of manifolds.",
+            "The theorem is `contMDiff_coe_sphere`.",
+            "*(hidden)* `exact contMDiff_coe_sphere`"
+          ],
+          "newTactics": [],
+          "completionTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [
+            "contMDiff_coe_sphere"
+          ],
+          "newDefinitions": [
+            "ContMDiff",
+            "Subtype.val"
+          ],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "lean/ManifoldAdventure/Course.lean",
+          "verification": "kernel"
+        },
+        {
+          "id": "course-8",
+          "world": "TangentSpaces",
+          "leanWorld": "Course",
+          "number": 4,
+          "title": "Her velocities are real vectors",
+          "introduction": "Ada picks a velocity at her place on the bead. Since the bead sits in the room, that velocity is also a velocity in the room. Two different velocities on the bead must stay different in the room; nothing is flattened away.\n\nThe derivative of a smooth map between manifolds is [`mfderiv`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/MFDeriv/Defs.html#mfderiv). At `place`, it is a linear map from `TangentSpace (𝓡 dimension) place` to the tangent space of the room, which is the room itself. [`Function.Injective`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Logic/Function/Defs.html#Function.Injective) says this linear map loses nothing, and [`mfderiv_coe_sphere_injective`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#mfderiv_coe_sphere_injective) proves it for the inclusion of the sphere.",
+          "conclusion": "Every abstract tangent vector at Ada's place is a real vector in the room, and different ones stay different.",
+          "statementText": "**Objective:** Show that the derivative of the inclusion at `place` is injective, so tangent vectors of the sphere are genuine vectors of the surrounding space.",
+          "statement": "tangent_vectors_are_vectors {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space] {dimension : ℕ}\n    [Fact (Module.finrank ℝ Space = dimension + 1)]\n    (place : sphere (0 : Space) 1) :\n    Function.Injective\n      (mfderiv (𝓡 dimension) 𝓘(ℝ, Space) ((↑) : sphere (0 : Space) 1 → Space) place)",
+          "theoremName": "tangent_vectors_are_vectors",
+          "declarationKind": "theorem",
+          "solution": "exact mfderiv_coe_sphere_injective place",
+          "hints": [
+            "The derivative of the inclusion embeds each tangent space into the room.",
+            "The theorem is `mfderiv_coe_sphere_injective` applied to `place`.",
+            "*(hidden)* `exact mfderiv_coe_sphere_injective place`"
+          ],
+          "newTactics": [],
+          "completionTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [
+            "mfderiv_coe_sphere_injective"
+          ],
+          "newDefinitions": [
+            "mfderiv",
+            "Function.Injective"
+          ],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "lean/ManifoldAdventure/Course.lean",
+          "verification": "kernel"
+        },
+        {
+          "id": "course-9",
+          "world": "TangentSpaces",
+          "leanWorld": "Course",
+          "number": 5,
+          "title": "The tangent plane stands square to the radius",
+          "introduction": "Ada asks which room vectors her bead velocities become. She expects exactly the vectors that lie flat against the bead at her place: perpendicular to the line from the center through her feet.\n\nThe image of the derivative is [`LinearMap.range`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Algebra/Module/Submodule/Range.html#LinearMap.range); the derivative is a continuous linear map, and `ContinuousLinearMap.toLinearMap` forgets the continuity so that `range` applies. The line through `place` is the span `ℝ ∙ (place : Space)`, and `ᗮ` (type `\\perp`) is its [`Submodule.orthogonal`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Analysis/InnerProductSpace/Orthogonal.html#Submodule.orthogonal) complement. Mathlib's [`range_mfderiv_coe_sphere`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#range_mfderiv_coe_sphere) identifies the two. This is the tangent plane drawn in the scene, now as a theorem.",
+          "conclusion": "The tangent plane at Ada's place is the plane perpendicular to her radius, exactly as the picture suggested.",
+          "statementText": "**Objective:** Show that the tangent vectors at `place`, seen in the room, are exactly the vectors orthogonal to `place`.",
+          "statement": "tangent_plane_is_orthogonal {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space] {dimension : ℕ}\n    [Fact (Module.finrank ℝ Space = dimension + 1)]\n    (place : sphere (0 : Space) 1) :\n    LinearMap.range (ContinuousLinearMap.toLinearMap\n      (mfderiv (𝓡 dimension) 𝓘(ℝ, Space) ((↑) : sphere (0 : Space) 1 → Space) place))\n      = (ℝ ∙ (place : Space))ᗮ",
+          "theoremName": "tangent_plane_is_orthogonal",
+          "declarationKind": "theorem",
+          "solution": "exact range_mfderiv_coe_sphere place",
+          "hints": [
+            "The tangent plane of a sphere is perpendicular to the radius, and Mathlib says so about the range of the derivative.",
+            "The theorem is `range_mfderiv_coe_sphere` applied to `place`.",
+            "*(hidden)* `exact range_mfderiv_coe_sphere place`"
+          ],
+          "question": {
+            "prompt": "Before proving it: the sphere in a space of dimension d+1 has tangent spaces of which dimension, and how does the orthogonal complement of one vector confirm it?",
+            "answer": "Dimension d. The orthogonal complement of a single nonzero vector in a (d+1)-dimensional space has dimension d."
+          },
+          "newTactics": [],
+          "completionTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [
+            "range_mfderiv_coe_sphere"
+          ],
+          "newDefinitions": [
+            "LinearMap.range",
+            "ContinuousLinearMap.toLinearMap",
+            "Submodule.span",
+            "Submodule.orthogonal"
+          ],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "lean/ManifoldAdventure/Course.lean",
+          "verification": "kernel"
         }
       ]
     },
@@ -402,10 +988,10 @@
       "prerequisites": [
         "ChartedSpaces"
       ],
-      "optional": false,
+      "optional": true,
       "mapPosition": {
-        "x": 500,
-        "y": 600
+        "x": 820,
+        "y": 840
       },
       "verification": "kernel",
       "levels": [
@@ -580,62 +1166,26 @@
       ]
     },
     {
-      "id": "SmoothManifolds",
-      "title": "Smooth manifolds",
-      "introduction": "# When chart changes are smooth\n\nAda's leaves now overlap, so she can compare two coordinate drawings of the same place. Continuity keeps nearby points nearby, but calculus also needs the change between drawings to have controlled derivatives.\n\n[`ChartedSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/ChartedSpace.html#ChartedSpace) supplies the charts. Mathlib's [`IsManifold`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold) adds differentiability conditions to their transition maps. For a first picture, take `Scalar = ℝ` and imagine `Coordinates` as ordinary Euclidean coordinates. The goals state the same ideas for a general `Surface`, `Coordinates`, `Vectors`, `model`, and `order`. The first level meets the transition map itself before the rest of the world asks such maps to be differentiable.",
+      "id": "SmoothOrders",
+      "title": "How smooth is smooth",
+      "introduction": "# Counting derivatives\n\nAda checks her map changes against standards of different strictness. A leaf change that passes a demanding test passes every easier one, and the model leaf passes them all.\n\nThese three levels spell out how Mathlib's [`IsManifold`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold) orders relate: the model space is a manifold at every order, a higher order implies a lower one, and a smooth atlas is in particular a topological one. The order `0` here is a regularity order, not a dimension.",
       "prerequisites": [
-        "CanonicalCharts"
+        "SmoothManifolds"
       ],
-      "optional": false,
+      "optional": true,
       "mapPosition": {
-        "x": 500,
-        "y": 840
+        "x": 820,
+        "y": 1080
       },
       "verification": "kernel",
       "levels": [
         {
-          "id": "smoothmanifolds-1",
-          "world": "SmoothManifolds",
+          "id": "smoothmanifolds-2",
+          "world": "SmoothOrders",
           "leanWorld": "SmoothManifolds",
           "number": 1,
-          "title": "Two leaves in conversation",
-          "introduction": "Ada holds two overlapping leaves of the same stone. She reads a mark from the first leaf back onto the stone, then presses that point through the second. This is the transition map between the drawings.\n\nFormally, the transition map is `chart.symm.trans chart'`: invert one chart, then apply the other. Its domain contains marks in the first chart's target whose read-back lands in the second chart's source. The preimage `chart.symm ⁻¹' chart'.source` collects those marks. Mathlib computes the domain with [`OpenPartialHomeomorph.trans_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph.trans_source), while [`OpenPartialHomeomorph.symm_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Topology/OpenPartialHomeomorph/Defs.html#OpenPartialHomeomorph.symm_source) renames the inverse chart's source to `chart.target`.",
-          "conclusion": "The transition map now has an explicit home: the overlap as seen from the first leaf.",
-          "statementText": "**Objective:** Compute the transition map's domain from the two charts.",
-          "statement": "transition_map_source {Stone : Type u} {Drawing : Type v}\n    [TopologicalSpace Stone] [TopologicalSpace Drawing]\n    (chart chart' : OpenPartialHomeomorph Stone Drawing) :\n    (chart.symm.trans chart').source =\n      chart.target ∩ chart.symm ⁻¹' chart'.source",
-          "theoremName": "transition_map_source",
-          "declarationKind": "theorem",
-          "solution": "rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source]",
-          "hints": [
-            "Unfold the source of the composite, then rename the inverse chart's source.",
-            "Rewrite with `OpenPartialHomeomorph.trans_source` and `OpenPartialHomeomorph.symm_source`.",
-            "*(hidden)* `rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source]`"
-          ],
-          "newTactics": [],
-          "completionTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [
-            "OpenPartialHomeomorph.trans_source",
-            "OpenPartialHomeomorph.symm_source"
-          ],
-          "newDefinitions": [
-            "OpenPartialHomeomorph.trans",
-            "Set.inter",
-            "Set.preimage"
-          ],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/SmoothManifolds.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "smoothmanifolds-2",
-          "world": "SmoothManifolds",
-          "leanWorld": "SmoothManifolds",
-          "number": 2,
           "title": "The reference leaf is ready",
-          "introduction": "Ada places a model leaf beside the world she is charting. The leaf is already its own coordinate space, so it needs no further change of coordinates to qualify as a manifold.\n\nIn the goal, `Scalar` supplies the numbers, `Vectors` supplies directions, and `Coordinates` is the model leaf itself. The [`ModelWithCorners`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#ModelWithCorners) named `model` connects those pieces. The ordered type `WithTop ℕ∞` records differentiability levels. Here `0` means continuity-level regularity, `∞` means smoothness at every finite order, and the top element `ω` means analyticity. World 8's circle will meet that stronger standard. Mathlib registers [`instIsManifoldModelSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#instIsManifoldModelSpace) for every order.",
+          "introduction": "Ada places a model leaf beside the world she is charting. The leaf is already its own coordinate space, so it needs no further change of coordinates to qualify as a manifold.\n\nIn the goal, `Scalar` supplies the numbers, `Vectors` supplies directions, and `Coordinates` is the model leaf itself. The [`ModelWithCorners`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#ModelWithCorners) named `model` connects those pieces. The ordered type `WithTop ℕ∞` records differentiability levels. Here `0` means continuity-level regularity, `∞` means smoothness at every finite order, and the top element `ω` means analyticity. The optional circle world meets that stronger standard. Mathlib registers [`instIsManifoldModelSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#instIsManifoldModelSpace) for every order.",
           "conclusion": "The model space is already a manifold at the requested order.",
           "statementText": "**Objective:** Establish that `Coordinates` carries the manifold structure supplied by `model`.",
           "statement": "model_space_is_manifold {Scalar : Type u}\n    [NontriviallyNormedField Scalar]\n    {Vectors : Type v} [NormedAddCommGroup Vectors]\n    [NormedSpace Scalar Vectors]\n    {Coordinates : Type w}\n    [TopologicalSpace Coordinates]\n    (model : ModelWithCorners Scalar Vectors Coordinates)\n    (order : WithTop ℕ∞) :\n    IsManifold model order Coordinates",
@@ -669,9 +1219,9 @@
         },
         {
           "id": "smoothmanifolds-3",
-          "world": "SmoothManifolds",
+          "world": "SmoothOrders",
           "leanWorld": "SmoothManifolds",
-          "number": 3,
+          "number": 2,
           "title": "Passing an easier check",
           "introduction": "Ada checks her map changes to a demanding standard. If they pass that test, they also pass any test that asks for fewer derivatives.\n\nFor example, an atlas of class $C^5$ also meets a $C^2$ requirement. Lean calls the demanding standard `higherOrder` and the weaker one `lowerOrder`. This time the comparison arrives inside the goal as an implication. The `intro` tactic moves its assumption into the context. Mathlib's [`IsManifold.of_le`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold.of_le) then finishes.",
           "conclusion": "The higher-order manifold instance now works at the requested lower order.",
@@ -704,9 +1254,9 @@
         },
         {
           "id": "smoothmanifolds-4",
-          "world": "SmoothManifolds",
+          "world": "SmoothOrders",
           "leanWorld": "SmoothManifolds",
-          "number": 4,
+          "number": 3,
           "title": "The smooth atlas passes the basic check",
           "introduction": "Ada's smoothest leaf changes never crease or kink. They certainly still preserve the nearby-point structure she needed for her first maps.\n\nThe assumption `IsManifold model ∞ Surface` says that Ada's chart changes have derivatives of every finite order. Mathlib's [`IsManifold`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold) hierarchy registers the implication to `IsManifold model 0 Surface`, where order `0` retains the basic topological requirement. This `0` is a regularity order, not the dimension of `Surface`.",
           "conclusion": "The smooth atlas also gives Ada the topological atlas she started with.",
@@ -729,354 +1279,6 @@
           "disabledTheorems": [],
           "disabledDefinitions": [],
           "sourcePath": "lean/ManifoldAdventure/SmoothManifolds.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "smoothmanifolds-5",
-          "world": "SmoothManifolds",
-          "leanWorld": "SmoothManifolds",
-          "number": 5,
-          "title": "Two circles make a torus",
-          "introduction": "Ada's two circular readings describe the torus together. If each circle has smooth coordinate changes, pairing the readings should preserve that smoothness.\n\nRead the final line of the goal first: it asks for a manifold structure on `FirstSurface × SecondSurface`. In Ada's torus, those surfaces are circles. The instance lines above provide their two manifold structures, and Mathlib's [`IsManifold.prod`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#IsManifold.prod) combines them with `firstModel.prod secondModel` at the same `order`.",
-          "conclusion": "Two smooth circles now give the torus its smooth manifold structure.",
-          "statementText": "**Objective:** Build the manifold structure on `FirstSurface × SecondSurface` from its two factors.",
-          "statement": "product_of_manifolds {Scalar : Type u}\n    [NontriviallyNormedField Scalar]\n    {FirstVectors : Type v}\n    [NormedAddCommGroup FirstVectors]\n    [NormedSpace Scalar FirstVectors]\n    {SecondVectors : Type v'}\n    [NormedAddCommGroup SecondVectors]\n    [NormedSpace Scalar SecondVectors]\n    {FirstCoordinates : Type w}\n    [TopologicalSpace FirstCoordinates]\n    {SecondCoordinates : Type w'}\n    [TopologicalSpace SecondCoordinates]\n    {firstModel : ModelWithCorners Scalar FirstVectors FirstCoordinates}\n    {secondModel : ModelWithCorners Scalar SecondVectors SecondCoordinates}\n    {FirstSurface : Type u'}\n    [TopologicalSpace FirstSurface]\n    [ChartedSpace FirstCoordinates FirstSurface]\n    {SecondSurface : Type u''}\n    [TopologicalSpace SecondSurface]\n    [ChartedSpace SecondCoordinates SecondSurface]\n    (order : WithTop ℕ∞)\n    [IsManifold firstModel order FirstSurface]\n    [IsManifold secondModel order SecondSurface] :\n    IsManifold (firstModel.prod secondModel) order (FirstSurface × SecondSurface)",
-          "theoremName": "product_of_manifolds",
-          "declarationKind": "theorem",
-          "solution": "exact IsManifold.prod FirstSurface SecondSurface",
-          "hints": [
-            "The product theorem wants the two surface types.",
-            "Supply them as `FirstSurface` and `SecondSurface`.",
-            "*(hidden)* `exact IsManifold.prod FirstSurface SecondSurface`"
-          ],
-          "newTactics": [],
-          "completionTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [
-            "IsManifold.prod"
-          ],
-          "newDefinitions": [
-            "ModelWithCorners.prod",
-            "Prod"
-          ],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/SmoothManifolds.lean",
-          "verification": "kernel"
-        }
-      ]
-    },
-    {
-      "id": "TangentSpaces",
-      "title": "Tangent spaces and the tangent bundle",
-      "introduction": "# A direction at every point\n\nAda's atlas tells her where she is. At one point on the surface, she now asks which directions she could move without leaving it.\n\nMathlib assigns a [`TangentSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentSpace) to every point. In the goals, `Surface` is Ada's world, `place` is her location, `model` describes its coordinates, and `velocity` is a tangent vector there. The [`TangentBundle`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentBundle) collects each place together with one of its possible velocities.",
-      "prerequisites": [
-        "SmoothManifolds"
-      ],
-      "optional": false,
-      "mapPosition": {
-        "x": 500,
-        "y": 1080
-      },
-      "verification": "kernel",
-      "levels": [
-        {
-          "id": "tangentspaces-1",
-          "world": "TangentSpaces",
-          "leanWorld": "TangentSpaces",
-          "number": 1,
-          "title": "Ada stands still",
-          "introduction": "Ada stands still at `place`. Even without choosing a direction, staying still is a valid tangent velocity.\n\nThe [`TangentSpace`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentSpace) `TangentSpace model place` is the intrinsic space of velocities available at Ada's current location. The plane in the 3D scene pictures this tangent space; it is not an arbitrary plane floating beside the surface. The space inherits an additive group structure from `Vectors`, so it contains a zero vector. The expected type tells Lean which `0` is intended.\n\nThis is a definition level, so the kernel accepts any well-typed term. Only one velocity here is canonical, and level 6.3 reuses the course's official `tangent_zero`, so make it the zero vector.",
-          "conclusion": "Standing still is now a genuine vector in `TangentSpace model place`.",
-          "statementText": "**Objective:** Construct the zero tangent vector at `place`.",
-          "statement": "tangent_zero {Scalar : Type u}\n    [NontriviallyNormedField Scalar]\n    {Vectors : Type v} [NormedAddCommGroup Vectors]\n    [NormedSpace Scalar Vectors]\n    {Coordinates : Type w}\n    [TopologicalSpace Coordinates]\n    (model : ModelWithCorners Scalar Vectors Coordinates)\n    {Surface : Type u'} [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface] (place : Surface) :\n    TangentSpace model place",
-          "theoremName": "tangent_zero",
-          "declarationKind": "noncomputable def",
-          "solution": "exact 0",
-          "hints": [
-            "The tangent space has a zero instance.",
-            "The expected type is enough for Lean to understand `0`.",
-            "*(hidden)* `exact 0`"
-          ],
-          "newTactics": [],
-          "completionTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [
-            "TangentSpace",
-            "Zero.zero"
-          ],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/TangentSpaces.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "tangentspaces-2",
-          "world": "TangentSpaces",
-          "leanWorld": "TangentSpaces",
-          "number": 2,
-          "title": "Read the location tag",
-          "introduction": "Ada records both where she is and the direction she is moving, then reads the record's location tag. A direction without its point would be ambiguous because the available tangent plane changes from place to place. The tag must give back the point she stored.\n\nA point of the [`TangentBundle`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentBundle) is the dependent pair `⟨place, velocity⟩` (angle brackets: type `\\<` and `\\>`). The tangent space may change with `place`, so `velocity : TangentSpace model place` remembers where the velocity belongs. The first projection `.1` reduces by definition to `place`, and the `rfl` tactic checks that reduction.",
-          "conclusion": "Reading the bundle point's location tag returns `place`.",
-          "statementText": "**Objective:** Show that projecting the base point from `⟨place, velocity⟩` returns `place`.",
-          "statement": "tangent_bundle_base {Scalar : Type u}\n    [NontriviallyNormedField Scalar]\n    {Vectors : Type v} [NormedAddCommGroup Vectors]\n    [NormedSpace Scalar Vectors]\n    {Coordinates : Type w}\n    [TopologicalSpace Coordinates]\n    (model : ModelWithCorners Scalar Vectors Coordinates)\n    {Surface : Type u'} [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface]\n    {place : Surface} (velocity : TangentSpace model place) :\n    (⟨place, velocity⟩ : TangentBundle model Surface).1 = place",
-          "theoremName": "tangent_bundle_base",
-          "declarationKind": "theorem",
-          "solution": "rfl",
-          "hints": [
-            "The first projection reduces to `place` by definition.",
-            "A reflexivity proof closes such a goal.",
-            "*(hidden)* `rfl`"
-          ],
-          "newTactics": [
-            "rfl"
-          ],
-          "completionTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [
-            "TangentBundle",
-            "Bundle.TotalSpace",
-            "Sigma",
-            "Sigma.fst"
-          ],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/TangentSpaces.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "tangentspaces-3",
-          "world": "TangentSpaces",
-          "leanWorld": "TangentSpaces",
-          "number": 3,
-          "title": "Standing still anywhere",
-          "introduction": "Ada can stand still anywhere on the manifold, not just at one chosen point. The tangent bundle should therefore contain a zero direction record over every location.\n\nThe course definition `tangent_zero model place` gives the standing-still velocity in `TangentSpace model place`. Pairing it with `place` produces a point of the [`TangentBundle`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/IsManifold/Basic.html#TangentBundle) whose location tag is `place`. This constructs the zero bundle point over one arbitrary place; it does not yet define the zero section as a function.",
-          "conclusion": "Every point now has a canonical bundle point for standing still.",
-          "statementText": "**Objective:** For an arbitrary `place`, construct a tangent-bundle point lying over it.",
-          "statement": "tangent_bundle_has_zero {Scalar : Type u}\n    [NontriviallyNormedField Scalar]\n    {Vectors : Type v} [NormedAddCommGroup Vectors]\n    [NormedSpace Scalar Vectors]\n    {Coordinates : Type w}\n    [TopologicalSpace Coordinates]\n    (model : ModelWithCorners Scalar Vectors Coordinates)\n    {Surface : Type u'} [TopologicalSpace Surface]\n    [ChartedSpace Coordinates Surface] (place : Surface) :\n    ∃ bundlePoint : TangentBundle model Surface, bundlePoint.1 = place",
-          "theoremName": "tangent_bundle_has_zero",
-          "declarationKind": "theorem",
-          "solution": "refine ⟨⟨place, tangent_zero model place⟩, ?_⟩\nrfl",
-          "hints": [
-            "Use `⟨place, tangent_zero model place⟩` as the witness.",
-            "Its base-point equation holds by reflexivity.",
-            "*(hidden)* `refine ⟨⟨place, tangent_zero model place⟩, ?_⟩`, then `rfl`"
-          ],
-          "newTactics": [
-            "refine"
-          ],
-          "completionTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [],
-          "newDefinitions": [
-            "Exists"
-          ],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/TangentSpaces.lean",
-          "verification": "kernel"
-        }
-      ]
-    },
-    {
-      "id": "MapProjections",
-      "title": "One pole is missing",
-      "introduction": "# A round world on a flat leaf\n\nAda finds a glass bead near the trail. She wants to copy its surface onto a leaf, but one drawing cannot include the point where she holds the bead. She makes a second drawing from another pole to cover the gap.\n\nMathlib builds this map as [`stereographic`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#stereographic), an `OpenPartialHomeomorph` from the unit sphere to a flat orthogonal plane. This branch uses the local-chart ideas from the main path on a concrete sphere. It assumes only World 2, and introduces the extra tactics it needs on the way to the covering proof.",
-      "prerequisites": [
-        "Charts"
-      ],
-      "optional": true,
-      "mapPosition": {
-        "x": 820,
-        "y": 360
-      },
-      "verification": "kernel",
-      "levels": [
-        {
-          "id": "mapprojections-1",
-          "world": "MapProjections",
-          "leanWorld": "MapProjections",
-          "number": 1,
-          "title": "The pole stays off the leaf",
-          "introduction": "Ada presses one point of the bead between her feet while she draws. That point is the pole of the projection, so it cannot appear in this chart.\n\nThe source of `stereographic unitPole` is the sphere with the pole removed. Mathlib states this as [`stereographic_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#stereographic_source). The complement notation `{⟨pole, ...⟩}ᶜ` means every sphere point except that one.\n\nThe singleton's element appears as `⟨pole, by simp [unitPole]⟩`. A sphere point is a vector paired with a certificate that its norm is one. Read the embedded proof as Mathlib filling in that certificate from `unitPole`.",
-          "conclusion": "The first drawing now has an exact missing point.",
-          "statementText": "**Objective:** Show that the stereographic chart covers the sphere except for its chosen pole.",
-          "statement": "stereographic_map_misses_pole {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (pole : Space) (unitPole : ‖pole‖ = 1) :\n    (stereographic unitPole).source = {⟨pole, by simp [unitPole]⟩}ᶜ",
-          "theoremName": "stereographic_map_misses_pole",
-          "declarationKind": "theorem",
-          "solution": "exact stereographic_source unitPole",
-          "hints": [
-            "Mathlib states the source of a stereographic chart directly.",
-            "Use `stereographic_source unitPole`.",
-            "*(hidden)* `exact stereographic_source unitPole`"
-          ],
-          "newTactics": [],
-          "completionTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [
-            "stereographic_source"
-          ],
-          "newDefinitions": [
-            "Metric.sphere",
-            "stereographic",
-            "Set.compl"
-          ],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/MapProjections.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "mapprojections-2",
-          "world": "MapProjections",
-          "leanWorld": "MapProjections",
-          "number": 2,
-          "title": "The far pole lands in the middle",
-          "introduction": "Ada marks the point opposite the missing pole. On her flat drawing, that point sits at the center.\n\nThe value `-pole` is the antipodal point on the sphere. Mathlib's [`stereographic_apply_neg`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#stereographic_apply_neg) computes its stereographic coordinate as the zero vector in the flat model space.\n\nThe pole has changed representation since the previous level. There it was a raw vector plus `‖pole‖ = 1`. Here it is already a point of the sphere subtype, and `norm_eq_of_mem_sphere pole` recovers the norm certificate from membership.",
-          "conclusion": "Ada can use the opposite pole as the center of her coordinates.",
-          "statementText": "**Objective:** Prove that the antipodal point maps to the origin of the drawing.",
-          "statement": "opposite_pole_is_origin {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (pole : sphere (0 : Space) 1) :\n    stereographic (norm_eq_of_mem_sphere pole) (-pole) = 0",
-          "theoremName": "opposite_pole_is_origin",
-          "declarationKind": "theorem",
-          "solution": "exact stereographic_apply_neg pole",
-          "hints": [
-            "The antipode's coordinate is a named computation.",
-            "Apply `stereographic_apply_neg` to `pole`.",
-            "*(hidden)* `exact stereographic_apply_neg pole`"
-          ],
-          "newTactics": [],
-          "completionTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [
-            "stereographic_apply_neg",
-            "norm_eq_of_mem_sphere"
-          ],
-          "newDefinitions": [
-            "Neg.neg"
-          ],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/MapProjections.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "mapprojections-3",
-          "world": "MapProjections",
-          "leanWorld": "MapProjections",
-          "number": 3,
-          "title": "Every mark has a place on the bead",
-          "introduction": "Ada points to an arbitrary mark on the leaf and traces it back to the bead. No coordinate on the drawing is wasted.\n\nThe chart target is the whole orthogonal plane. The theorem [`surjective_stereographic`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#surjective_stereographic) says that every coordinate has a preimage on the sphere away from the missing pole.",
-          "conclusion": "Every mark on the leaf now names a point on the bead.",
-          "statementText": "**Objective:** Show that every point in the coordinate plane comes from the sphere.",
-          "statement": "every_stereographic_mark_has_source {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (pole : Space) (unitPole : ‖pole‖ = 1) :\n    Function.Surjective (stereographic unitPole)",
-          "theoremName": "every_stereographic_mark_has_source",
-          "declarationKind": "theorem",
-          "solution": "exact surjective_stereographic unitPole",
-          "hints": [
-            "Surjectivity of the stereographic map is already proved.",
-            "Use `surjective_stereographic unitPole`.",
-            "*(hidden)* `exact surjective_stereographic unitPole`"
-          ],
-          "newTactics": [],
-          "completionTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [
-            "surjective_stereographic"
-          ],
-          "newDefinitions": [
-            "Function.Surjective"
-          ],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/MapProjections.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "mapprojections-4",
-          "world": "MapProjections",
-          "leanWorld": "MapProjections",
-          "number": 4,
-          "title": "Off the pole, onto the leaf",
-          "introduction": "Ada checks a point that is not the pinned pole. Every such point earned a mark on the first leaf.\n\nMembership in the source is membership in a complement. The condition `place ∈ {north}ᶜ` becomes `place ∉ {north}`, and singleton membership becomes equality, so the whole condition is `place ≠ north`. The tactic `simp only [h₁, h₂, …]` rewrites with exactly the listed lemmas. Here those lemmas include [`stereographic_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#stereographic_source), `Set.mem_compl_iff`, and `Set.mem_singleton_iff`.",
-          "conclusion": "Only the pinned pole is missing. Everything else already has coordinates on the first leaf.",
-          "statementText": "**Objective:** Show that any point other than the pole lies in that pole's chart source.",
-          "statement": "stereographic_off_pole {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (north place : sphere (0 : Space) 1) (notNorth : place ≠ north) :\n    place ∈ (stereographic (norm_eq_of_mem_sphere north)).source",
-          "theoremName": "stereographic_off_pole",
-          "declarationKind": "theorem",
-          "solution": "simp only [stereographic_source, Set.mem_compl_iff, Set.mem_singleton_iff]\nexact notNorth",
-          "hints": [
-            "Unwind the chart source and the two membership statements.",
-            "Use `simp only [stereographic_source, Set.mem_compl_iff, Set.mem_singleton_iff]`; the result is `notNorth`.",
-            "*(hidden)* `simp only [stereographic_source, Set.mem_compl_iff, Set.mem_singleton_iff]`, then `exact notNorth`"
-          ],
-          "newTactics": [
-            "simp"
-          ],
-          "completionTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [
-            "Set.mem_compl_iff",
-            "Set.mem_singleton_iff"
-          ],
-          "newDefinitions": [],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/MapProjections.lean",
-          "verification": "kernel"
-        },
-        {
-          "id": "mapprojections-5",
-          "world": "MapProjections",
-          "leanWorld": "MapProjections",
-          "number": 5,
-          "title": "The second leaf covers the hole",
-          "introduction": "Ada makes a second drawing from a different pole. The first leaf misses only the north point, and the second misses only the south point. Since those points differ, every place appears on at least one leaf.\n\nThe proof starts from [`stereographic_source`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#stereographic_source) and has a useful shape. `ext place` turns the set equation into a statement about one point. `simp only` with the membership lemmas from the previous level reduces it to a disjunction: the point differs from north, or it differs from south. `by_cases atNorth : place = north` splits the situations, while `left` and `right` choose a side. At north, assume `place = south` with `intro` and chain equalities as `atNorth.symm.trans atSouth` to contradict `different`.",
-          "conclusion": "Two leaves are enough to record every point on the bead. This pair is the atlas Mathlib uses to make the sphere a `ChartedSpace`, tying this branch back to World 3.",
-          "statementText": "**Objective:** Prove that two stereographic charts with different poles cover the whole sphere.",
-          "statement": "two_stereographic_maps_cover {Space : Type u} [NormedAddCommGroup Space]\n    [InnerProductSpace ℝ Space]\n    (north south : sphere (0 : Space) 1) (different : north ≠ south) :\n    (stereographic (norm_eq_of_mem_sphere north)).source ∪\n      (stereographic (norm_eq_of_mem_sphere south)).source = Set.univ",
-          "theoremName": "two_stereographic_maps_cover",
-          "declarationKind": "theorem",
-          "solution": "ext place\nsimp only [stereographic_source, Set.mem_union, Set.mem_compl_iff,\n  Set.mem_singleton_iff, Set.mem_univ, iff_true]\nby_cases atNorth : place = north\n· right\n  intro atSouth\n  exact different (atNorth.symm.trans atSouth)\n· left\n  exact atNorth",
-          "hints": [
-            "Reduce the set equality to one point, expose the disjunction, then split on whether that point is north.",
-            "Use `ext`, `simp only`, and `by_cases`. Choose branches with `left` or `right`.",
-            "*(hidden)* `ext place`, then `simp only [stereographic_source, Set.mem_union, Set.mem_compl_iff,`, then `  Set.mem_singleton_iff, Set.mem_univ, iff_true]`, then `by_cases atNorth : place = north`, then `· right`, then `  intro atSouth`, then `  exact different (atNorth.symm.trans atSouth)`, then `· left`, then `  exact atNorth`"
-          ],
-          "newTactics": [
-            "ext",
-            "by_cases",
-            "left",
-            "right",
-            "intro"
-          ],
-          "completionTactics": [],
-          "hiddenTactics": [],
-          "newTheorems": [
-            "Set.mem_union",
-            "Set.mem_univ",
-            "iff_true",
-            "Eq.symm",
-            "Eq.trans"
-          ],
-          "newDefinitions": [
-            "Set.union",
-            "Set.univ",
-            "Or"
-          ],
-          "disabledTactics": [],
-          "disabledTheorems": [],
-          "disabledDefinitions": [],
-          "sourcePath": "lean/ManifoldAdventure/MapProjections.lean",
           "verification": "kernel"
         }
       ]
@@ -1197,10 +1399,48 @@
           "verification": "kernel"
         },
         {
+          "id": "course-10",
+          "world": "CircleMotion",
+          "leanWorld": "Course",
+          "number": 4,
+          "title": "Two angles, one pointer position",
+          "introduction": "Ada records the dial with two different angle readings and sees the pointer in the same place. The only way that can happen is that the two readings differ by some whole number of full turns.\n\nThis is the exact rule for when two angle coordinates name the same circle point, and it is why an angle is a local chart rather than a global one. Mathlib states it as [`Circle.exp_eq_exp`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Analysis/SpecialFunctions/Complex/Circle.html#Circle.exp_eq_exp): the positions agree if and only if the angles differ by an integer multiple of `2 * Real.pi`. The integer is coerced to a real number in the statement.",
+          "conclusion": "An angle chart of the dial is honest on any arc shorter than a full turn, and on the whole circle it repeats.",
+          "statementText": "**Objective:** Show that two angles give the same pointer position exactly when they differ by a whole number of turns.",
+          "statement": "same_point_iff_full_turns (first second : ℝ) :\n    Circle.exp first = Circle.exp second ↔\n      ∃ turns : ℤ, first = second + turns * (2 * Real.pi)",
+          "theoremName": "same_point_iff_full_turns",
+          "declarationKind": "theorem",
+          "solution": "exact Circle.exp_eq_exp",
+          "hints": [
+            "Angles that agree on the circle differ by whole turns.",
+            "The two-way statement is `Circle.exp_eq_exp`.",
+            "*(hidden)* `exact Circle.exp_eq_exp`"
+          ],
+          "question": {
+            "prompt": "Before proving it: how long can an arc of the dial be before one angle reading stops being a chart of it?",
+            "answer": "Strictly less than a full turn. On an arc of length 2π or more, two different angles would name the same point, so the reading is no longer one-to-one."
+          },
+          "newTactics": [],
+          "completionTactics": [],
+          "hiddenTactics": [],
+          "newTheorems": [
+            "Circle.exp_eq_exp"
+          ],
+          "newDefinitions": [
+            "Iff",
+            "Int"
+          ],
+          "disabledTactics": [],
+          "disabledTheorems": [],
+          "disabledDefinitions": [],
+          "sourcePath": "lean/ManifoldAdventure/Course.lean",
+          "verification": "kernel"
+        },
+        {
           "id": "circlemotion-4",
           "world": "CircleMotion",
           "leanWorld": "CircleMotion",
-          "number": 4,
+          "number": 5,
           "title": "The pointer turns smoothly",
           "introduction": "Ada turns the dial slowly. The pointer follows without a jump or corner, even when it crosses the home mark.\n\nThe statement `CMDiff ∞ Circle.exp` uses Mathlib's manifold notation. `CMDiff n f` elaborates to `ContMDiff I J n f`, with the two models inferred instead of written out. It says that the angle-to-circle map has derivatives of every finite order as a map between manifolds. Mathlib proves this in [`contMDiff_circleExp`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Geometry/Manifold/Instances/Sphere.html#contMDiff_circleExp).",
           "conclusion": "A continuously turning angle now gives smooth motion on the circle.",
@@ -1447,7 +1687,8 @@
             "*(hidden)* `unfold robot_arm_tip`, then `apply abs_sub_le_iff.mpr`, then `constructor`, then `· have h := norm_sub_norm_le`, then `    ((firstLength : ℂ) * (joints.1 : ℂ))`, then `    (-((secondLength : ℂ) * ((joints.1 * joints.2 : Circle) : ℂ)))`, then `  simpa [Circle.norm_coe, abs_of_nonneg, hFirst, hSecond] using h`, then `· have h := norm_sub_norm_le`, then `    ((secondLength : ℂ) * ((joints.1 * joints.2 : Circle) : ℂ))`, then `    (-((firstLength : ℂ) * (joints.1 : ℂ)))`, then `  simpa [Circle.norm_coe, abs_of_nonneg, hFirst, hSecond, add_comm] using h`"
           ],
           "newTactics": [
-            "have"
+            "have",
+            "simpa"
           ],
           "completionTactics": [],
           "hiddenTactics": [],

@@ -53,12 +53,9 @@ function reportImportProgress(text) {
   return /^\s*-\s+\/lib\/lean\/.*\.olean\s*$/.test(text);
 }
 
-// Pick the largest shared wasm memory this device will actually grant.
-// Desktop gets the full 2GB; iOS Safari kills the tab on a 2GB up-front
-// commit (jetsam), so probe downward and boot with what fits. The build has
-// ALLOW_MEMORY_GROWTH=0, so whatever we pick here is the heap for the whole
-// session — maximum stays 32768 pages (2GB, virtual reservation only) to
-// match the patched module's declared import.
+// Start with the largest shared memory this device will grant. The 4.33
+// artifacts allow growth up to 4 GiB; desktop can use that headroom without
+// increasing its initial allocation. Keep the existing iOS limits.
 function pickWasmMemory() {
   const PAGE = 65536;
   // iOS reports allocation success and then jetsam-kills the tab when the
@@ -69,7 +66,7 @@ function pickWasmMemory() {
   const candidates = isIOS ? [1024, 768, 512] : [2048, 1536, 1024, 768];
   for (const mb of candidates) {
     try {
-      const memory = new WebAssembly.Memory({ initial: (mb * 1024 * 1024) / PAGE, maximum: 32768, shared: true });
+      const memory = new WebAssembly.Memory({ initial: (mb * 1024 * 1024) / PAGE, maximum: isIOS ? 32768 : 65536, shared: true });
       if (mb < 2048) console.warn('[MEM] reduced wasm memory: ' + mb + 'MB (device limit)');
       return { memory, bytes: mb * 1024 * 1024 };
     } catch (e) { /* try smaller */ }
@@ -220,8 +217,7 @@ async function loadSnapshot(name, url) {
 
 function startLeanModule() {
   self.Module = {
-    // 4.28 ships a 16MB memory cap (patched to 2GB MAX in lean.wasm); the
-    // probed memory below is as much as the device grants (2GB on desktop).
+    // Supply the device's initial allocation and maximum to the growable runtime.
     ...(function () { const p = pickWasmMemory(); return p ? { wasmMemory: p.memory, INITIAL_MEMORY: p.bytes } : {}; })(),
     locateFile: (path) => assetBase + '/' + path + assetQ,
     // Tell Emscripten where the runtime script is, so the pthread sub-workers

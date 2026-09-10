@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "leanCommit": "62b6a2291302d4bbeace37642a066b7510d0145c",
+  "emscriptenVersion": "4.0.22",
+  "assetVersion": "62b6a2291302d4bbeace37642a066b7510d0145c-dlsym1-compact1",
+  "objects": {
+    "lean.js": {
+      "bytes": 148402,
+      "sha256": "63aa7b004435f3d90cf19d7c3b3e3284726701ea06da8bc70b015125e1a38b24"
+    },
+    "lean.wasm": {
+      "bytes": 100838905,
+      "sha256": "08d3ae8ee5dec8bae165ad5102e604eca016d74d2303e0b5748690df679a764e"
+    },
+    "slim/lean.js": {
+      "bytes": 3430113,
+      "sha256": "cfb1e66db50309d2f4409c8c90fca10b6470036941d5e3479b9504eb63c22120"
+    },
+    "slim/lean.wasm": {
+      "bytes": 70444966,
+      "sha256": "e3499ffc9414d178b1735fe82254284163d8f57046c977d74f04c0c8fc23a8f4"
+    },
+    "snapshots/init.snap": {
+      "bytes": 241301441,
+      "sha256": "d91cda15128ac8df3611bd43fa36ff0bd866924c3522521a80d43fc19d1ff7c9"
+    },
+    "slim/snapshots/init.snap": {
+      "bytes": 241309481,
+      "sha256": "a7759e7fa311396a57c74bde979bf47ffca64a194004eb8cbb02b800205873e6"
+    }
+  },
+  "fixture": {
+    "url": "https://github.com/cauli/lean4-wasm-in-browser/releases/download/runtime-62b6a22-compact1/lean-runtime-fixture.tar.gz",
+    "sha256": "8dce3ed8a078046b5251ddf55917080fdf69227b3e4597c94e91ebb7f0b06521",
+    "bytes": 290396150
+  },
+  "staticAssets": {
+    "url": "https://github.com/cauli/lean4-wasm-in-browser/releases/download/runtime-62b6a22-compact1/pages-assets-62b6a22-compact1.tar.gz",
+    "sha256": "e0c1ae4d40fd5c4da18d4a38e254e8adef603b855757daff103659a4b80c9a39",
+    "bytes": 1082970062
+  }
+}

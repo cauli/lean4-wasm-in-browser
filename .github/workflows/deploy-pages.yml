@@ -1,72 +1,79 @@
 name: deploy pages
 
-# Publish the site to Cloudflare Pages (lean-playground → lean.cau.li) whenever
-# the test suite goes green on main. The multi-GB Lean build tree only exists on
-# a dev machine, so the static subset the deploy needs (base .olean/.ir tree,
-# lean-lib-files.json, Real Analysis packs) comes from a GitHub release asset;
-# regenerate it with deploy/pack-pages-assets.sh after a Lean artifact swap and
-# update PAGES_ASSETS_URL below. lean.js/lean.wasm are not involved: they live
-# in R2 and only change via deploy/upload-r2.sh.
-#
-# Secrets required (repo → Settings → Secrets and variables → Actions):
-#   CLOUDFLARE_API_TOKEN   API token with "Cloudflare Pages: Edit" on the account
-#   CLOUDFLARE_ACCOUNT_ID  the personal account id (kept out of the public repo)
-
+# 🤖 Production accepts only successful push-to-main release gates. Manual runs
+# 🤖 validate the selected commit and publish only to an explicit preview branch.
 on:
   workflow_run:
     workflows: [playground tests]
     types: [completed]
   workflow_dispatch:
+    inputs:
+      preview_branch:
+        description: Preview branch name (must start preview-; never main)
+        required: true
+        type: string
 
-env:
-  PAGES_ASSETS_URL: https://github.com/cauli/lean4-wasm-in-browser/releases/download/pages-assets-manifold-v2-0bbf970/pages-assets-manifold-v2-0bbf970.tar.gz
+permissions:
+  contents: read
 
-# One deploy at a time; a newer main build supersedes an in-flight one.
 concurrency:
-  group: deploy-pages
+  group: deploy-pages-${{ github.event_name == 'workflow_dispatch' && inputs.preview_branch || 'production' }}
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    # Deploy only what the tests passed on; manual dispatch skips the gate.
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.head_branch == 'main')
+  preview-input:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate preview destination
+        env:
+          PREVIEW_BRANCH: ${{ inputs.preview_branch }}
+        run: node deploy/deploy-target.mjs preview "$PREVIEW_BRANCH"
+  preview-gate:
+    needs: preview-input
+    if: github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/runtime-release-gate.yml
+  deploy:
+    needs: [preview-input, preview-gate]
+    if: >-
+      always() && !cancelled() &&
+      ((github.event_name == 'workflow_dispatch' && needs.preview-gate.result == 'success') ||
+       (github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.head_repository.full_name == github.repository))
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'workflow_dispatch' && 'preview' || 'production' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
-          # workflow_run checks out the tested commit, not whatever main moved to.
-          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
-
+          # 🤖 Build the tested commit, never a newer moving branch tip.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-
       - name: Install dependencies
         run: npm ci
-
       - name: Fetch static Lean assets
-        run: |
-          mkdir -p public/lean-wasm
-          curl --fail --location --retry 3 "$PAGES_ASSETS_URL" \
-            | tar -xz -C public/lean-wasm
-          ls \
-            public/lean-wasm/lean-lib/Init.olean \
-            public/lean-wasm/real-analysis-layer.json \
-            public/lean-wasm/manifold-layer.json
-
-      - name: Build Pages output
+        run: node deploy/static-assets.mjs fetch
+      - name: Select the deployment destination
+        env:
+          PREVIEW_BRANCH: ${{ inputs.preview_branch }}
+        run: node deploy/deploy-target.mjs event >> "$GITHUB_ENV"
+      - name: Reject stale production runs before building
+        run: node deploy/deploy-target.mjs freshness "$PAGES_DEPLOY_BRANCH"
+      - name: Build Pages output with the pinned release
         run: bash deploy/build-pages.sh
-
-      - name: Deploy to Cloudflare Pages
-        run: >-
-          npx wrangler@4 pages deploy dist
-          --project-name lean-playground
-          --branch main
+      - name: Recheck production freshness and deploy to Cloudflare Pages
+        run: |
+          node deploy/deploy-target.mjs freshness "$PAGES_DEPLOY_BRANCH"
+          npx wrangler@4 pages deploy dist \
+            --project-name lean-playground \
+            --branch "$PAGES_DEPLOY_BRANCH"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
