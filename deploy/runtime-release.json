@@ -29,5 +29,14 @@
       "sha256": "a7759e7fa311396a57c74bde979bf47ffca64a194004eb8cbb02b800205873e6"
     }
   },
-  "fixture": null
+  "fixture": {
+    "url": "https://github.com/cauli/lean4-wasm-in-browser/releases/download/runtime-62b6a22-compact1/lean-runtime-fixture.tar.gz",
+    "sha256": "8dce3ed8a078046b5251ddf55917080fdf69227b3e4597c94e91ebb7f0b06521",
+    "bytes": 290396150
+  },
+  "staticAssets": {
+    "url": "https://github.com/cauli/lean4-wasm-in-browser/releases/download/runtime-62b6a22-compact1/pages-assets-62b6a22-compact1.tar.gz",
+    "sha256": "e0c1ae4d40fd5c4da18d4a38e254e8adef603b855757daff103659a4b80c9a39",
+    "bytes": 1082970062
+  }
 }
