@@ -62,7 +62,7 @@ export async function verifyServedFile(url, expected, fetchImpl = fetch, timeout
 }
 
 // 🤖 This function runs unchanged in page.evaluate and has no Node dependencies.
-export function snapshotSession({ workerUrl, snapshotUrl, timeoutMs, validCode, invalidCode }) {
+export function snapshotSession({ workerUrl, snapshotUrl, expectedSnapshotBytes, timeoutMs, validCode, invalidCode }) {
   return new Promise((resolve) => {
     const record = { emptyLibrary: false, received: 0 };
     let phase = 'boot';
@@ -102,6 +102,7 @@ export function snapshotSession({ workerUrl, snapshotUrl, timeoutMs, validCode, 
         record.startupOutput = output;
         output = [];
         if (message.success !== true) return finish(`Snapshot restoration failed: ${message.error || 'runtime rejected snapshot'}`);
+        if (record.received !== expectedSnapshotBytes) return finish('Snapshot download byte count differs from the release pin');
         phase = 'valid';
         worker.postMessage({ type: 'compile', code: validCode, path: '/workspace/snapshot-valid.lean' });
       } else if (message.type === 'compile_result' && ['valid', 'invalid'].includes(phase)) {

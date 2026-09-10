@@ -90,7 +90,7 @@ test('real worker protocol loads snapshot before any compile and never sends lib
   }
   globalThis.Worker = FakeWorker;
   try {
-    const result = await snapshotSession({ workerUrl: '/worker', snapshotUrl: '/snap', timeoutMs: 1000, validCode: 'valid', invalidCode: 'invalid' });
+    const result = await snapshotSession({ workerUrl: '/worker', snapshotUrl: '/snap', expectedSnapshotBytes: 123, timeoutMs: 1000, validCode: 'valid', invalidCode: 'invalid' });
     validateSession(result, 123);
     assert.deepEqual(sent.map((m) => m.type), ['load_library', 'start_worker', 'load_snapshot', 'compile', 'compile']);
     assert.deepEqual(sent[0].files, []);
