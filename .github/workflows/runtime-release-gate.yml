@@ -26,7 +26,7 @@ jobs:
         run: node deploy/static-assets.mjs fetch
       - name: Stage and check the exact full runtime for Chromium
         run: |
-          cp -R tests/.artifacts/runtime/. public/lean-wasm/
+          node deploy/runtime-release.mjs stage-fixture tests/.artifacts public/lean-wasm
           node deploy/runtime-release.mjs verify-runtime
           echo "VITE_LEAN_ASSET_VERSION=$(node deploy/runtime-release.mjs build-version)" >> "$GITHUB_ENV"
           echo "VITE_LEAN_WASM_BASE=/lean-wasm" >> "$GITHUB_ENV"

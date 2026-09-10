@@ -18,8 +18,10 @@ The `playground tests` workflow calls the required `runtime release gate`. It:
 5. Requires first-attempt Chromium Manifold and NNG kernel acceptance.
 
 A successful **push-to-main** gate run triggers production deployment of that
-exact commit. A manual gate run, pull-request run, or release-branch run cannot
-trigger production. Configure `runtime-gate / validate` as a required branch
+exact commit. Production fetches the current `origin/main` and rejects an old
+successful SHA before building and again immediately before deployment. This
+prevents rerunning an old gate to roll back a newer `main`. A manual gate run,
+pull-request run, or release-branch run cannot trigger production. Configure `runtime-gate / validate` as a required branch
 check. Protect the GitHub `production` environment and restrict it to `main`.
 
 Manual `deploy pages` runs require an explicit `preview-...` branch. They run
@@ -63,6 +65,10 @@ Dereference symlinks and hardlinks when making the tarball. The fetcher rejects
 links and unsafe paths. It verifies the archive before extraction and verifies
 the full JS/WASM twice: the Node `bin/` pair and the browser `runtime/` pair.
 An unsuccessful fetch keeps the previous Node fixture directory intact.
+The browser stager rejects unlisted runtime fixture files and copies only the
+manifest's object keys, so fixtures cannot replace the pinned static packs.
+Its destination must be a real staging tree: symlink files or ancestors abort
+before any copy, including development links to another worktree's artifacts.
 
 Before publishing:
 

@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 
 export function previewBranch(value) {
   if (typeof value !== 'string' || value.trim() !== value
@@ -22,6 +23,17 @@ export function deploymentBranch({ eventName, event, repository, preview }) {
   return 'main';
 }
 
+export function assertDeploymentFreshness({ branch, headSha, mainSha }) {
+  if (branch !== 'main') {
+    previewBranch(branch);
+    return;
+  }
+  if (!/^[a-f0-9]{40}$/.test(headSha ?? '') || headSha?.length !== 40
+      || headSha !== mainSha) {
+    throw new Error(`Stale production deployment: tested ${headSha ?? '(missing)'}, current main ${mainSha ?? '(missing)'}`);
+  }
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   if (process.argv[2] === 'preview') console.log(previewBranch(process.argv[3]));
   else if (process.argv[2] === 'event') {
@@ -32,5 +44,13 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       preview: process.env.PREVIEW_BRANCH,
     });
     console.log(`PAGES_DEPLOY_BRANCH=${branch}`);
-  } else throw new Error('Usage: node deploy/deploy-target.mjs preview <branch>|event');
+  } else if (process.argv[2] === 'freshness') {
+    const branch = process.argv[3];
+    if (branch === 'main') {
+      // 🤖 A rerun for an old successful SHA must not roll back a newer main.
+      execFileSync('git', ['fetch', '--no-tags', 'origin', '+refs/heads/main:refs/remotes/origin/main'], { stdio: 'inherit' });
+      const revision = (ref) => execFileSync('git', ['rev-parse', ref], { encoding: 'utf8' }).trim();
+      assertDeploymentFreshness({ branch, headSha: revision('HEAD'), mainSha: revision('refs/remotes/origin/main') });
+    } else assertDeploymentFreshness({ branch });
+  } else throw new Error('Usage: node deploy/deploy-target.mjs preview <branch>|event|freshness <branch>');
 }

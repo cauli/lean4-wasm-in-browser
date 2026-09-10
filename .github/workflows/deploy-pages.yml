@@ -60,17 +60,20 @@ jobs:
         run: npm ci
       - name: Fetch static Lean assets
         run: node deploy/static-assets.mjs fetch
-      - name: Build Pages output with the pinned release
-        run: bash deploy/build-pages.sh
       - name: Select the deployment destination
         env:
           PREVIEW_BRANCH: ${{ inputs.preview_branch }}
         run: node deploy/deploy-target.mjs event >> "$GITHUB_ENV"
-      - name: Deploy to Cloudflare Pages
-        run: >-
-          npx wrangler@4 pages deploy dist
-          --project-name lean-playground
-          --branch "$PAGES_DEPLOY_BRANCH"
+      - name: Reject stale production runs before building
+        run: node deploy/deploy-target.mjs freshness "$PAGES_DEPLOY_BRANCH"
+      - name: Build Pages output with the pinned release
+        run: bash deploy/build-pages.sh
+      - name: Recheck production freshness and deploy to Cloudflare Pages
+        run: |
+          node deploy/deploy-target.mjs freshness "$PAGES_DEPLOY_BRANCH"
+          npx wrangler@4 pages deploy dist \
+            --project-name lean-playground \
+            --branch "$PAGES_DEPLOY_BRANCH"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

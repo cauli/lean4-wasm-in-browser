@@ -107,12 +107,60 @@ export async function verifyRuntime(root, release, keys = Object.keys(release.ob
   }
 }
 
+// 🤖 A runtime fixture cannot add files that shadow the separately pinned static bundle.
+export async function verifyRuntimeLayout(root, release) {
+  const pending = [''];
+  while (pending.length) {
+    const directory = pending.pop();
+    for (const entry of await fsp.readdir(path.join(root, directory), { withFileTypes: true })) {
+      const key = directory ? `${directory}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) pending.push(key);
+      else if (!entry.isFile() || !Object.hasOwn(release.objects, key)) {
+        throw new Error(`Unexpected runtime fixture entry: ${key}`);
+      }
+    }
+  }
+}
+
 export async function verifyFixture(root, release) {
   for (const key of ['lean.js', 'lean.wasm']) {
     await verifyFile(path.join(root, 'bin', key), release.objects[key]);
   }
   await verifyInit(path.join(root, 'lib/lean/Init.olean'), release);
+  await verifyRuntimeLayout(path.join(root, 'runtime'), release);
   await verifyRuntime(path.join(root, 'runtime'), release);
+}
+
+async function assertNoSymlinkAncestors(target) {
+  const absolute = path.resolve(target);
+  const root = path.parse(absolute).root;
+  let current = root;
+  for (const segment of absolute.slice(root.length).split(path.sep)) {
+    current = path.join(current, segment);
+    let stat;
+    try { stat = await fsp.lstat(current); }
+    catch (error) {
+      if (error.code === 'ENOENT') return;
+      throw error;
+    }
+    if (stat.isSymbolicLink()) throw new Error(`Refusing symlink staging destination: ${current}`);
+  }
+}
+
+export async function stageFixtureRuntime(fixtureRoot, destination, release) {
+  await verifyFixture(fixtureRoot, release);
+  // 🤖 Preflight every destination before any write, including symlink ancestors.
+  // 🤖 The local development tree may point at another worktree's release files.
+  for (const key of Object.keys(release.objects)) {
+    await assertNoSymlinkAncestors(path.join(destination, key));
+  }
+  // 🤖 Copy only the manifest keys, never the complete fixture tree. Static assets
+  // 🤖 keep their independently verified identity even if staging changes later.
+  for (const key of Object.keys(release.objects)) {
+    const target = path.join(destination, key);
+    await fsp.mkdir(path.dirname(target), { recursive: true });
+    await fsp.copyFile(path.join(fixtureRoot, 'runtime', key), target);
+  }
 }
 
 export async function buildVersion(root, release) {
@@ -127,5 +175,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   else if (command === 'build-version') console.log(await buildVersion(root, release));
   else if (command === 'verify-runtime') await verifyRuntime(root, release);
   else if (command === 'verify-fixture') await verifyFixture(root, release);
-  else throw new Error('Usage: node deploy/runtime-release.mjs version|build-version|verify-runtime|verify-fixture [root]');
+  else if (command === 'stage-fixture') {
+    if (!process.argv[4]) throw new Error('stage-fixture requires a fixture root and destination');
+    await stageFixtureRuntime(root, process.argv[4], release);
+  }
+  else throw new Error('Usage: node deploy/runtime-release.mjs version|build-version|verify-runtime|verify-fixture [root], or stage-fixture <fixture-root> <destination>');
 }

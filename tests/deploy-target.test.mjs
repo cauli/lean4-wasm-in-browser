@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { deploymentBranch, previewBranch } from '../deploy/deploy-target.mjs';
+import { deploymentBranch, previewBranch, assertDeploymentFreshness } from '../deploy/deploy-target.mjs';
 
 const production = {
   eventName: 'workflow_run', repository: 'cauli/lean4-wasm-in-browser',
@@ -24,4 +24,14 @@ test('production requires a successful same-repository push gate on main, never 
     assert.throws(() => deploymentBranch(options), /Production requires/);
   }
   assert.throws(() => deploymentBranch({ ...production, eventName: 'push' }), /Production requires/);
+});
+
+test('production rejects stale successful SHAs while previews need not match main', () => {
+  const headSha = 'a'.repeat(40);
+  const newerMain = 'b'.repeat(40);
+  assert.doesNotThrow(() => assertDeploymentFreshness({ branch: 'main', headSha, mainSha: headSha }));
+  assert.throws(() => assertDeploymentFreshness({ branch: 'main', headSha, mainSha: newerMain }), /Stale production deployment/);
+  assert.throws(() => assertDeploymentFreshness({ branch: 'main' }), /Stale production deployment/);
+  assert.doesNotThrow(() => assertDeploymentFreshness({ branch: 'preview-old-candidate', headSha, mainSha: newerMain }));
+  assert.doesNotThrow(() => assertDeploymentFreshness({ branch: 'preview-independent' }));
 });

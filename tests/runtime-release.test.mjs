@@ -7,7 +7,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import {
   assertReleaseEnvironment, buildVersion, validateRelease,
-  verifyFixture, verifyRuntime,
+  verifyFixture, verifyRuntime, stageFixtureRuntime,
 } from '../deploy/runtime-release.mjs';
 import { uploadRelease, wranglerStore } from '../deploy/upload-r2.mjs';
 import { fetchArtifacts, validateArchiveEntries } from './fetch-artifacts.mjs';
@@ -23,7 +23,7 @@ const makeRelease = () => ({
 async function temp(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'lean-release-test-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
-  return root;
+  return fs.realpath(root);
 }
 async function write(root, file, body) {
   await fs.mkdir(path.dirname(path.join(root, file)), { recursive: true });
@@ -168,4 +168,60 @@ test('fetch authenticates archive and full runtime before atomically replacing o
   await verifyFixture(out, release);
   assert.equal(JSON.parse(await fs.readFile(path.join(out, 'bin/package.json'), 'utf8')).type, 'commonjs');
   await assert.rejects(fs.stat(path.join(out, 'previous.txt')), /ENOENT/);
+});
+
+test('runtime fixture staging rejects extra core files and cannot replace the pinned static core', async (t) => {
+  const root = await temp(t);
+  const fixture = path.join(root, 'fixture');
+  const browser = path.join(root, 'browser');
+  const release = makeRelease();
+  await write(fixture, 'bin/lean.js', files['lean.js']);
+  await write(fixture, 'bin/lean.wasm', files['lean.wasm']);
+  await write(fixture, 'lib/lean/Init.olean', `olean-header:${commit}`);
+  await stageRuntime(path.join(fixture, 'runtime'));
+  await write(browser, 'core-layer.json', 'independently pinned static core');
+  await write(browser, 'core-lib/artifacts-000.pack', 'independently pinned static pack');
+
+  for (const key of ['core-layer.json', 'core-lib/artifacts-000.pack']) {
+    await write(fixture, `runtime/${key}`, 'must not replace static assets');
+    await assert.rejects(verifyFixture(fixture, release), /Unexpected runtime fixture entry/);
+    await assert.rejects(stageFixtureRuntime(fixture, browser, release), /Unexpected runtime fixture entry/);
+    assert.equal(await fs.readFile(path.join(browser, 'core-layer.json'), 'utf8'), 'independently pinned static core');
+    assert.equal(await fs.readFile(path.join(browser, 'core-lib/artifacts-000.pack'), 'utf8'), 'independently pinned static pack');
+    await assert.rejects(fs.stat(path.join(browser, 'lean.js')), /ENOENT/);
+    await fs.rm(path.join(fixture, 'runtime', key));
+  }
+
+  await stageFixtureRuntime(fixture, browser, release);
+  await verifyRuntime(browser, release);
+  assert.equal(await fs.readFile(path.join(browser, 'core-layer.json'), 'utf8'), 'independently pinned static core');
+  assert.equal(await fs.readFile(path.join(browser, 'core-lib/artifacts-000.pack'), 'utf8'), 'independently pinned static pack');
+});
+
+test('runtime staging refuses symlink files, directory ancestors, and the destination root before writes', async (t) => {
+  const root = await temp(t);
+  const fixture = path.join(root, 'fixture');
+  const release = makeRelease();
+  await write(fixture, 'bin/lean.js', files['lean.js']);
+  await write(fixture, 'bin/lean.wasm', files['lean.wasm']);
+  await write(fixture, 'lib/lean/Init.olean', `olean-header:${commit}`);
+  await stageRuntime(path.join(fixture, 'runtime'));
+  const original = path.join(root, 'original');
+  await write(original, 'lean.js', 'untouched original glue');
+  await write(original, 'lean.wasm', 'untouched original wasm');
+
+  for (const link of ['lean.wasm', 'slim', 'snapshots']) {
+    const browser = path.join(root, `browser-${link.replace('.', '-')}`);
+    await fs.mkdir(browser);
+    await fs.symlink(link === 'lean.wasm' ? path.join(original, 'lean.wasm') : original, path.join(browser, link));
+    await assert.rejects(stageFixtureRuntime(fixture, browser, release), /Refusing symlink staging destination/);
+    await assert.rejects(fs.stat(path.join(browser, 'lean.js')), /ENOENT/);
+    assert.equal(await fs.readFile(path.join(original, 'lean.js'), 'utf8'), 'untouched original glue');
+    assert.equal(await fs.readFile(path.join(original, 'lean.wasm'), 'utf8'), 'untouched original wasm');
+  }
+  const linkedRoot = path.join(root, 'linked-root');
+  await fs.symlink(original, linkedRoot);
+  await assert.rejects(stageFixtureRuntime(fixture, linkedRoot, release), /Refusing symlink staging destination/);
+  await assert.rejects(stageFixtureRuntime(fixture, path.join(linkedRoot, 'nested'), release), /Refusing symlink staging destination/);
+  assert.equal(await fs.readFile(path.join(original, 'lean.js'), 'utf8'), 'untouched original glue');
 });
