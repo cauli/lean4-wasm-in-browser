@@ -109,34 +109,59 @@ async function observeWorkers(pageSession, report) {
         }
         const record = { targetId: targetInfo.targetId, targetUrl: targetInfo.url, role };
         report.workers.push(record);
-        const scripts = new Map();
-        let breakpoint;
-        session.on('Debugger.scriptParsed', (script) => scripts.set(script.scriptId, script));
-        session.on('Debugger.paused', (event) => {
-          run((async () => {
-            const scriptId = event.callFrames[0]?.location.scriptId || event.data?.scriptId;
-            const script = scripts.get(scriptId);
-            if (script && /\/lean\.js(?:\?|$)/.test(script.url)) {
-              const { scriptSource } = await session.send('Debugger.getScriptSource', { scriptId });
-              record.scriptUrl = script.url;
-              record.source = digest(scriptSource);
-              await session.send('Debugger.removeBreakpoint', { breakpointId: breakpoint });
-              await session.send('Debugger.resume');
-              // 🤖 Stop debugging before this worker can enter long native Tasks.
-              await session.send('Debugger.disable');
-            } else await session.send('Debugger.resume');
-          })());
+        let capture;
+        // 🤖 Debugger.enable replays an initial pthread script that may already
+        // 🤖 be parsed. A beforeScriptExecution breakpoint can miss that script.
+        session.on('Debugger.scriptParsed', (script) => {
+          record.parsedScriptCount = (record.parsedScriptCount || 0) + 1;
+          if (capture || !/\/lean\.js(?:\?|$)/.test(script.url)) return;
+          record.sourceReadStarted = true;
+          capture = (async () => {
+            const { scriptSource } = await session.send('Debugger.getScriptSource', { scriptId: script.scriptId });
+            record.scriptUrl = script.url;
+            record.source = digest(scriptSource);
+            record.sourceObservation = 'Debugger.scriptParsed';
+            await session.send('Debugger.disable');
+            record.debuggerDisabled = true;
+          })();
+          run(capture);
         });
         await session.send('Target.setAutoAttach', { autoAttach: true, waitForDebuggerOnStart: true, flatten: false });
         await session.send('Debugger.enable');
-        ({ breakpointId: breakpoint } = await session.send('Debugger.setInstrumentationBreakpoint', { instrumentation: 'beforeScriptExecution' }));
+        record.debuggerEnabled = true;
+        // 🤖 Capture replayed source before releasing startup. No evaluation or
+        // 🤖 pause request is sent to a pthread that can enter a native Task.
+        if (capture) await capture;
         await session.send('Runtime.runIfWaitingForDebugger');
+        record.startupReleased = true;
       })());
     });
   };
   attach(pageSession);
   await pageSession.send('Target.setAutoAttach', { autoAttach: true, waitForDebuggerOnStart: true, flatten: false });
   return { failure, settle: () => Promise.all([...jobs]) };
+}
+
+async function streamedDigest(body) {
+  const hash = createHash('sha256');
+  let bytes = 0;
+  for await (const chunk of body) {
+    hash.update(chunk);
+    bytes += chunk.byteLength;
+  }
+  return { sha256: hash.digest('hex'), bytes };
+}
+async function wasmPreflight(url, expected, fetchImpl = fetch) {
+  // 🤖 This is a separate HTTP request, NOT a hash of the browser's response.
+  // 🤖 Streaming avoids the inspector cache eviction seen with the 100 MB WASM.
+  const response = await fetchImpl(url, {
+    redirect: 'error', signal: AbortSignal.timeout(60_000), headers: { 'accept-encoding': 'identity' },
+  });
+  assert.equal(response.status, 200, 'WASM HTTP preflight failed');
+  assert.ok(response.body, 'WASM HTTP preflight returned no body');
+  const body = await streamedDigest(response.body);
+  checkDigest(body, expected, 'Separate HTTP WASM preflight');
+  return { kind: 'separate-streamed-http-preflight', url, status: response.status, headers: Object.fromEntries(response.headers), body };
 }
 
 async function smoke() {
@@ -153,7 +178,8 @@ async function smoke() {
   const firstId = game.worlds.flatMap((world) => world.levels)[0].id;
   const report = {
     startedAt: new Date().toISOString(), baseUrl: base.href, assetVersion: release.assetVersion,
-    leanCommit: release.leanCommit, workers: [], runtimeResponses: [], realAnalysisFetches: [],
+    leanCommit: release.leanCommit, workers: [], runtimeResponses: [], runtimeWarmups: [], realAnalysisFetches: [],
+    wasmIdentityEvidence: 'Separate HTTP body hash plus actual browser request URL/status/headers; no browser response-body hash.',
     observationErrors: [], pageErrors: [], passed: false,
   };
   const { chromium } = await import('@playwright/test');
@@ -161,25 +187,44 @@ async function smoke() {
   try {
     const context = await browser.newContext({ serviceWorkers: 'block' });
     const networkJobs = [];
+    const requests = new Map();
+    context.on('requestfinished', (request) => {
+      const record = requests.get(request);
+      if (record) { record.events.push('requestfinished'); record.finished = true; }
+    });
+    context.on('requestfailed', (request) => {
+      const record = requests.get(request);
+      if (record) { record.events.push('requestfailed'); record.requestFailure = request.failure(); }
+    });
     context.on('response', (response) => {
       const url = new URL(response.url());
       const runtime = /\/lean\.(js|wasm)$/.test(url.pathname);
       const analysisPack = /\/real-analysis-lib\/artifacts-[^/]+\.pack$/.test(url.pathname);
       if (!runtime && !analysisPack) return;
-      const record = { url: url.href, status: response.status(), fromServiceWorker: response.fromServiceWorker() };
+      const record = { url: url.href, status: response.status(), headers: response.headers(), fromServiceWorker: response.fromServiceWorker(), events: ['response'] };
+      requests.set(response.request(), record);
+      // 🤖 An unconsumed JS warm-up/preload may never emit requestfinished.
+      // 🤖 Its response is not a worker identity and must not hold this gate open.
+      if (url.pathname.endsWith('/lean.js') && !url.searchParams.has('v')) {
+        report.runtimeWarmups.push(record);
+        return;
+      }
       (runtime ? report.runtimeResponses : report.realAnalysisFetches).push(record);
-      networkJobs.push((async () => {
-        const failure = await response.finished();
-        if (failure) throw failure;
-        record.finished = true;
-        if (url.pathname.endsWith('/lean.wasm')) record.body = digest(await response.body());
-      })().catch((error) => { record.error = String(error); }));
+      if (url.pathname.endsWith('/lean.js')) return;
+      networkJobs.push(deadline(response.finished(), 60_000, `Response completion: ${url.href}`)
+        .then((failure) => {
+          if (failure) throw failure;
+          record.finished = true;
+          record.events.push('response.finished');
+        }).catch((error) => { record.error = String(error); }));
     });
     const page = await context.newPage();
     page.on('pageerror', (error) => report.pageErrors.push(String(error)));
     const cdp = await context.newCDPSession(page);
     const observation = await observeWorkers(cdp, report);
     await deadline(Promise.race([observation.failure, (async () => {
+      const expectedWasm = new URL(`/lean-wasm/lean.wasm?v=${release.assetVersion}`, base).href;
+      report.wasmPreflight = await wasmPreflight(expectedWasm, release.objects['lean.wasm']);
       // 🤖 One fresh page/context and one [0, 1) reference call. No tracked report is updated.
       await page.goto(new URL('/games/real-analysis-game?conformance=1&variant=full', base).href, { waitUntil: 'domcontentloaded', timeout: 60_000 });
       report.crossOriginIsolated = await page.evaluate(() => crossOriginIsolated);
@@ -190,14 +235,15 @@ async function smoke() {
       await observation.settle();
       await Promise.all(networkJobs);
       checkWorkerIdentity(report.workers, release, base);
-      const expectedWasm = new URL(`/lean-wasm/lean.wasm?v=${release.assetVersion}`, base).href;
       const wasm = report.runtimeResponses.filter((response) => new URL(response.url).pathname.endsWith('/lean.wasm'));
       assert.ok(wasm.length > 0, 'No actual WASM response was observed');
       for (const response of wasm) {
         assert.equal(response.url, expectedWasm);
         assert.equal(response.status, 200);
         assert.equal(response.error, undefined);
-        checkDigest(response.body, release.objects['lean.wasm'], 'Actual WASM response');
+        assert.equal(response.finished, true, 'Pinned browser WASM response did not finish');
+        assert.equal(response.fromServiceWorker, false);
+        assert.match(response.headers['content-type'] || '', /^application\/wasm(?:;|$)/);
       }
       assert.ok(report.realAnalysisFetches.some((response) => response.status === 200 && response.finished && !response.error
         && !response.fromServiceWorker && new URL(response.url).origin === base.origin), 'No completed same-origin Real Analysis package fetch');
@@ -250,6 +296,40 @@ async function selfTest() {
   };
   const child = childSession(parent, 'worker-session');
   assert.deepEqual(await child.send('Debugger.getScriptSource', { scriptId: '1' }), { scriptSource: 'actual glue' });
+  const replayParent = new EventEmitter();
+  const methods = [];
+  replayParent.send = async (method, params) => {
+    if (method !== 'Target.sendMessageToTarget') return {};
+    const request = JSON.parse(params.message);
+    methods.push(request.method);
+    if (request.method === 'Debugger.enable') {
+      queueMicrotask(() => replayParent.emit('Target.receivedMessageFromTarget', {
+        sessionId: params.sessionId,
+        message: JSON.stringify({ method: 'Debugger.scriptParsed', params: { scriptId: 'initial', url: scriptUrl } }),
+      }));
+    }
+    const result = request.method === 'Debugger.getScriptSource' ? { scriptSource: 'actual glue' } : {};
+    queueMicrotask(() => replayParent.emit('Target.receivedMessageFromTarget', {
+      sessionId: params.sessionId, message: JSON.stringify({ id: request.id, result }),
+    }));
+    return {};
+  };
+  const replayReport = { workers: [], observationErrors: [] };
+  const observation = await observeWorkers(replayParent, replayReport);
+  replayParent.emit('Target.attachedToTarget', {
+    sessionId: 'initial-pthread', targetInfo: { type: 'worker', targetId: 'initial-pthread', url: scriptUrl },
+  });
+  await Promise.race([observation.settle(), observation.failure]);
+  checkDigest(replayReport.workers[0].source, release.objects['lean.js'], 'Replayed initial pthread script');
+  assert.equal(replayReport.workers[0].debuggerDisabled, true);
+  assert.ok(methods.indexOf('Debugger.getScriptSource') < methods.indexOf('Runtime.runIfWaitingForDebugger'));
+  assert.ok(!methods.some((method) => /evaluate|callFunctionOn|pause|InstrumentationBreakpoint/.test(method)));
+
+  const wasmBytes = Buffer.from('small WASM fixture');
+  const preflight = await wasmPreflight(`${base}/lean-wasm/lean.wasm?v=test-release`, digest(wasmBytes), async () => new Response(wasmBytes));
+  assert.equal(preflight.kind, 'separate-streamed-http-preflight');
+  checkDigest(preflight.body, digest(wasmBytes), 'Streamed preflight');
+  await assert.rejects(wasmPreflight(`${base}/wrong`, digest('different'), async () => new Response(wasmBytes)));
   console.log('Release browser smoke light checks passed; no browser launched.');
 }
 
