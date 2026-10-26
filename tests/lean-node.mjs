@@ -77,6 +77,11 @@ export async function bootLean({ root, wasmPath, quiet = true } = {}) {
           try { Module._lean_io_result_show_error(sp); } catch {}
           throw new Error('lean_init_search_path failed');
         }
+        // The build links with EXIT_RUNTIME=1, so without a keepalive reference the
+        // first event-loop callback after a Lean thread proxies work to this thread
+        // exits the runtime and closes stderr (issue #4). Releases linked before the
+        // fork exported this function lack it.
+        if (Module._emscripten_runtime_keepalive_push) Module._emscripten_runtime_keepalive_push();
         resolveReady();
       } catch (e) { rejectReady(e); }
     },
@@ -115,5 +120,5 @@ export async function bootLean({ root, wasmPath, quiet = true } = {}) {
   // which the environment is resident and every compile is milliseconds.
   compile('#check Nat');
 
-  return { compile };
+  return { compile, holdsKeepalive: Boolean(Module._emscripten_runtime_keepalive_push) };
 }
