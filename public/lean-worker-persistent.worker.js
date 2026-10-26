@@ -251,6 +251,11 @@ function startLeanModule() {
           try { Module._lean_io_result_show_error(spRes); } catch (e) { /* ignore */ }
           throw new Error('lean_init_search_path failed (see stderr)');
         }
+        // 🤖 The build links with EXIT_RUNTIME=1, so without a keepalive reference the
+        // first event-loop callback after a Lean thread proxies work to this thread
+        // exits the runtime and closes stderr, failing every later compile (issue #4).
+        // Releases linked before the fork exported this function lack it.
+        if (Module._emscripten_runtime_keepalive_push) Module._emscripten_runtime_keepalive_push();
         moduleReady = true;
         self.postMessage({ type: 'worker_ready' });
       } catch (e) {
