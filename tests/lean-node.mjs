@@ -120,5 +120,5 @@ export async function bootLean({ root, wasmPath, quiet = true } = {}) {
   // which the environment is resident and every compile is milliseconds.
   compile('#check Nat');
 
-  return { compile };
+  return { compile, holdsKeepalive: Boolean(Module._emscripten_runtime_keepalive_push) };
 }
