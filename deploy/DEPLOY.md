@@ -43,8 +43,11 @@ blocks deployment, not the artifact checks.
 
 Use a new immutable release name for any binary, glue, or snapshot change.
 Keep the six object entries together: full JS/WASM, slim JS/WASM, and each
-variant's `snapshots/init.snap`. The compact-exports release retains its
-existing slim pair and snapshots; the manifest pins their unchanged bytes.
+variant's `snapshots/init.snap`. The compact2 release changes only the full and
+slim `lean.js`, which add the `_emscripten_runtime_keepalive_push` export. Both
+`lean.wasm` files and both snapshots keep compact1's bytes, and the served
+snapshot gate restored both snapshots against the new glue. The Lean fork's
+`wasm-desktop-compact2-62b6a22` branch relinks these bytes from the 62b6a22 kit.
 
 The fixture archive contains regular files and directories only:
 
