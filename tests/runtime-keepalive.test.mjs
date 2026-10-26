@@ -1,4 +1,4 @@
-// 🤖 Regression test for issue #4: once a compile generates equation lemmas, a
+// Regression test for issue #4: once a compile generates equation lemmas, a
 // Lean task thread proxies work to the main thread, and the next timer turn of
 // the event loop used to exit the Emscripten runtime and close stderr. Every
 // later compile then failed with EBADF before printing anything.
@@ -25,7 +25,7 @@ const exportsKeepalive = fs.readFileSync(path.join(root, 'bin/lean.js'), 'utf8')
 
 const timerTurn = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-// 🤖 Simp unfolding a structurally recursive def realizes its equation lemmas.
+// Simp unfolding a structurally recursive def realizes its equation lemmas.
 const unfoldsRecursiveDef = (name) => `def ${name} : List Nat → Nat
   | [] => 0
   | _ :: xs => ${name} xs + 1
@@ -43,7 +43,7 @@ before(async () => {
 test('compiles keep working across event-loop turns after equation-lemma generation', {
   todo: !exportsKeepalive && 'runtime release predates the _emscripten_runtime_keepalive_push export',
 }, async () => {
-  // 🤖 Which turn first breaks depends on thread timing, so alternate several times.
+  // Which turn first breaks depends on thread timing, so alternate several times.
   for (let i = 0; i < 10; i++) {
     const first = lean.compile(unfoldsRecursiveDef(`f${i}`));
     assert.equal(first.tag, 0, `compile ${i} threw an IO error`);
