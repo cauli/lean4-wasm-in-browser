@@ -39,8 +39,10 @@ if (oleanPaths.length === 0) throw new Error('No Init closure files in the file 
 // .ir/.ir.sig pair when the artifact ships one (the reader only loads an .ir
 // whose .ir.sig exists, so a lone missing sibling is fine to skip).
 const sources = new Map()
+// The .olean.server part holds the docstrings the editor's hover and
+// completions show; a module without one still loads, without docstrings.
 for (const olean of oleanPaths) {
-  for (const rel of [olean, olean.replace(/\.olean$/, '.ir'), olean.replace(/\.olean$/, '.ir.sig')]) {
+  for (const rel of [olean, olean + '.server', olean.replace(/\.olean$/, '.ir'), olean.replace(/\.olean$/, '.ir.sig')]) {
     const abs = path.join(libRoot, rel)
     if (fs.existsSync(abs)) sources.set(rel, abs)
   }

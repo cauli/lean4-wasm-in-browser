@@ -717,3 +717,101 @@ body {
   position: absolute;
   inset: 0;
 }
+
+/* The side column: the infoview above the output. */
+.side-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: var(--panel-gap);
+}
+.side-column > .panel {
+  flex: 1;
+  min-height: 0;
+}
+.infoview-panel { flex: 1.2; }
+
+.infoview {
+  flex: 1;
+  overflow: auto;
+  padding: 0.75rem 1rem;
+  background: var(--bg-primary);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.infoview section + section { margin-top: 0.9rem; }
+.iv-title {
+  margin-bottom: 0.35rem;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.iv-goal {
+  margin-bottom: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border-color);
+  border-left: 2px solid #7aa2f7;
+  background: var(--bg-card);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.iv-case { color: var(--text-muted); }
+.iv-names { color: #e0af68; }
+.iv-target-rule { margin-top: 0.2rem; padding-top: 0.2rem; border-top: 1px dashed var(--border-color); }
+.iv-turnstile { color: #7aa2f7; font-weight: 600; }
+.iv-done { margin: 0; color: #9ece6a; }
+.iv-note { margin: 0; color: var(--text-muted); }
+.iv-message {
+  margin: 0 0 0.4rem;
+  padding: 0.3rem 0.6rem;
+  border-left: 2px solid var(--border-hover);
+  background: var(--bg-card);
+  font: inherit;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.iv-message-error { border-left-color: #f7768e; }
+.iv-message-warning { border-left-color: #e0af68; }
+.iv-message-information { border-left-color: #7aa2f7; }
+
+/* A "Try this" message: each suggestion is a link that puts it in place of
+   the search tactic. */
+.iv-suggestion { margin: 0.2rem 0 0 0.8rem; }
+.iv-apply {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #7aa2f7;
+  font: inherit;
+  text-align: left;
+  white-space: pre-wrap;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.iv-apply:hover { background: rgba(122, 162, 247, 0.12); }
+.iv-suggestion-note { margin: 0; color: var(--text-muted); font: inherit; white-space: pre-wrap; }
+.iv-more { margin: 0.2rem 0 0 0.8rem; color: var(--text-muted); }
+.iv-more > summary { cursor: pointer; }
+.iv-more > .iv-suggestion { margin-left: 0; }
+.iv-failed { margin: 0 0 0.4rem; }
+
+/* Gutter marks, after Lean's VS Code extension: an icon where an error or a
+   warning starts, ✓✓ on a theorem Lean accepted, and a bar along an error
+   that spans lines. */
+.lean-glyph { background: center / 14px no-repeat; }
+.lean-glyph-error {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6.1' fill='none' stroke='%23f7768e' stroke-width='1.4'/%3E%3Cpath d='M5.7 5.7l4.6 4.6M10.3 5.7l-4.6 4.6' stroke='%23f7768e' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+.lean-glyph-warning {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.2 14.4 13.6H1.6Z' fill='none' stroke='%23e0af68' stroke-width='1.4' stroke-linejoin='round'/%3E%3Cpath d='M8 6.3v3.6' stroke='%23e0af68' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='11.7' r='.85' fill='%23e0af68'/%3E%3C/svg%3E");
+}
+.lean-glyph-done {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 16'%3E%3Cpath d='M1.5 8.8 4.6 11.9 10.8 5.2M7.6 11.2l.7.7 6.3-6.7' fill='none' stroke='%237aa2f7' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.lean-span { margin-left: 3px; width: 2px !important; background: #f7768e; }
+.lean-span-start { margin-top: 0.6em; }
+.lean-span-end { height: 50% !important; }

@@ -213,8 +213,9 @@ function getTransitiveDeps(
 }
 
 // Get all required .olean paths for given imports.
-// Only base .olean files: the WASM build imports at the `exported` olean level,
-// so the .olean.server/.olean.private parts are never read.
+// Only base .olean files: a module without its .olean.server and
+// .olean.private parts loads its base data. The packed core (Init) ships
+// .olean.server too, for the docstrings the editor shows.
 export async function getRequiredOleanPaths(imports: string[]): Promise<string[]> {
   const m = await loadManifest();
   const allModules = new Set<string>();

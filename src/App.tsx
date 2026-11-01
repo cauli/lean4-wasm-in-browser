@@ -11,7 +11,10 @@ import {
 import { prepareArtifactPackCache } from './artifact-pack-cache'
 import { LEAN_WASM_BASE, LEAN_BIN_BASE, LEAN_ASSET_VERSION, LEAN_VARIANT, workerAssetQuery } from './config'
 import { examples } from './examples'
-import { LeanEditor, dropModel, renameModel, type LeanMarker } from './editor/LeanEditor'
+import { LeanEditor, dropModel, renameModel, applySuggestion, type LeanMarker } from './editor/LeanEditor'
+import { grouped, failureSummary, suggestionsText } from './editor/suggestions'
+import { setLeanService, type LeanInfo, type LeanPos } from './editor/lean-services'
+import { InfoView } from './editor/InfoView'
 import { makeZip } from './zip'
 import './App.css'
 
@@ -139,6 +142,18 @@ interface LeanDiagnostic {
   fileName: string
   caption?: string
   kind?: string
+  /** Silent messages, such as "Goals accomplished!", mark the gutter only. */
+  isSilent?: boolean
+}
+
+// What decides the environment Lean checks a file in: its imports, and
+// whether it is a `module`. The editor checks as the reader types only in
+// environments the worker has already imported, at boot or by a Run, since a
+// first import can take minutes.
+function headerKey(code: string): string {
+  const first = code.split('\n').map((l) => l.trim()).find((l) => l && !l.startsWith('--')) ?? ''
+  const imports = parseUserImports(code).filter((i) => i !== 'Init').join(' ')
+  return (/^module\b/.test(first) ? 'module ' : '') + imports
 }
 
 // Parse JSON output lines from Lean
@@ -265,6 +280,22 @@ function App() {
   const residentOleansRef = useRef<Set<string>>(new Set())
   const residentAddPendingRef = useRef<{ resolve: () => void } | null>(null)
   const snapshotPendingRef = useRef<{ resolve: (r: { success: boolean; error?: string }) => void } | null>(null)
+  // The editor's live view: Lean's messages about the code as it is typed,
+  // and what Lean has at the cursor. `queriesRef` says whether this runtime
+  // answers position queries; older ones only compile.
+  const queriesRef = useRef(false)
+  const requestIdRef = useRef(0)
+  const requestsRef = useRef(new Map<number, (answer: Record<string, unknown>) => void>())
+  const warmHeadersRef = useRef(new Set<string>())
+  const checkedRef = useRef<{ code: string; result: Promise<{ messages?: LeanDiagnostic[] } | null> } | null>(null)
+  const latestCodeRef = useRef('')
+  const cursorRef = useRef<{ lineNumber: number; column: number } | null>(null)
+  const cursorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [liveDiagnostics, setLiveDiagnostics] = useState<LeanDiagnostic[] | null>(null)
+  // The same facts as `warmHeadersRef` and `queriesRef`, for rendering.
+  const [warmHeaders, setWarmHeaders] = useState<ReadonlySet<string>>(new Set())
+  const [queriesAvailable, setQueriesAvailable] = useState(false)
+  const [cursorInfo, setCursorInfo] = useState<{ line: number; info: LeanInfo | null } | null>(null)
 
   const appendOutput = useCallback((text: string, isError = false) => {
     if (isError) {
@@ -600,6 +631,8 @@ function App() {
           residentAddPendingRef.current = null
         } else if (type === 'worker_ready') {
           persistentReadyRef.current = true
+          queriesRef.current = !!event.data.queries
+          setQueriesAvailable(queriesRef.current)
           clearTimeout(timeout)
           // Keep this handler installed: it also serves compile traffic below.
           resolve()
@@ -617,6 +650,9 @@ function App() {
         } else if (type === 'compile_result') {
           persistentPendingRef.current?.resolve(event.data)
           persistentPendingRef.current = null
+        } else if (type === 'check_result' || type === 'query_result') {
+          requestsRef.current.get(event.data.id)?.(event.data)
+          requestsRef.current.delete(event.data.id)
         } else if (type === 'snapshot_loaded') {
           snapshotPendingRef.current?.resolve(event.data)
           snapshotPendingRef.current = null
@@ -678,7 +714,61 @@ function App() {
       throw new Error(result.error || 'compile failed')
     }
     persistentCompiledOnceRef.current = true
+    // The environment for this header is now imported, so the editor can
+    // check such code as it is typed. Position queries are about the code
+    // compiled last, which is now this one.
+    warmHeadersRef.current.add(headerKey(code))
+    setWarmHeaders(new Set(warmHeadersRef.current))
+    checkedRef.current = null
   }, [ensurePersistentWorker])
+
+  // Send the resident worker a check or a query and wait for its answer.
+  const askWorker = useCallback((msg: Record<string, unknown>): Promise<Record<string, unknown> | null> => {
+    const worker = persistentWorkerRef.current
+    if (!worker || !persistentReadyRef.current) return Promise.resolve(null)
+    const id = ++requestIdRef.current
+    return new Promise((resolve) => {
+      requestsRef.current.set(id, resolve)
+      worker.postMessage({ ...msg, id })
+    })
+  }, [])
+
+  // Check `code` unless it was checked last; null when its environment has
+  // not been imported yet. The messages become the editor's markers while
+  // `code` is still what the editor holds.
+  const ensureChecked = useCallback((code: string) => {
+    if (!persistentReadyRef.current || !warmHeadersRef.current.has(headerKey(code))) {
+      return Promise.resolve(null)
+    }
+    if (checkedRef.current?.code === code) return checkedRef.current.result
+    const result = askWorker({ type: 'check', code, path: '/workspace/input.lean' }).then((answer) => {
+      const messages = (answer?.messages as LeanDiagnostic[] | undefined) ?? null
+      if (messages && code === latestCodeRef.current) setLiveDiagnostics(messages)
+      return answer ? { messages: messages ?? undefined } : null
+    })
+    checkedRef.current = { code, result }
+    return result
+  }, [askWorker])
+
+  const query = useCallback(async (code: string, name: string, args: number[]) => {
+    if (!queriesRef.current || !(await ensureChecked(code))) return null
+    const answer = await askWorker({ type: 'query', name, args })
+    return (answer?.answer as Record<string, unknown> | null) ?? null
+  }, [askWorker, ensureChecked])
+
+  // Hover text and completions in the editor come from here.
+  useEffect(() => {
+    setLeanService({
+      info: (code, pos) => query(code, '_lean_wasm_info_at', [pos.line, pos.column]) as Promise<LeanInfo | null>,
+      complete: (code, pos) => query(code, '_lean_wasm_complete', [pos.line, pos.column]) as never,
+      resolve: async (index) => {
+        if (!queriesRef.current) return null
+        const answer = await askWorker({ type: 'query', name: '_lean_wasm_resolve_completion', args: [index] })
+        return (answer?.answer as { detail: string | null; documentation: string | null } | null) ?? null
+      },
+    })
+    return () => setLeanService(null)
+  }, [query, askWorker])
 
   // Make sure the resident worker's in-WASM filesystem has the oleans for the
   // given imports, writing any that aren't there yet. The resident `wasmCompile`
@@ -1039,22 +1129,71 @@ function App() {
     }
   }, [wasmLoaded, leanCode, leanFlags, appendOutput, ensurePersistentWorker, ensureResidentOleans, runPersistent, runOneShot, loadOleansFor])
 
+  // What Lean has at the cursor, for the infoview: asked once the cursor
+  // rests, and again after each check of new code.
+  const refreshCursorInfo = useCallback(async () => {
+    const position = cursorRef.current
+    const code = latestCodeRef.current
+    if (!position || !queriesRef.current) return
+    const lineText = code.split('\n')[position.lineNumber - 1] ?? ''
+    const pos: LeanPos = { line: position.lineNumber, column: Array.from(lineText.slice(0, position.column - 1)).length }
+    const info = (await query(code, '_lean_wasm_info_at', [pos.line, pos.column])) as LeanInfo | null
+    if (code === latestCodeRef.current && cursorRef.current === position) setCursorInfo({ line: pos.line, info })
+  }, [query])
+
+  const onCursor = useCallback((position: { lineNumber: number; column: number }) => {
+    cursorRef.current = position
+    if (cursorTimerRef.current) clearTimeout(cursorTimerRef.current)
+    cursorTimerRef.current = setTimeout(refreshCursorInfo, 150)
+  }, [refreshCursorInfo])
+
+  // Check the code as it is typed, once typing pauses.
+  useEffect(() => {
+    latestCodeRef.current = leanCode
+    if (!wasmLoaded) return
+    if (!warmHeadersRef.current.has(headerKey(leanCode))) {
+      setLiveDiagnostics(null)
+      return
+    }
+    const timer = setTimeout(() => { ensureChecked(leanCode).then(refreshCursorInfo) }, 500)
+    return () => clearTimeout(timer)
+  }, [leanCode, wasmLoaded, ensureChecked, refreshCursorInfo])
+
   // Parse output for display
   const parsedOutput = useMemo(() => {
     return parseLeanOutput(output)
   }, [output])
 
-  // Diagnostics as Monaco markers (squiggles) on the active file. Lean's
-  // JSON positions are 1-based lines / 0-based columns.
+  // Diagnostics as Monaco markers (squiggles) on the active file: the live
+  // check's when the editor checks as it is typed, else the last Run's.
+  // Lean's JSON positions are 1-based lines / 0-based columns. The
+  // suggestions a search tactic makes at one place are one marker, with its
+  // quick fixes, and the attempts it reports as failed show in the infoview
+  // only.
+  const diagnostics = liveDiagnostics ?? parsedOutput.diagnostics
   const editorMarkers = useMemo<LeanMarker[]>(() =>
-    parsedOutput.diagnostics.map((d) => ({
-      severity: d.severity,
-      message: d.data,
-      startLine: d.pos.line,
-      startColumn: d.pos.column,
-      endLine: d.endPos?.line ?? d.pos.line,
-      endColumn: d.endPos?.column ?? d.pos.column + 1,
-    })), [parsedOutput])
+    grouped(diagnostics).flatMap((entry) => {
+      if ('failed' in entry) return []
+      const d = entry.message
+      return [{
+        severity: d.severity,
+        message: entry.offered ? suggestionsText(entry.offered) : d.data,
+        startLine: d.pos.line,
+        startColumn: d.pos.column,
+        endLine: d.endPos?.line ?? d.pos.line,
+        endColumn: d.endPos?.column ?? d.pos.column + 1,
+        kind: d.kind,
+        silent: d.isSilent,
+        suggestions: entry.offered ?? undefined,
+      }]
+    }), [diagnostics])
+  const cursorLine = cursorInfo?.line ?? null
+  const lineMessages = cursorLine === null ? [] : diagnostics.filter((d) =>
+    !d.isSilent && d.pos.line === cursorLine && d.kind !== 'Tactic.unsolvedGoals')
+  const infoNote = !wasmLoaded ? 'The goals at the cursor appear here once Lean has started.'
+    : !warmHeaders.has(headerKey(leanCode)) ? 'Run once to load this file\'s imports; then the editor checks as you type.'
+      : !queriesAvailable ? 'This Lean runtime cannot report goals at the cursor.'
+        : undefined
 
   // Persist the workspace (debounced — this fires per keystroke).
   useEffect(() => {
@@ -1412,10 +1551,22 @@ function App() {
                 content={leanCode}
                 markers={editorMarkers}
                 onChange={setLeanCode}
+                onCursor={onCursor}
               />
             </div>
           </div>
 
+          <div className="side-column">
+          <div className="panel infoview-panel">
+            <div className="panel-header"><span>Infoview</span></div>
+            <InfoView
+              line={cursorLine}
+              info={cursorInfo?.info ?? null}
+              messages={lineMessages}
+              note={infoNote}
+              onApply={(m, suggestion) => applySuggestion(activeFile, m.pos.line, m.pos.column, suggestion.text)}
+            />
+          </div>
           <div className="panel">
             <div className="panel-header">
               <span>Output</span>
@@ -1428,24 +1579,29 @@ function App() {
             </div>
             <div className="output" ref={outputRef}>
               {/* Show parsed diagnostics */}
-              {parsedOutput.diagnostics.length > 0 && (
+              {parsedOutput.diagnostics.some((d) => !d.isSilent) && (
                 <div className="diagnostics">
-                  {parsedOutput.diagnostics.map((diag, i) => (
-                    <div 
-                      key={i} 
-                      className={`diagnostic diagnostic-${diag.severity}`}
-                    >
-                      <div className="diagnostic-header">
-                        <span className="diagnostic-pos">
-                          {diag.pos.line}:{diag.pos.column}
-                        </span>
-                        <span className={`diagnostic-badge diagnostic-badge-${diag.severity}`}>
-                          {diag.severity === 'information' ? 'info' : diag.severity}
-                        </span>
+                  {grouped(parsedOutput.diagnostics.filter((d) => !d.isSilent)).map((entry, i) => {
+                    const diag = 'failed' in entry ? entry.messages[0] : entry.message
+                    const data = 'failed' in entry ? failureSummary(entry.failed, entry.messages.length)
+                      : entry.offered ? suggestionsText(entry.offered) : diag.data
+                    return (
+                      <div
+                        key={i}
+                        className={`diagnostic diagnostic-${diag.severity}`}
+                      >
+                        <div className="diagnostic-header">
+                          <span className="diagnostic-pos">
+                            {diag.pos.line}:{diag.pos.column}
+                          </span>
+                          <span className={`diagnostic-badge diagnostic-badge-${diag.severity}`}>
+                            {diag.severity === 'information' ? 'info' : diag.severity}
+                          </span>
+                        </div>
+                        <div className="diagnostic-data">{data}</div>
                       </div>
-                      <div className="diagnostic-data">{diag.data}</div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
               {/* Show raw lines (non-JSON output) */}
@@ -1465,6 +1621,7 @@ function App() {
                 </span>
               )}
             </div>
+          </div>
           </div>
         </div>
       </main>

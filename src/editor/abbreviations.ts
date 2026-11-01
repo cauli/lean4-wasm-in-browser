@@ -14,6 +14,9 @@ const provider = new AbbreviationProvider({
   eagerReplacementEnabled: true,
 })
 
+// Shared with the `\` symbol list (lean-services.ts).
+export const abbreviationProvider = provider
+
 // Characters that may extend an abbreviation (the database uses letters,
 // digits, and punctuation like `-`, `^`, `_`, `=`, `<`).
 const ABBREV_CHAR = /^[a-zA-Z0-9_\-^=<>'"`~+*/!?.()[\]]$/
