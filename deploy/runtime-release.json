@@ -2,37 +2,37 @@
   "schemaVersion": 1,
   "leanCommit": "62b6a2291302d4bbeace37642a066b7510d0145c",
   "emscriptenVersion": "4.0.22",
-  "assetVersion": "62b6a2291302d4bbeace37642a066b7510d0145c-dlsym1-compact2",
+  "assetVersion": "62b6a2291302d4bbeace37642a066b7510d0145c-editor1",
   "objects": {
     "lean.js": {
       "bytes": 148585,
-      "sha256": "075218cc9663757f8ca22ba5bdcac9423ebcc21feb102c274c5fe29150ee077a"
+      "sha256": "30ae0b6a2febc60c7c3e0aaa742a6ddd1b2a094ea5aa97c5bff09f00070edab3"
     },
     "lean.wasm": {
-      "bytes": 100838905,
-      "sha256": "08d3ae8ee5dec8bae165ad5102e604eca016d74d2303e0b5748690df679a764e"
+      "bytes": 100907960,
+      "sha256": "48bc0308549841323723743f412d8f5006834758830a4205470e0165734235b5"
     },
     "slim/lean.js": {
-      "bytes": 3430296,
-      "sha256": "1bb3b3e4367bb633fb48a0b4aaf0f236c819b8938841335683b38c3b2f62457e"
+      "bytes": 3455303,
+      "sha256": "f3d89857512c60a330b06cc87acc10e24b0c9d54d0986195509c5ed95d57e3ac"
     },
     "slim/lean.wasm": {
-      "bytes": 70444966,
-      "sha256": "e3499ffc9414d178b1735fe82254284163d8f57046c977d74f04c0c8fc23a8f4"
+      "bytes": 70510850,
+      "sha256": "daffa90d2e0757c2c728981c806854fa7298943bacfb2cfc49b2c389b4fdeeda"
     },
     "snapshots/init.snap": {
-      "bytes": 241301441,
-      "sha256": "d91cda15128ac8df3611bd43fa36ff0bd866924c3522521a80d43fc19d1ff7c9"
+      "bytes": 74018193,
+      "sha256": "4477f14b798098e4391fb8f52314b39a74e14aab7f8b2415ee17c5e8af619310"
     },
     "slim/snapshots/init.snap": {
-      "bytes": 241309481,
-      "sha256": "a7759e7fa311396a57c74bde979bf47ffca64a194004eb8cbb02b800205873e6"
+      "bytes": 74026233,
+      "sha256": "ac2a7b624b6c66dffa9972a5d567451bb2b30263fbef9857eef44df76dc0d83e"
     }
   },
   "fixture": {
-    "url": "https://github.com/cauli/lean4-wasm-in-browser/releases/download/runtime-62b6a22-compact2/lean-runtime-fixture.tar.gz",
-    "sha256": "e00f4148b04b3121b68356e2bb36057471600714fbb01a34c5b3036cde5f4470",
-    "bytes": 286293798
+    "url": "https://github.com/cauli/lean4-wasm-in-browser/releases/download/runtime-62b6a22-editor1/lean-runtime-fixture.tar.gz",
+    "sha256": "a66af27e859464db9849df10ea3bd7aa3b5ee824fbcc7c330fb8cf5931cc5527",
+    "bytes": 139215860
   },
   "staticAssets": {
     "url": "https://github.com/cauli/lean4-wasm-in-browser/releases/download/runtime-62b6a22-compact1/pages-assets-62b6a22-compact1.tar.gz",
