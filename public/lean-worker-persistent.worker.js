@@ -9,12 +9,19 @@
 // down via EXIT_RUNTIME=1) and serves repeated compiles through the fork's
 // `lean_wasm_compile` export. The first compile imports Init and caches the
 // environment inside Lean; subsequent compiles reuse it.
+//
+// The editor also checks code as the reader types (`check`) and asks what Lean
+// has at a position of the code checked last (`query`: goals, hover text,
+// completions). Their output is the answer, returned to the page, not output
+// for the output panel.
 
 Error.stackTraceLimit = 1000;
 
 let libraryFiles = [];
 let moduleReady = false;
 let compileBusy = false;
+// Lines Lean prints while a check or query runs, which are its answer.
+let captured = null;
 
 const assetBase = (new URLSearchParams(location.search).get('assetBase') || '/lean-wasm').replace(/\/$/, '');
 // Per-build version, appended to lean.js/lean.wasm so each build is a distinct
@@ -100,6 +107,40 @@ function mkLeanString(str) {
   return obj;
 }
 
+// Check `code` for the editor: a compile whose messages are returned, one
+// JSON object per line Lean printed.
+function checkCode(code, fileName) {
+  captured = [];
+  try {
+    const result = compileCode(code, fileName);
+    const messages = [];
+    for (const line of captured) {
+      if (line.startsWith('{')) { try { messages.push(JSON.parse(line)); } catch (e) { /* not a message */ } }
+    }
+    return { ...result, messages };
+  } finally {
+    captured = null;
+  }
+}
+
+// Run one of the runtime's position queries (`_lean_wasm_info_at`, ...) and
+// return the JSON object it prints, or null when this runtime lacks it.
+function queryLean(name, args) {
+  const fn = Module[name];
+  if (!moduleReady || typeof fn !== 'function') return null;
+  captured = [];
+  try {
+    const res = fn(...args);
+    if ((Module.getValue(res + 7, 'i8') & 0xff) !== 0) return null;
+    const line = captured.filter((l) => l.startsWith('{')).pop();
+    return line ? JSON.parse(line) : null;
+  } catch (e) {
+    return null;
+  } finally {
+    captured = null;
+  }
+}
+
 function compileCode(code, fileName) {
   if (!moduleReady) return { success: false, error: 'Module not ready' };
   if (compileBusy) return { success: false, error: 'Compile already in progress' };
@@ -141,6 +182,10 @@ self.onmessage = (event) => {
     startLeanModule();
   } else if (msg.type === 'compile') {
     self.postMessage({ type: 'compile_result', ...compileCode(msg.code, msg.path) });
+  } else if (msg.type === 'check') {
+    self.postMessage({ type: 'check_result', id: msg.id, ...checkCode(msg.code, msg.path) });
+  } else if (msg.type === 'query') {
+    self.postMessage({ type: 'query_result', id: msg.id, answer: queryLean(msg.name, msg.args || []) });
   } else if (msg.type === 'load_snapshot') {
     loadSnapshot(msg.name, msg.url)
       .then((r) => self.postMessage({ type: 'snapshot_loaded', ...r }))
@@ -223,8 +268,8 @@ function startLeanModule() {
     // Tell Emscripten where the runtime script is, so the pthread sub-workers
     // this Worker spawns can load lean.js (the Worker's own script is this file).
     mainScriptUrlOrBlob: assetBase + '/lean.js' + assetQ,
-    print: (text) => { noteActivity(); if (reportImportProgress(text)) return; if (isDebugLine(text)) console.log(text); else self.postMessage({ type: 'stdout', data: text }); },
-    printErr: (text) => { noteActivity(); if (reportImportProgress(text)) return; if (isDebugLine(text)) console.log(text); else self.postMessage({ type: 'stderr', data: text }); },
+    print: (text) => { noteActivity(); if (captured) { captured.push(text); return; } if (reportImportProgress(text)) return; if (isDebugLine(text)) console.log(text); else self.postMessage({ type: 'stdout', data: text }); },
+    printErr: (text) => { noteActivity(); if (reportImportProgress(text)) return; if (isDebugLine(text) || captured) console.log(text); else self.postMessage({ type: 'stderr', data: text }); },
     setStatus: (text) => { if (text) self.postMessage({ type: 'progress', data: text }); },
     noInitialRun: true,
 
@@ -257,7 +302,7 @@ function startLeanModule() {
         // Releases linked before the fork exported this function lack it.
         if (Module._emscripten_runtime_keepalive_push) Module._emscripten_runtime_keepalive_push();
         moduleReady = true;
-        self.postMessage({ type: 'worker_ready' });
+        self.postMessage({ type: 'worker_ready', queries: typeof Module._lean_wasm_info_at === 'function' });
       } catch (e) {
         self.postMessage({ type: 'error', data: 'Lean init failed: ' + ((e && e.message) || e) });
       }
